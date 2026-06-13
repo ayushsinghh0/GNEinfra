@@ -1,9 +1,20 @@
 import Link from "next/link";
+import { Mail, ChevronRight } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { isAdminAuthed } from "@/lib/auth";
 import { fmtDate } from "@/lib/format";
 import Badge from "@/components/Badge";
 import InviteForm from "@/components/InviteForm";
+import {
+  PageHeader,
+  Card,
+  Table,
+  EmptyState,
+  thCls,
+  tdCls,
+  theadRowCls,
+  trCls,
+} from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 
@@ -17,56 +28,67 @@ export default async function InvitesPage() {
 
   return (
     <>
-      <header className="h-16 bg-white border-b border-slate-200 flex items-center px-8">
-        <h1 className="text-lg font-semibold text-slate-900">Invitations</h1>
-        <span className="ml-3 text-sm text-slate-400">{invites.length} total</span>
-      </header>
+      <PageHeader title="Invitations" subtitle={`${invites.length} total`} />
 
-      <div className="p-8 space-y-5">
+      <div className="p-8 space-y-6">
         <InviteForm />
 
-        <section className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+        <Card className="overflow-hidden">
           {invites.length === 0 ? (
-            <p className="text-sm text-slate-500 p-6">
-              No invitations sent yet.
-            </p>
+            <EmptyState
+              icon={<Mail className="h-6 w-6" />}
+              title="No invitations sent yet"
+              description="Invite a vendor above to send them a unique registration link."
+            />
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-left text-xs uppercase tracking-wide text-slate-500 bg-slate-50 border-b border-slate-100">
-                    <th className="py-3 px-4">Email</th>
-                    <th className="py-3 px-4">Company hint</th>
-                    <th className="py-3 px-4">Sent</th>
-                    <th className="py-3 px-4">Expires</th>
-                    <th className="py-3 px-4">Status</th>
-                    <th className="py-3 px-4">Vendor</th>
+            <Table>
+              <thead>
+                <tr className={theadRowCls}>
+                  <th className={thCls}>Email</th>
+                  <th className={thCls}>Company hint</th>
+                  <th className={thCls}>Sent</th>
+                  <th className={thCls}>Expires</th>
+                  <th className={thCls}>Status</th>
+                  <th className={thCls}>Vendor</th>
+                </tr>
+              </thead>
+              <tbody>
+                {invites.map((inv) => (
+                  <tr key={inv.id} className={trCls}>
+                    <td className={tdCls}>
+                      <span className="font-medium text-slate-900">{inv.email}</span>
+                    </td>
+                    <td className={tdCls}>
+                      {inv.companyHint || <span className="text-slate-400">—</span>}
+                    </td>
+                    <td className={tdCls}>
+                      <span className="text-slate-500">{fmtDate(inv.sentAt)}</span>
+                    </td>
+                    <td className={tdCls}>
+                      <span className="text-slate-500">{fmtDate(inv.expiresAt) || "—"}</span>
+                    </td>
+                    <td className={tdCls}>
+                      <Badge value={inv.status} />
+                    </td>
+                    <td className={tdCls}>
+                      {inv.vendor ? (
+                        <Link
+                          href={`/admin/vendors/${inv.vendor.id}`}
+                          className="inline-flex items-center gap-1 font-medium text-brand-700 transition-colors hover:text-brand"
+                        >
+                          {inv.vendor.companyName}
+                          <ChevronRight className="h-4 w-4" />
+                        </Link>
+                      ) : (
+                        <span className="text-slate-400">—</span>
+                      )}
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {invites.map((inv) => (
-                    <tr key={inv.id} className="border-b border-slate-50 hover:bg-slate-50">
-                      <td className="py-2.5 px-4">{inv.email}</td>
-                      <td className="py-2.5 px-4 text-slate-500">{inv.companyHint || "—"}</td>
-                      <td className="py-2.5 px-4 text-slate-500">{fmtDate(inv.sentAt)}</td>
-                      <td className="py-2.5 px-4 text-slate-500">{fmtDate(inv.expiresAt) || "—"}</td>
-                      <td className="py-2.5 px-4"><Badge value={inv.status} /></td>
-                      <td className="py-2.5 px-4">
-                        {inv.vendor ? (
-                          <Link href={`/admin/vendors/${inv.vendor.id}`} className="text-brand hover:underline">
-                            {inv.vendor.companyName}
-                          </Link>
-                        ) : (
-                          <span className="text-slate-300">—</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </tbody>
+            </Table>
           )}
-        </section>
+        </Card>
       </div>
     </>
   );

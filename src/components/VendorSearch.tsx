@@ -2,6 +2,8 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect, FormEvent } from "react";
+import { Search } from "lucide-react";
+import { Button, Select, inputCls, cn } from "@/components/ui";
 
 const STATUSES = ["", "SUBMITTED", "UNDER_REVIEW", "APPROVED", "REJECTED"];
 
@@ -31,33 +33,34 @@ export default function VendorSearch() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col sm:flex-row gap-3">
-      <input
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
-        placeholder="Search company, email, GST or PAN…"
-        className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
-      />
-      <select
+    <form onSubmit={onSubmit} className="flex flex-col gap-3 sm:flex-row sm:items-center">
+      <div className="relative flex-1">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+        <input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Search company, email, GST or PAN…"
+          className={cn(inputCls, "pl-9")}
+        />
+      </div>
+      <Select
         value={status}
         onChange={(e) => {
           setStatus(e.target.value);
           apply(q, e.target.value);
         }}
-        className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand bg-white"
+        className="sm:w-48"
       >
         {STATUSES.map((s) => (
           <option key={s} value={s}>
             {s ? s.replace(/_/g, " ") : "All statuses"}
           </option>
         ))}
-      </select>
-      <button
-        type="submit"
-        className="px-5 py-2 rounded-lg bg-brand text-white font-semibold hover:opacity-90 transition"
-      >
+      </Select>
+      <Button type="submit" variant="primary" className="sm:w-auto">
+        <Search className="h-4 w-4" />
         Search
-      </button>
+      </Button>
     </form>
   );
 }

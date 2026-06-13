@@ -1,20 +1,16 @@
-import Link from "next/link";
 import { Suspense } from "react";
 import { Prisma } from "@prisma/client";
+import { Building2 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { isAdminAuthed } from "@/lib/auth";
 import { fmtDate } from "@/lib/format";
-import Badge from "@/components/Badge";
 import VendorSearch from "@/components/VendorSearch";
+import VendorRow from "@/components/VendorRow";
+import { PageHeader, Card, CardBody, EmptyState, thCls, theadRowCls } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 
-const VALID_STATUS = new Set([
-  "SUBMITTED",
-  "UNDER_REVIEW",
-  "APPROVED",
-  "REJECTED",
-]);
+const VALID_STATUS = new Set(["SUBMITTED", "UNDER_REVIEW", "APPROVED", "REJECTED"]);
 
 export default async function VendorsPage({
   searchParams,
@@ -48,62 +44,69 @@ export default async function VendorsPage({
 
   return (
     <>
-      <header className="h-16 bg-white border-b border-slate-200 flex items-center px-8">
-        <h1 className="text-lg font-semibold text-slate-900">Vendors</h1>
-        <span className="ml-3 text-sm text-slate-400">{vendors.length} result(s)</span>
-      </header>
+      <PageHeader title="Vendors" subtitle={`${vendors.length} result(s)`} />
 
-      <div className="p-8 space-y-5">
-        <div className="bg-white rounded-xl border border-slate-200 p-5">
-          <Suspense fallback={<div className="h-10" />}>
-            <VendorSearch />
-          </Suspense>
-        </div>
+      <div className="p-8 space-y-6">
+        <Card>
+          <CardBody className="p-4">
+            <Suspense fallback={<div className="h-10" />}>
+              <VendorSearch />
+            </Suspense>
+          </CardBody>
+        </Card>
 
-        <section className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+        <Card className="overflow-hidden">
           {vendors.length === 0 ? (
-            <p className="text-sm text-slate-500 p-6">No vendors match your search.</p>
+            <EmptyState
+              icon={<Building2 className="h-6 w-6" />}
+              title="No vendors found"
+              description="No vendors match your search. Try a different term or status filter."
+            />
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-left text-xs uppercase tracking-wide text-slate-500 bg-slate-50 border-b border-slate-100">
-                    <th className="py-3 px-4">Company</th>
-                    <th className="py-3 px-4">Contact</th>
-                    <th className="py-3 px-4">Email</th>
-                    <th className="py-3 px-4">GST</th>
-                    <th className="py-3 px-4">PAN</th>
-                    <th className="py-3 px-4">State</th>
-                    <th className="py-3 px-4">Projects</th>
-                    <th className="py-3 px-4">Docs</th>
-                    <th className="py-3 px-4">Status</th>
-                    <th className="py-3 px-4">Submitted</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {vendors.map((v) => (
-                    <tr key={v.id} className="border-b border-slate-50 hover:bg-slate-50">
-                      <td className="py-2.5 px-4 font-medium">
-                        <Link href={`/admin/vendors/${v.id}`} className="text-brand hover:underline">
-                          {v.companyName}
-                        </Link>
-                      </td>
-                      <td className="py-2.5 px-4 text-slate-600">{v.contactPerson || "—"}</td>
-                      <td className="py-2.5 px-4 text-slate-600">{v.email}</td>
-                      <td className="py-2.5 px-4 text-slate-600">{v.gstNo}</td>
-                      <td className="py-2.5 px-4 text-slate-600">{v.panNo}</td>
-                      <td className="py-2.5 px-4 text-slate-600">{v.state || "—"}</td>
-                      <td className="py-2.5 px-4 text-slate-500">{v._count.projects}</td>
-                      <td className="py-2.5 px-4 text-slate-500">{v._count.documents}</td>
-                      <td className="py-2.5 px-4"><Badge value={v.status} /></td>
-                      <td className="py-2.5 px-4 text-slate-500">{fmtDate(v.createdAt)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <table className="w-full table-fixed text-sm">
+              <colgroup>
+                <col className="w-[20%]" />
+                <col className="w-[22%]" />
+                <col className="w-[16%]" />
+                <col className="w-[11%]" />
+                <col className="w-[11%]" />
+                <col className="w-[11%]" />
+                <col className="w-[9%]" />
+              </colgroup>
+              <thead>
+                <tr className={theadRowCls}>
+                  <th className={thCls}>Company</th>
+                  <th className={thCls}>Email</th>
+                  <th className={thCls}>GST / PAN</th>
+                  <th className={thCls}>State</th>
+                  <th className={thCls}>Activity</th>
+                  <th className={thCls}>Status</th>
+                  <th className={thCls}>Submitted</th>
+                </tr>
+              </thead>
+              <tbody>
+                {vendors.map((v) => (
+                  <VendorRow
+                    key={v.id}
+                    v={{
+                      id: v.id,
+                      companyName: v.companyName,
+                      contactPerson: v.contactPerson,
+                      email: v.email,
+                      gstNo: v.gstNo,
+                      panNo: v.panNo,
+                      state: v.state,
+                      projects: v._count.projects,
+                      documents: v._count.documents,
+                      status: v.status,
+                      submitted: fmtDate(v.createdAt),
+                    }}
+                  />
+                ))}
+              </tbody>
+            </table>
           )}
-        </section>
+        </Card>
       </div>
     </>
   );

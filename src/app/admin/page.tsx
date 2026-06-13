@@ -4,28 +4,30 @@ import { isAdminAuthed } from "@/lib/auth";
 import { fmtDate } from "@/lib/format";
 import Badge from "@/components/Badge";
 import InviteForm from "@/components/InviteForm";
+import {
+  Building2,
+  Clock,
+  CheckCircle,
+  Mail,
+  CalendarDays,
+  ChevronRight,
+  Inbox,
+} from "lucide-react";
+import {
+  PageHeader,
+  StatCard,
+  Card,
+  CardHeader,
+  CardBody,
+  EmptyState,
+  Table,
+  thCls,
+  tdCls,
+  theadRowCls,
+  trCls,
+} from "@/components/ui";
 
 export const dynamic = "force-dynamic";
-
-function Card({
-  label,
-  value,
-  accent,
-  href,
-}: {
-  label: string;
-  value: number;
-  accent: string;
-  href?: string;
-}) {
-  const inner = (
-    <div className="bg-white rounded-xl border border-slate-200 p-5 hover:shadow-sm transition">
-      <div className={`text-3xl font-bold ${accent}`}>{value}</div>
-      <div className="text-sm text-slate-500 mt-1">{label}</div>
-    </div>
-  );
-  return href ? <Link href={href}>{inner}</Link> : inner;
-}
 
 export default async function DashboardPage() {
   // Guard BEFORE any DB query: the layout shows the login screen, but Next still
@@ -52,65 +54,117 @@ export default async function DashboardPage() {
 
   return (
     <>
-      <header className="h-16 bg-white border-b border-slate-200 flex items-center px-8">
-        <h1 className="text-lg font-semibold text-slate-900">Dashboard</h1>
-      </header>
+      <PageHeader title="Dashboard" />
 
       <div className="p-8 space-y-6">
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-          <Card label="Total vendors" value={total} accent="text-slate-900" href="/admin/vendors" />
-          <Card label="Awaiting review" value={awaiting} accent="text-amber-600" href="/admin/vendors?status=SUBMITTED" />
-          <Card label="Approved" value={approved} accent="text-emerald-600" href="/admin/vendors?status=APPROVED" />
-          <Card label="Pending invites" value={pendingInvites} accent="text-blue-600" href="/admin/invites" />
-          <Card label="This month" value={thisMonth} accent="text-slate-900" />
+          <Link href="/admin/vendors" className="block">
+            <StatCard
+              label="Total vendors"
+              value={total}
+              tone="brand"
+              icon={<Building2 className="h-[18px] w-[18px]" />}
+            />
+          </Link>
+          <Link href="/admin/vendors?status=SUBMITTED" className="block">
+            <StatCard
+              label="Awaiting review"
+              value={awaiting}
+              tone="amber"
+              icon={<Clock className="h-[18px] w-[18px]" />}
+            />
+          </Link>
+          <Link href="/admin/vendors?status=APPROVED" className="block">
+            <StatCard
+              label="Approved"
+              value={approved}
+              tone="emerald"
+              icon={<CheckCircle className="h-[18px] w-[18px]" />}
+            />
+          </Link>
+          <Link href="/admin/invites" className="block">
+            <StatCard
+              label="Pending invites"
+              value={pendingInvites}
+              tone="blue"
+              icon={<Mail className="h-[18px] w-[18px]" />}
+            />
+          </Link>
+          <StatCard
+            label="This month"
+            value={thisMonth}
+            tone="slate"
+            icon={<CalendarDays className="h-[18px] w-[18px]" />}
+          />
         </div>
 
         <InviteForm />
 
-        <section className="bg-white rounded-xl border border-slate-200 p-6">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-semibold text-slate-900">Recent vendors</h2>
-            <Link href="/admin/vendors" className="text-sm text-brand hover:underline">
-              View all →
-            </Link>
-          </div>
+        <Card>
+          <CardHeader
+            title="Recent vendors"
+            action={
+              <Link
+                href="/admin/vendors"
+                className="inline-flex items-center gap-1 text-sm font-medium text-brand-700 transition-colors hover:text-brand"
+              >
+                View all
+                <ChevronRight className="h-4 w-4" />
+              </Link>
+            }
+          />
           {recent.length === 0 ? (
-            <p className="text-sm text-slate-500">
-              No vendors yet. Invite one above to get started.
-            </p>
+            <EmptyState
+              icon={<Inbox className="h-6 w-6" />}
+              title="No vendors yet"
+              description="Invite a vendor above to get started — their submissions will appear here."
+            />
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+            <CardBody className="pt-0">
+              <Table>
                 <thead>
-                  <tr className="text-left text-xs uppercase tracking-wide text-slate-500 border-b border-slate-100">
-                    <th className="py-2 pr-4">Company</th>
-                    <th className="py-2 pr-4">Email</th>
-                    <th className="py-2 pr-4">GST</th>
-                    <th className="py-2 pr-4">Projects</th>
-                    <th className="py-2 pr-4">Status</th>
-                    <th className="py-2 pr-4">Submitted</th>
+                  <tr className={theadRowCls}>
+                    <th className={thCls}>Company</th>
+                    <th className={thCls}>Email</th>
+                    <th className={thCls}>GST</th>
+                    <th className={thCls}>Projects</th>
+                    <th className={thCls}>Status</th>
+                    <th className={thCls}>Submitted</th>
                   </tr>
                 </thead>
                 <tbody>
                   {recent.map((v) => (
-                    <tr key={v.id} className="border-b border-slate-50 hover:bg-slate-50">
-                      <td className="py-2 pr-4 font-medium">
-                        <Link href={`/admin/vendors/${v.id}`} className="text-brand hover:underline">
+                    <tr key={v.id} className={trCls}>
+                      <td className={tdCls}>
+                        <Link
+                          href={`/admin/vendors/${v.id}`}
+                          className="font-medium text-slate-900 transition-colors hover:text-brand-700"
+                        >
                           {v.companyName}
                         </Link>
                       </td>
-                      <td className="py-2 pr-4 text-slate-600">{v.email}</td>
-                      <td className="py-2 pr-4 text-slate-600">{v.gstNo}</td>
-                      <td className="py-2 pr-4 text-slate-500">{v._count.projects}</td>
-                      <td className="py-2 pr-4"><Badge value={v.status} /></td>
-                      <td className="py-2 pr-4 text-slate-500">{fmtDate(v.createdAt)}</td>
+                      <td className={tdCls}>
+                        <span className="text-slate-600">{v.email}</span>
+                      </td>
+                      <td className={tdCls}>
+                        <span className="text-slate-600">{v.gstNo}</span>
+                      </td>
+                      <td className={tdCls}>
+                        <span className="text-slate-500">{v._count.projects}</span>
+                      </td>
+                      <td className={tdCls}>
+                        <Badge value={v.status} />
+                      </td>
+                      <td className={tdCls}>
+                        <span className="text-slate-500">{fmtDate(v.createdAt)}</span>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
-              </table>
-            </div>
+              </Table>
+            </CardBody>
           )}
-        </section>
+        </Card>
       </div>
     </>
   );

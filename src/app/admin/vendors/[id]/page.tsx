@@ -4,24 +4,40 @@ import { prisma } from "@/lib/prisma";
 import { isAdminAuthed } from "@/lib/auth";
 import { fmtDate } from "@/lib/format";
 import Badge from "@/components/Badge";
+import {
+  Card,
+  CardHeader,
+  CardBody,
+  Table,
+  thCls,
+  tdCls,
+  theadRowCls,
+  trCls,
+  btn,
+  EmptyState,
+  PageHeader,
+} from "@/components/ui";
+import {
+  ArrowLeft,
+  Building,
+  ShieldCheck,
+  Banknote,
+  FileText,
+  Eye,
+  Download,
+  CalendarDays,
+} from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
 function Row({ label, value }: { label: string; value?: string | null }) {
   return (
-    <div className="flex gap-3 py-1.5 border-b border-slate-50 last:border-0">
-      <div className="w-48 shrink-0 text-sm text-slate-500">{label}</div>
-      <div className="text-sm text-slate-900">{value || <span className="text-slate-300">—</span>}</div>
+    <div className="flex gap-4 py-2 border-b border-slate-100 last:border-0">
+      <dt className="w-44 shrink-0 text-sm text-slate-500">{label}</dt>
+      <dd className="text-sm font-medium text-slate-900">
+        {value || <span className="font-normal text-slate-300">—</span>}
+      </dd>
     </div>
-  );
-}
-
-function Card({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section className="bg-white rounded-xl border border-slate-200 p-6">
-      <h2 className="text-base font-semibold text-slate-900 mb-3">{title}</h2>
-      {children}
-    </section>
   );
 }
 
@@ -63,137 +79,213 @@ export default async function VendorDetail({
 
   return (
     <>
-      <header className="h-16 bg-white border-b border-slate-200 flex items-center px-8">
-        <Link href="/admin/vendors" className="text-sm text-brand hover:underline">
-          ← Vendors
+      <PageHeader title="Vendor Details">
+        <Link href="/admin/vendors" className={btn("secondary", "sm")}>
+          <ArrowLeft className="h-4 w-4" />
+          Vendors
         </Link>
-      </header>
-      <div className="p-8 max-w-4xl space-y-5">
-        <div className="flex items-center gap-3 flex-wrap">
-          <h1 className="text-2xl font-bold text-slate-900">{v.companyName}</h1>
+      </PageHeader>
+
+      <div className="p-8 space-y-6">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+            {v.companyName}
+          </h1>
           <Badge value={v.status} />
-          <span className="text-xs text-slate-400 ml-auto">
+          <span className="ml-auto inline-flex items-center gap-1.5 text-sm text-slate-400">
+            <CalendarDays className="h-4 w-4" />
             Registered {fmtDate(v.createdAt)}
           </span>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          <Card title="Company Information">
-            <Row label="Contact Person" value={v.contactPerson} />
-            <Row label="Mobile" value={v.mobileNumber} />
-            <Row label="Email" value={v.email} />
-            <Row label="Address" value={v.address} />
-            <Row label="State" value={v.state} />
-            <Row label="Website" value={v.website} />
-            <Row label="Date of Incorporation" value={fmtDate(v.dateOfIncorporation)} />
-            <Row label="Years of Service" value={v.yearsOfService} />
-            <Row label="Annual Turnover" value={v.annualTurnover} />
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <Card>
+            <CardHeader
+              title={
+                <span className="inline-flex items-center gap-2">
+                  <Building className="h-[18px] w-[18px] text-brand" />
+                  Company Information
+                </span>
+              }
+            />
+            <CardBody>
+              <dl>
+                <Row label="Contact Person" value={v.contactPerson} />
+                <Row label="Mobile" value={v.mobileNumber} />
+                <Row label="Email" value={v.email} />
+                <Row label="Address" value={v.address} />
+                <Row label="State" value={v.state} />
+                <Row label="Website" value={v.website} />
+                <Row label="Date of Incorporation" value={fmtDate(v.dateOfIncorporation)} />
+                <Row label="Years of Service" value={v.yearsOfService} />
+                <Row label="Annual Turnover" value={v.annualTurnover} />
+              </dl>
+            </CardBody>
           </Card>
 
-          <Card title="Statutory & Tax">
-            <Row label="GST No" value={v.gstNo} />
-            <Row label="PAN No" value={v.panNo} />
-            <Row label="Excise No" value={v.exciseNo} />
-            <Row label="TIN No" value={v.tinNo} />
-            <Row label="VAT / LST No" value={v.vatLstNo} />
-            <Row label="CST No" value={v.cstNo} />
-            <Row label="Service Tax No" value={v.serviceTaxNo} />
-            <Row label="MSME No" value={v.msmeNo} />
+          <Card>
+            <CardHeader
+              title={
+                <span className="inline-flex items-center gap-2">
+                  <ShieldCheck className="h-[18px] w-[18px] text-brand" />
+                  Statutory &amp; Tax
+                </span>
+              }
+            />
+            <CardBody>
+              <dl>
+                <Row label="GST No" value={v.gstNo} />
+                <Row label="PAN No" value={v.panNo} />
+                <Row label="Excise No" value={v.exciseNo} />
+                <Row label="TIN No" value={v.tinNo} />
+                <Row label="VAT / LST No" value={v.vatLstNo} />
+                <Row label="CST No" value={v.cstNo} />
+                <Row label="Service Tax No" value={v.serviceTaxNo} />
+                <Row label="MSME No" value={v.msmeNo} />
+              </dl>
+            </CardBody>
           </Card>
 
-          <Card title="Bank Details">
-            <Row label="Bank Name" value={v.bankName} />
-            <Row label="Branch Address" value={v.bankBranchAddress} />
-            <Row label="Account No" value={v.bankAccountNo} />
-            <Row label="Branch Code" value={v.bankBranchCode} />
-            <Row label="IFSC Code" value={v.ifscCode} />
-            <Row label="SWIFT Code" value={v.swiftCode} />
-            <Row label="IBAN Code" value={v.ibanCode} />
+          <Card>
+            <CardHeader
+              title={
+                <span className="inline-flex items-center gap-2">
+                  <Banknote className="h-[18px] w-[18px] text-brand" />
+                  Bank Details
+                </span>
+              }
+            />
+            <CardBody>
+              <dl>
+                <Row label="Bank Name" value={v.bankName} />
+                <Row label="Branch Address" value={v.bankBranchAddress} />
+                <Row label="Account No" value={v.bankAccountNo} />
+                <Row label="Branch Code" value={v.bankBranchCode} />
+                <Row label="IFSC Code" value={v.ifscCode} />
+                <Row label="SWIFT Code" value={v.swiftCode} />
+                <Row label="IBAN Code" value={v.ibanCode} />
+              </dl>
+            </CardBody>
           </Card>
 
-          <Card title="Documents">
-            {v.documents.length === 0 ? (
-              <p className="text-sm text-slate-400">No documents uploaded.</p>
-            ) : (
-              <ul className="space-y-3">
-                {v.documents.map((d) => (
-                  <li key={d.id} className="text-sm border-b border-slate-50 last:border-0 pb-3 last:pb-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-slate-500">{DOC_LABELS[d.docType] ?? d.docType}</span>
-                      {d.purgedAt ? (
-                        <span className="text-xs text-slate-400 italic">
-                          deleted {fmtDate(d.purgedAt)} (after download)
-                        </span>
-                      ) : (
-                        <a
-                          href={`/api/documents/${d.id}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-brand hover:underline truncate max-w-[55%]"
-                        >
-                          {d.originalName} ↓
-                        </a>
-                      )}
-                    </div>
-                    <div className="mt-1 text-xs text-slate-400 flex flex-wrap gap-x-3">
-                      <span>{fmtBytes(d.originalSize)}</span>
-                      {d.compressed && d.originalSize ? (
-                        <span className="text-emerald-600">
-                          compressed −{savedPct(d.originalSize, d.storedSize)}
-                        </span>
-                      ) : null}
-                      {d.downloadCount > 0 && (
-                        <span>
-                          downloaded {d.downloadCount}× · auto-deletes {fmtDate(d.purgeAfter)}
-                        </span>
-                      )}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
+          <Card>
+            <CardHeader
+              title={
+                <span className="inline-flex items-center gap-2">
+                  <FileText className="h-[18px] w-[18px] text-brand" />
+                  Documents
+                </span>
+              }
+            />
+            <CardBody>
+              {v.documents.length === 0 ? (
+                <p className="text-sm text-slate-400">No documents uploaded.</p>
+              ) : (
+                <ul className="space-y-3">
+                  {v.documents.map((d) => (
+                    <li
+                      key={d.id}
+                      className="rounded-xl border border-slate-200 p-4 transition-colors hover:border-slate-300"
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="text-sm font-medium text-slate-900">
+                            {DOC_LABELS[d.docType] ?? d.docType}
+                          </div>
+                          <div className="mt-0.5 truncate text-xs text-slate-400">
+                            {d.originalName}
+                          </div>
+                        </div>
+                        {d.purgedAt ? (
+                          <span className="text-xs italic text-slate-400">
+                            deleted {fmtDate(d.purgedAt)} (after download)
+                          </span>
+                        ) : (
+                          <div className="flex shrink-0 items-center gap-2">
+                            <a
+                              href={`/api/documents/${d.id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={btn("secondary", "sm")}
+                            >
+                              <Eye className="h-4 w-4" />
+                              View
+                            </a>
+                            <a
+                              href={`/api/documents/${d.id}?download=1`}
+                              className={btn("primary", "sm")}
+                            >
+                              <Download className="h-4 w-4" />
+                              Download
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400">
+                        <span>{fmtBytes(d.originalSize)}</span>
+                        {d.compressed && d.originalSize ? (
+                          <span className="font-medium text-emerald-600">
+                            compressed −{savedPct(d.originalSize, d.storedSize)}
+                          </span>
+                        ) : null}
+                        {d.downloadCount > 0 && (
+                          <span>
+                            downloaded {d.downloadCount}× · auto-deletes {fmtDate(d.purgeAfter)}
+                          </span>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardBody>
           </Card>
         </div>
 
-        <Card title={`Past Projects (${v.projects.length})`}>
-          {v.projects.length === 0 ? (
-            <p className="text-sm text-slate-400">No projects listed.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+        <Card>
+          <CardHeader title={`Past Projects (${v.projects.length})`} />
+          <CardBody className="px-0 pb-0">
+            {v.projects.length === 0 ? (
+              <EmptyState
+                icon={<FileText className="h-6 w-6" />}
+                title="No projects listed"
+                description="This vendor has not submitted any past projects yet."
+              />
+            ) : (
+              <Table>
                 <thead>
-                  <tr className="text-left text-xs uppercase tracking-wide text-slate-500 border-b border-slate-100">
-                    <th className="py-2 pr-3">#</th>
-                    <th className="py-2 pr-3">Client</th>
-                    <th className="py-2 pr-3">Capacity</th>
-                    <th className="py-2 pr-3">Type</th>
-                    <th className="py-2 pr-3">EPC/I&C/BOS</th>
-                    <th className="py-2 pr-3">Location</th>
-                    <th className="py-2 pr-3">Year</th>
-                    <th className="py-2 pr-3">Scope</th>
-                    <th className="py-2 pr-3">% Done</th>
-                    <th className="py-2 pr-3">Remarks</th>
+                  <tr className={theadRowCls}>
+                    <th className={thCls}>#</th>
+                    <th className={thCls}>Client</th>
+                    <th className={thCls}>Capacity</th>
+                    <th className={thCls}>Type</th>
+                    <th className={thCls}>EPC/I&amp;C/BOS</th>
+                    <th className={thCls}>Location</th>
+                    <th className={thCls}>Year</th>
+                    <th className={thCls}>Scope</th>
+                    <th className={thCls}>% Done</th>
+                    <th className={thCls}>Remarks</th>
                   </tr>
                 </thead>
                 <tbody>
                   {v.projects.map((p) => (
-                    <tr key={p.id} className="border-b border-slate-50">
-                      <td className="py-2 pr-3 text-slate-400">{p.serialNo}</td>
-                      <td className="py-2 pr-3">{p.clientName}</td>
-                      <td className="py-2 pr-3">{p.capacity}</td>
-                      <td className="py-2 pr-3">{p.projectType}</td>
-                      <td className="py-2 pr-3">{p.contractType}</td>
-                      <td className="py-2 pr-3">{p.location}</td>
-                      <td className="py-2 pr-3">{p.yearOfCompletion}</td>
-                      <td className="py-2 pr-3">{p.scopeOfWork}</td>
-                      <td className="py-2 pr-3">{p.percentCompleted}</td>
-                      <td className="py-2 pr-3">{p.remarks}</td>
+                    <tr key={p.id} className={trCls}>
+                      <td className={`${tdCls} text-slate-400`}>{p.serialNo}</td>
+                      <td className={`${tdCls} font-medium text-slate-900`}>{p.clientName}</td>
+                      <td className={tdCls}>{p.capacity}</td>
+                      <td className={tdCls}>{p.projectType}</td>
+                      <td className={tdCls}>{p.contractType}</td>
+                      <td className={tdCls}>{p.location}</td>
+                      <td className={tdCls}>{p.yearOfCompletion}</td>
+                      <td className={tdCls}>{p.scopeOfWork}</td>
+                      <td className={tdCls}>{p.percentCompleted}</td>
+                      <td className={tdCls}>{p.remarks}</td>
                     </tr>
                   ))}
                 </tbody>
-              </table>
-            </div>
-          )}
+              </Table>
+            )}
+          </CardBody>
         </Card>
       </div>
     </>

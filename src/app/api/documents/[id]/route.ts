@@ -8,16 +8,20 @@ function purgeDays() {
   return Number(process.env.DOC_PURGE_DAYS || 7);
 }
 
-// GET /api/documents/<id>  (admin only) — streams an uploaded vendor document.
-// On the first download we start the purge countdown so storage cost stays low.
+// GET /api/documents/<id>            → view the file inline (no side effects)
+// GET /api/documents/<id>?download=1 → force a file download; this counts as a
+//   download and, on the FIRST one, starts the purge countdown so storage cost
+//   stays low. Simply viewing a file never triggers deletion.
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   if (!(await isAdminAuthed())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const { id } = await params;
+  const isDownload = req.nextUrl.searchParams.get("download") === "1";
+
   const doc = await prisma.vendorDocument.findUnique({ where: { id } });
   if (!doc) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -38,25 +42,28 @@ export async function GET(
     return NextResponse.json({ error: "File missing in storage" }, { status: 404 });
   }
 
-  // Record the download and (on the first one) start the purge countdown.
-  const now = new Date();
-  await prisma.vendorDocument.update({
-    where: { id: doc.id },
-    data: {
-      downloadCount: { increment: 1 },
-      ...(doc.firstDownloadedAt
-        ? {}
-        : {
-            firstDownloadedAt: now,
-            purgeAfter: new Date(now.getTime() + purgeDays() * 86400_000),
-          }),
-    },
-  });
+  // Only an actual download records a download / starts the purge countdown.
+  if (isDownload) {
+    const now = new Date();
+    await prisma.vendorDocument.update({
+      where: { id: doc.id },
+      data: {
+        downloadCount: { increment: 1 },
+        ...(doc.firstDownloadedAt
+          ? {}
+          : {
+              firstDownloadedAt: now,
+              purgeAfter: new Date(now.getTime() + purgeDays() * 86400_000),
+            }),
+      },
+    });
+  }
 
+  const disposition = isDownload ? "attachment" : "inline";
   return new NextResponse(new Uint8Array(data), {
     headers: {
       "Content-Type": doc.mimeType || "application/octet-stream",
-      "Content-Disposition": `inline; filename="${doc.originalName.replace(/"/g, "")}"`,
+      "Content-Disposition": `${disposition}; filename="${doc.originalName.replace(/"/g, "")}"`,
     },
   });
 }
