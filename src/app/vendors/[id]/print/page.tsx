@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { isAdminAuthed } from "@/lib/auth";
-import { fmtDate } from "@/lib/format";
+import { fmtDate, fmtDateOnly } from "@/lib/format";
 import PrintBar from "@/components/PrintBar";
 
 export const dynamic = "force-dynamic";
@@ -88,7 +88,7 @@ export default async function VendorPrintPage({
           <Row label="Address" value={v.address} />
           <Row label="State" value={v.state} />
           <Row label="Website" value={v.website} />
-          <Row label="Date of Incorporation" value={fmtDate(v.dateOfIncorporation)} />
+          <Row label="Date of Incorporation" value={fmtDateOnly(v.dateOfIncorporation)} />
           <Row label="Years of Service" value={v.yearsOfService} />
           <Row label="Annual Turnover" value={v.annualTurnover} />
         </Section>

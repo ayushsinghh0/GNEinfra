@@ -38,25 +38,36 @@ export async function GET(
   let data: Buffer;
   try {
     data = await readDocument(doc);
-  } catch {
-    return NextResponse.json({ error: "File missing in storage" }, { status: 404 });
+  } catch (err) {
+    // Distinguish "file is gone" (404) from a real storage/decompress failure (502).
+    const code = (err as { code?: string })?.code;
+    if (code === "ENOENT" || code === "NoSuchKey") {
+      return NextResponse.json({ error: "File no longer in storage" }, { status: 404 });
+    }
+    return NextResponse.json({ error: "Could not read the file" }, { status: 502 });
   }
 
   // Only an actual download records a download / starts the purge countdown.
+  // A counter-write failure must NOT fail the download itself.
   if (isDownload) {
     const now = new Date();
-    await prisma.vendorDocument.update({
-      where: { id: doc.id },
-      data: {
-        downloadCount: { increment: 1 },
-        ...(doc.firstDownloadedAt
-          ? {}
-          : {
-              firstDownloadedAt: now,
-              purgeAfter: new Date(now.getTime() + purgeDays() * 86400_000),
-            }),
-      },
-    });
+    try {
+      await prisma.vendorDocument.update({
+        where: { id: doc.id },
+        data: {
+          downloadCount: { increment: 1 },
+          // Conditionally stamp the first-download fields only once.
+          ...(doc.firstDownloadedAt
+            ? {}
+            : {
+                firstDownloadedAt: now,
+                purgeAfter: new Date(now.getTime() + purgeDays() * 86400_000),
+              }),
+        },
+      });
+    } catch (e) {
+      console.error("[documents] failed to record download", doc.id, e);
+    }
   }
 
   const disposition = isDownload ? "attachment" : "inline";

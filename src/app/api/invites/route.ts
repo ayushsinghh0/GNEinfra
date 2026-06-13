@@ -25,9 +25,20 @@ export async function POST(req: NextRequest) {
   const token = newInviteToken();
   const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30); // 30 days
 
-  const invite = await prisma.vendorInvite.create({
-    data: { email, companyHint, token, expiresAt },
-  });
+  let invite;
+  try {
+    // Revoke any earlier still-pending invites for this email so only one live
+    // token exists per address.
+    await prisma.vendorInvite.updateMany({
+      where: { email, status: "PENDING" },
+      data: { status: "REVOKED" },
+    });
+    invite = await prisma.vendorInvite.create({
+      data: { email, companyHint, token, expiresAt },
+    });
+  } catch {
+    return NextResponse.json({ error: "Could not create the invitation." }, { status: 500 });
+  }
 
   const base = process.env.APP_BASE_URL || "http://localhost:3000";
   const link = `${base}/register/${token}`;

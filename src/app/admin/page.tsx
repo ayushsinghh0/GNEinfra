@@ -46,7 +46,9 @@ export default async function DashboardPage() {
       prisma.vendor.count(),
       prisma.vendor.count({ where: { status: { in: ["SUBMITTED", "UNDER_REVIEW"] } } }),
       prisma.vendor.count({ where: { status: "APPROVED" } }),
-      prisma.vendorInvite.count({ where: { status: "PENDING" } }),
+      prisma.vendorInvite.count({
+        where: { status: "PENDING", OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] },
+      }),
       prisma.vendor.count({ where: { createdAt: { gte: startOfMonth } } }),
       prisma.vendor.findMany({
         orderBy: { createdAt: "desc" },

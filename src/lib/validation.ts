@@ -74,7 +74,7 @@ export const registrationSchema = z.object({
   swiftCode: optionalStr,
   ibanCode: optionalStr,
 
-  projects: z.array(projectSchema).optional().default([]),
+  projects: z.array(projectSchema).max(50, "Too many project rows").optional().default([]),
 });
 
 export type RegistrationInput = z.infer<typeof registrationSchema>;
@@ -85,3 +85,8 @@ export const inviteSchema = z.object({
   companyHint: optionalStr,
 });
 export type InviteInput = z.infer<typeof inviteSchema>;
+
+// Admin sending a test email.
+export const testEmailSchema = z.object({
+  to: z.string().trim().email("A valid recipient email is required"),
+});

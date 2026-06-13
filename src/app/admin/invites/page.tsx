@@ -68,7 +68,13 @@ export default async function InvitesPage() {
                       <span className="text-slate-500">{fmtDate(inv.expiresAt) || "—"}</span>
                     </td>
                     <td className={tdCls}>
-                      <Badge value={inv.status} />
+                      <Badge
+                        value={
+                          inv.status === "PENDING" && inv.expiresAt && inv.expiresAt < new Date()
+                            ? "EXPIRED"
+                            : inv.status
+                        }
+                      />
                     </td>
                     <td className={tdCls}>
                       {inv.vendor ? (

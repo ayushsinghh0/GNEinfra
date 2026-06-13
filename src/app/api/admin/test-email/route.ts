@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdminAuthed } from "@/lib/auth";
 import { sendMail } from "@/lib/mailer";
+import { testEmailSchema } from "@/lib/validation";
 
 // POST /api/admin/test-email { to } (admin only)
 // Sends a test message through the configured SMTP so you can confirm email
@@ -9,10 +10,14 @@ export async function POST(req: NextRequest) {
   if (!(await isAdminAuthed())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const { to } = await req.json().catch(() => ({ to: "" }));
-  if (!to || typeof to !== "string") {
-    return NextResponse.json({ error: "Recipient email required" }, { status: 400 });
+  const parsed = testEmailSchema.safeParse(await req.json().catch(() => ({})));
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: parsed.error.issues[0]?.message ?? "Recipient email required" },
+      { status: 400 }
+    );
   }
+  const { to } = parsed.data;
 
   try {
     const info = await sendMail({

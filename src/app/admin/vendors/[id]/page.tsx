@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { isAdminAuthed } from "@/lib/auth";
-import { fmtDate } from "@/lib/format";
+import { fmtDate, fmtDateOnly } from "@/lib/format";
 import Badge from "@/components/Badge";
 import {
   Card,
@@ -126,7 +126,7 @@ export default async function VendorDetail({
                 <Row label="Address" value={v.address} />
                 <Row label="State" value={v.state} />
                 <Row label="Website" value={v.website} />
-                <Row label="Date of Incorporation" value={fmtDate(v.dateOfIncorporation)} />
+                <Row label="Date of Incorporation" value={fmtDateOnly(v.dateOfIncorporation)} />
                 <Row label="Years of Service" value={v.yearsOfService} />
                 <Row label="Annual Turnover" value={v.annualTurnover} />
               </dl>
@@ -238,7 +238,7 @@ export default async function VendorDetail({
                             compressed −{savedPct(d.originalSize, d.storedSize)}
                           </span>
                         ) : null}
-                        {d.downloadCount > 0 && (
+                        {!d.purgedAt && d.downloadCount > 0 && d.purgeAfter && (
                           <span>
                             downloaded {d.downloadCount}× · auto-deletes {fmtDate(d.purgeAfter)}
                           </span>

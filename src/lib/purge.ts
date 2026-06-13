@@ -10,19 +10,22 @@ export async function purgeExpiredDocuments(now = new Date()) {
   });
 
   let purged = 0;
+  let failed = 0;
   let freedBytes = 0;
   for (const doc of due) {
     try {
       await deleteDocument(doc.storageKey);
       await prisma.vendorDocument.update({
         where: { id: doc.id },
-        data: { purgedAt: now },
+        data: { purgedAt: new Date() }, // actual deletion time, per document
       });
       purged++;
       freedBytes += doc.storedSize ?? 0;
-    } catch {
-      // Leave it for the next run if storage delete fails.
+    } catch (e) {
+      // Leave it for the next run if storage delete fails; surface the error.
+      failed++;
+      console.error("[purge] failed to delete document", doc.id, e);
     }
   }
-  return { scanned: due.length, purged, freedBytes };
+  return { scanned: due.length, purged, failed, freedBytes };
 }
