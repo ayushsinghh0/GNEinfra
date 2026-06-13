@@ -43,7 +43,8 @@ export default async function SettingsPage() {
     <>
       <PageHeader title="Settings" />
 
-      <div className="p-8 space-y-6 max-w-3xl">
+      <div className="p-8">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 items-start">
         <Card>
           <CardHeader
             title={
@@ -108,6 +109,7 @@ export default async function SettingsPage() {
             </p>
           </CardBody>
         </Card>
+        </div>
       </div>
     </>
   );
