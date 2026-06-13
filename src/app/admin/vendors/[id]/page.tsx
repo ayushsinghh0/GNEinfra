@@ -8,11 +8,7 @@ import {
   Card,
   CardHeader,
   CardBody,
-  Table,
-  thCls,
-  tdCls,
-  theadRowCls,
-  trCls,
+  Chip,
   btn,
   EmptyState,
   PageHeader,
@@ -37,6 +33,15 @@ function Row({ label, value }: { label: string; value?: string | null }) {
       <dd className="text-sm font-medium text-slate-900">
         {value || <span className="font-normal text-slate-300">—</span>}
       </dd>
+    </div>
+  );
+}
+
+function PRow({ label, value }: { label: string; value?: string | null }) {
+  return (
+    <div>
+      <dt className="text-xs text-slate-400">{label}</dt>
+      <dd className="text-slate-700">{value || <span className="text-slate-300">—</span>}</dd>
     </div>
   );
 }
@@ -244,7 +249,7 @@ export default async function VendorDetail({
 
         <Card>
           <CardHeader title={`Past Projects (${v.projects.length})`} />
-          <CardBody className="px-0 pb-0">
+          <CardBody>
             {v.projects.length === 0 ? (
               <EmptyState
                 icon={<FileText className="h-6 w-6" />}
@@ -252,38 +257,34 @@ export default async function VendorDetail({
                 description="This vendor has not submitted any past projects yet."
               />
             ) : (
-              <Table>
-                <thead>
-                  <tr className={theadRowCls}>
-                    <th className={thCls}>#</th>
-                    <th className={thCls}>Client</th>
-                    <th className={thCls}>Capacity</th>
-                    <th className={thCls}>Type</th>
-                    <th className={thCls}>EPC/I&amp;C/BOS</th>
-                    <th className={thCls}>Location</th>
-                    <th className={thCls}>Year</th>
-                    <th className={thCls}>Scope</th>
-                    <th className={thCls}>% Done</th>
-                    <th className={thCls}>Remarks</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {v.projects.map((p) => (
-                    <tr key={p.id} className={trCls}>
-                      <td className={`${tdCls} text-slate-400`}>{p.serialNo}</td>
-                      <td className={`${tdCls} font-medium text-slate-900`}>{p.clientName}</td>
-                      <td className={tdCls}>{p.capacity}</td>
-                      <td className={tdCls}>{p.projectType}</td>
-                      <td className={tdCls}>{p.contractType}</td>
-                      <td className={tdCls}>{p.location}</td>
-                      <td className={tdCls}>{p.yearOfCompletion}</td>
-                      <td className={tdCls}>{p.scopeOfWork}</td>
-                      <td className={tdCls}>{p.percentCompleted}</td>
-                      <td className={tdCls}>{p.remarks}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </Table>
+              <div className="space-y-3">
+                {v.projects.map((p) => (
+                  <div key={p.id} className="rounded-xl border border-slate-200 p-4">
+                    <div className="mb-2.5 flex flex-wrap items-center gap-2">
+                      <span className="grid h-6 w-6 place-items-center rounded-md bg-slate-100 text-xs font-bold text-slate-600 tabular-nums">
+                        {p.serialNo ?? "—"}
+                      </span>
+                      <span className="font-medium text-slate-900">
+                        {p.clientName || "Project"}
+                      </span>
+                      {p.projectType && <Chip>{p.projectType}</Chip>}
+                      {p.contractType && <Chip>{p.contractType}</Chip>}
+                      {p.percentCompleted && <Chip>{p.percentCompleted}% done</Chip>}
+                    </div>
+                    <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3 lg:grid-cols-4">
+                      <PRow label="Capacity" value={p.capacity} />
+                      <PRow label="Location" value={p.location} />
+                      <PRow label="Year" value={p.yearOfCompletion} />
+                      <PRow label="Scope" value={p.scopeOfWork} />
+                      {p.remarks && (
+                        <div className="col-span-full">
+                          <PRow label="Remarks" value={p.remarks} />
+                        </div>
+                      )}
+                    </dl>
+                  </div>
+                ))}
+              </div>
             )}
           </CardBody>
         </Card>

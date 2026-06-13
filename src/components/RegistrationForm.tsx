@@ -276,87 +276,79 @@ export default function RegistrationForm({
         description="List solar/wind projects you have executed. Add as many rows as needed."
         icon={<Briefcase className="h-4 w-4" />}
       >
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm border-separate border-spacing-y-2">
-            <thead>
-              <tr className="text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-                <th className="px-2">#</th>
-                <th className="px-2 min-w-40">Client</th>
-                <th className="px-2 min-w-28">Capacity</th>
-                <th className="px-2 min-w-28">Type</th>
-                <th className="px-2 min-w-28">EPC/I&amp;C/BOS</th>
-                <th className="px-2 min-w-32">Location</th>
-                <th className="px-2 min-w-24">Year</th>
-                <th className="px-2 min-w-40">Scope</th>
-                <th className="px-2 min-w-20">% Done</th>
-                <th className="px-2 min-w-32">Remarks</th>
-                <th className="px-2"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {projects.map((row, i) => (
-                <tr key={i}>
-                  <td className="px-2 text-slate-400">{i + 1}</td>
-                  <td className="px-2">
-                    <input className={cellCls} value={row.clientName} onChange={(e) => updateRow(i, "clientName", e.target.value)} />
-                  </td>
-                  <td className="px-2">
-                    <input className={cellCls} value={row.capacity} onChange={(e) => updateRow(i, "capacity", e.target.value)} placeholder="MW" />
-                  </td>
-                  <td className="px-2">
-                    <select className={cellCls} value={row.projectType} onChange={(e) => updateRow(i, "projectType", e.target.value)}>
-                      <option value="">—</option>
-                      <option>Solar</option>
-                      <option>Wind</option>
-                    </select>
-                  </td>
-                  <td className="px-2">
-                    <select className={cellCls} value={row.contractType} onChange={(e) => updateRow(i, "contractType", e.target.value)}>
-                      <option value="">—</option>
-                      <option>EPC</option>
-                      <option>I&amp;C</option>
-                      <option>BOS</option>
-                    </select>
-                  </td>
-                  <td className="px-2">
-                    <input className={cellCls} value={row.location} onChange={(e) => updateRow(i, "location", e.target.value)} />
-                  </td>
-                  <td className="px-2">
-                    <input className={cellCls} value={row.yearOfCompletion} onChange={(e) => updateRow(i, "yearOfCompletion", e.target.value)} />
-                  </td>
-                  <td className="px-2">
-                    <input className={cellCls} value={row.scopeOfWork} onChange={(e) => updateRow(i, "scopeOfWork", e.target.value)} />
-                  </td>
-                  <td className="px-2">
-                    <input className={cellCls} value={row.percentCompleted} onChange={(e) => updateRow(i, "percentCompleted", e.target.value)} />
-                  </td>
-                  <td className="px-2">
-                    <input className={cellCls} value={row.remarks} onChange={(e) => updateRow(i, "remarks", e.target.value)} />
-                  </td>
-                  <td className="px-2">
-                    {projects.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => setProjects((r) => r.filter((_, idx) => idx !== i))}
-                        className="grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-600"
-                        aria-label="Remove row"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="space-y-4">
+          {projects.map((row, i) => (
+            <div
+              key={i}
+              className="rounded-xl border border-slate-200 bg-slate-50/50 p-4"
+            >
+              <div className="mb-3 flex items-center justify-between">
+                <span className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700">
+                  <span className="grid h-6 w-6 place-items-center rounded-md bg-brand-50 text-xs font-bold text-brand-700 tabular-nums">
+                    {i + 1}
+                  </span>
+                  Project {i + 1}
+                </span>
+                {projects.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => setProjects((r) => r.filter((_, idx) => idx !== i))}
+                    className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-600"
+                    aria-label="Remove project"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Remove
+                  </button>
+                )}
+              </div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <UIField label="Client">
+                  <Input value={row.clientName} onChange={(e) => updateRow(i, "clientName", e.target.value)} />
+                </UIField>
+                <UIField label="Capacity">
+                  <Input value={row.capacity} onChange={(e) => updateRow(i, "capacity", e.target.value)} placeholder="e.g. 50 MW" />
+                </UIField>
+                <UIField label="Type">
+                  <Select value={row.projectType} onChange={(e) => updateRow(i, "projectType", e.target.value)}>
+                    <option value="">—</option>
+                    <option>Solar</option>
+                    <option>Wind</option>
+                  </Select>
+                </UIField>
+                <UIField label="EPC / I&C / BOS">
+                  <Select value={row.contractType} onChange={(e) => updateRow(i, "contractType", e.target.value)}>
+                    <option value="">—</option>
+                    <option>EPC</option>
+                    <option>I&C</option>
+                    <option>BOS</option>
+                  </Select>
+                </UIField>
+                <UIField label="Location">
+                  <Input value={row.location} onChange={(e) => updateRow(i, "location", e.target.value)} />
+                </UIField>
+                <UIField label="Year of Completion">
+                  <Input value={row.yearOfCompletion} onChange={(e) => updateRow(i, "yearOfCompletion", e.target.value)} placeholder="e.g. 2023" />
+                </UIField>
+                <UIField label="% Completed">
+                  <Input value={row.percentCompleted} onChange={(e) => updateRow(i, "percentCompleted", e.target.value)} placeholder="e.g. 100" />
+                </UIField>
+                <UIField label="Scope of Work" className="sm:col-span-2 lg:col-span-2">
+                  <Input value={row.scopeOfWork} onChange={(e) => updateRow(i, "scopeOfWork", e.target.value)} />
+                </UIField>
+                <UIField label="Remarks" className="sm:col-span-2 lg:col-span-3">
+                  <Input value={row.remarks} onChange={(e) => updateRow(i, "remarks", e.target.value)} />
+                </UIField>
+              </div>
+            </div>
+          ))}
         </div>
         <button
           type="button"
           onClick={() => setProjects((r) => [...r, emptyRow()])}
-          className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-brand-700 transition-colors hover:text-brand"
+          className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-dashed border-slate-300 px-4 py-2 text-sm font-medium text-brand-700 transition-colors hover:border-brand hover:bg-brand-50/40"
         >
           <Plus className="h-4 w-4" />
-          Add project
+          Add another project
         </button>
       </Section>
 
