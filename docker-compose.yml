@@ -1,0 +1,55 @@
+# Local development services for GNE ERP.
+# Production uses a hosted Postgres (e.g. Neon) + real SMTP instead — see README.
+services:
+  # PostgreSQL on port 5433 so it never clashes with a Postgres already
+  # installed on the host's default 5432.
+  postgres:
+    image: postgres:18
+    container_name: gne-erp-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: gne
+      POSTGRES_PASSWORD: gne_local_dev
+      POSTGRES_DB: gne_erp
+    ports:
+      - "5433:5432"
+    volumes:
+      # postgres:18+ stores data in a major-version subdirectory, so the mount
+      # point is /var/lib/postgresql (not /var/lib/postgresql/data).
+      - gne_pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gne -d gne_erp"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Mailpit: a fake SMTP server that catches every email the app sends so you
+  # can read them in a browser at http://localhost:8025 during development.
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: gne-erp-mailpit
+    restart: unless-stopped
+    ports:
+      - "1025:1025" # SMTP (app sends here in dev)
+      - "8025:8025" # Web UI (open this to read captured emails)
+
+  # MinIO: an S3-compatible store, so you can test the production S3 storage
+  # driver locally. Console at http://localhost:9001 (minioadmin / minioadmin).
+  # In real AWS you use S3 itself — this is dev convenience only.
+  minio:
+    image: minio/minio:latest
+    container_name: gne-erp-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000" # S3 API
+      - "9001:9001" # Web console
+    volumes:
+      - gne_minio:/data
+
+volumes:
+  gne_pgdata:
+  gne_minio:

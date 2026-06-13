@@ -1,0 +1,15 @@
+# Caddy reverse proxy with automatic HTTPS.
+# {$DOMAIN} comes from the DOMAIN env var (set in .env):
+#   - a real hostname (vendors.example.com) → Caddy fetches a free Let's Encrypt
+#     certificate and serves HTTPS automatically.
+#   - ":80" → plain HTTP only (use when you just have an IP and no domain yet).
+{$DOMAIN} {
+	encode gzip
+	reverse_proxy gne-app:3000 {
+		# Allow large document uploads to pass through.
+		flush_interval -1
+	}
+	request_body {
+		max_size 12MB
+	}
+}

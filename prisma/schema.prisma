@@ -1,0 +1,159 @@
+// GNE ERP — Phase 1 data model (Vendor Registration).
+//
+// Designed to be the long-term foundation: later ERP modules (Procurement,
+// Inventory, Project, Finance) will reference Vendor records by id / vendorCode.
+// Evolve this schema with `npm run db:migrate` — every change is a tracked,
+// reversible migration so existing vendor data is never lost.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Lifecycle of a vendor record, from invitation to approval.
+enum VendorStatus {
+  INVITED // invite emailed, form not yet submitted
+  SUBMITTED // vendor completed the form
+  UNDER_REVIEW // procurement is reviewing
+  APPROVED // approved for use in the ERP (gets a vendorCode)
+  REJECTED
+}
+
+enum InviteStatus {
+  PENDING
+  USED
+  EXPIRED
+  REVOKED
+}
+
+// A single vendor / supplier. Field names mirror the GNE Vendor Registration
+// Form. Tax/registration numbers are optional except GST and PAN (mandatory),
+// which is enforced at the application layer (see src/lib/validation.ts).
+model Vendor {
+  id     String       @id @default(cuid())
+  status VendorStatus @default(SUBMITTED)
+
+  // ERP vendor code, assigned on approval (e.g. "GNE-V-0001"). Unique when set.
+  vendorCode String? @unique
+
+  // ── Company information ──
+  companyName       String
+  contactPerson     String?
+  mobileNumber      String?
+  email             String
+  address           String?
+  state             String?
+  website           String?
+  dateOfIncorporation DateTime?
+  yearsOfService    String?
+  annualTurnover    String?
+
+  // ── Statutory / tax registration ──
+  gstNo         String // mandatory
+  panNo         String // mandatory
+  exciseNo      String?
+  tinNo         String?
+  vatLstNo      String?
+  cstNo         String?
+  serviceTaxNo  String?
+  msmeNo        String?
+
+  // ── Bank details (cancelled cheque uploaded as a VendorDocument) ──
+  bankName          String?
+  bankBranchAddress String?
+  bankAccountNo     String?
+  bankBranchCode    String?
+  ifscCode          String?
+  swiftCode         String? // required for foreign vendors
+  ibanCode          String? // required for foreign suppliers
+
+  // ── ERP posting classification (filled by GNE, not the vendor) ──
+  genBusPostingGroup    String?
+  exciseBusPostingGroup String?
+  natureOfServices      String?
+  vendorPostingGroup    String?
+
+  // ── Relations ──
+  projects  VendorProject[]
+  documents VendorDocument[]
+  invite    VendorInvite?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([companyName])
+  @@index([status])
+  @@index([gstNo])
+}
+
+// Past projects the vendor has executed (the "Projects Details" sheet).
+model VendorProject {
+  id       String @id @default(cuid())
+  vendorId String
+  vendor   Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  serialNo           Int?
+  clientName         String?
+  capacity           String?
+  projectType        String? // Solar / Wind
+  contractType       String? // EPC / I&C / BOS
+  location           String?
+  yearOfCompletion   String?
+  scopeOfWork        String?
+  percentCompleted   String?
+  remarks            String?
+
+  @@index([vendorId])
+}
+
+// Files uploaded with a registration (cancelled cheque, GST cert, PAN, etc.).
+// Stored gzip-compressed via the storage driver (local disk or S3); the
+// storageKey locates the object. Files are purged a configurable number of days
+// after their first download to minimise cloud storage cost — the metadata row
+// is kept (purgedAt set) so we always know what was provided.
+model VendorDocument {
+  id       String @id @default(cuid())
+  vendorId String
+  vendor   Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  docType      String // e.g. CANCELLED_CHEQUE, GST_CERTIFICATE, PAN_CARD, OTHER
+  originalName String
+  storageKey   String // object key in the storage backend
+  mimeType     String?
+  originalSize Int? // bytes before compression
+  storedSize   Int? // bytes actually stored
+  compressed   Boolean @default(false)
+
+  uploadedAt       DateTime  @default(now())
+  downloadCount    Int       @default(0)
+  firstDownloadedAt DateTime?
+  purgeAfter       DateTime? // set on first download; file deleted after this
+  purgedAt         DateTime? // when the file was actually deleted from storage
+
+  @@index([vendorId])
+  @@index([purgeAfter])
+}
+
+// An email invitation carrying a unique token. The vendor opens
+// /register/<token> to fill the form. One invite may produce one vendor.
+model VendorInvite {
+  id        String       @id @default(cuid())
+  email     String
+  token     String       @unique
+  status    InviteStatus @default(PENDING)
+  companyHint String?    // optional company name typed by admin when inviting
+
+  vendorId String? @unique
+  vendor   Vendor? @relation(fields: [vendorId], references: [id])
+
+  sentAt    DateTime  @default(now())
+  expiresAt DateTime?
+  usedAt    DateTime?
+
+  @@index([email])
+  @@index([status])
+}

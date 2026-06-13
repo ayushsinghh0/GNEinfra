@@ -1,0 +1,61 @@
+# Production stack for a single VPS: the app, its database, and Caddy (which
+# gets a free HTTPS certificate automatically). Everything self-contained — no
+# external cloud services required. See VPS_DEPLOY.md.
+#
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+# Values come from the .env file in this directory (copy from .env.example).
+services:
+  db:
+    image: postgres:18
+    container_name: gne-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: gne
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: gne_erp
+    volumes:
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gne -d gne_erp"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    container_name: gne-app
+    restart: unless-stopped
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      # Uploaded documents live on a persistent volume (local-disk storage).
+      - uploads:/app/uploads
+    expose:
+      - "3000" # internal only; Caddy is the public entry point
+
+  caddy:
+    image: caddy:2
+    container_name: gne-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      # Your domain (e.g. vendors.example.com) → automatic HTTPS.
+      # Set DOMAIN=":80" if you only have an IP and want plain HTTP.
+      DOMAIN: ${DOMAIN:?set DOMAIN in .env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+
+volumes:
+  pgdata:
+  uploads:
+  caddy_data:
+  caddy_config:
