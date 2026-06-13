@@ -15,6 +15,10 @@ function createTransport() {
     secure,
     // Only attach auth when credentials are supplied (Mailpit needs none).
     auth: user ? { user, pass } : undefined,
+    // Never let a slow/unreachable mail server hang a request.
+    connectionTimeout: 10_000,
+    greetingTimeout: 10_000,
+    socketTimeout: 15_000,
   });
 }
 
@@ -33,6 +37,16 @@ export async function sendMail({ to, subject, html, text }: SendArgs) {
 
 // ── Email templates ───────────────────────────────────────────────────────
 
+// Escape untrusted values before embedding them in HTML email bodies.
+function esc(v: string) {
+  return String(v)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 const BRAND = "#0f766e"; // teal — GNE accent
 
 function wrap(title: string, body: string) {
@@ -45,7 +59,7 @@ function wrap(title: string, body: string) {
 }
 
 export function inviteEmail(link: string, company?: string) {
-  const hello = company ? `Dear ${company} team,` : "Hello,";
+  const hello = company ? `Dear ${esc(company)} team,` : "Hello,";
   return {
     subject: "Invitation to register as a GNE vendor",
     html: wrap(
@@ -67,7 +81,7 @@ export function vendorConfirmationEmail(company: string) {
     subject: "We've received your GNE vendor registration",
     html: wrap(
       "Registration Received",
-      `<p>Dear ${company} team,</p>
+      `<p>Dear ${esc(company)} team,</p>
        <p>Thank you — we have received your vendor registration. Our procurement team will review your details and get in touch if anything further is required.</p>
        <p>Regards,<br>GNE Procurement</p>`
     ),
@@ -88,10 +102,10 @@ export function adminNotificationEmail(opts: {
       "New Vendor Submitted",
       `<p>A new vendor has submitted the registration form.</p>
        <table style="border-collapse:collapse;font-size:14px">
-         <tr><td style="padding:4px 12px 4px 0;color:#64748b">Company</td><td><b>${opts.company}</b></td></tr>
-         <tr><td style="padding:4px 12px 4px 0;color:#64748b">Email</td><td>${opts.email}</td></tr>
-         <tr><td style="padding:4px 12px 4px 0;color:#64748b">GST</td><td>${opts.gstNo}</td></tr>
-         <tr><td style="padding:4px 12px 4px 0;color:#64748b">PAN</td><td>${opts.panNo}</td></tr>
+         <tr><td style="padding:4px 12px 4px 0;color:#64748b">Company</td><td><b>${esc(opts.company)}</b></td></tr>
+         <tr><td style="padding:4px 12px 4px 0;color:#64748b">Email</td><td>${esc(opts.email)}</td></tr>
+         <tr><td style="padding:4px 12px 4px 0;color:#64748b">GST</td><td>${esc(opts.gstNo)}</td></tr>
+         <tr><td style="padding:4px 12px 4px 0;color:#64748b">PAN</td><td>${esc(opts.panNo)}</td></tr>
        </table>
        <p style="margin-top:20px"><a href="${opts.adminLink}" style="color:${BRAND}">Review in the admin panel →</a></p>`
     ),

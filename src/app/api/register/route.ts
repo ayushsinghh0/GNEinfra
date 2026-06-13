@@ -87,7 +87,21 @@ export async function POST(req: NextRequest) {
 
   const doi = d.dateOfIncorporation ? new Date(d.dateOfIncorporation) : null;
 
-  // Create the vendor + projects in one transaction.
+  // Atomically consume the invite first — prevents a double-submit or a race
+  // between two concurrent requests from creating two vendors for one invite.
+  // Only the request that flips PENDING -> USED proceeds.
+  const consumed = await prisma.vendorInvite.updateMany({
+    where: { id: invite.id, status: "PENDING" },
+    data: { status: "USED", usedAt: new Date() },
+  });
+  if (consumed.count === 0) {
+    return NextResponse.json(
+      { error: "This registration link has already been used." },
+      { status: 409 }
+    );
+  }
+
+  // Create the vendor + its projects atomically (Prisma nested create).
   const vendor = await prisma.vendor.create({
     data: {
       status: "SUBMITTED",
@@ -131,7 +145,20 @@ export async function POST(req: NextRequest) {
         })),
       },
     },
-  });
+  }).catch(() => null);
+  if (!vendor) {
+    // Roll the invite back so the vendor can retry with the same link.
+    await prisma.vendorInvite
+      .updateMany({
+        where: { id: invite.id, status: "USED", vendorId: null },
+        data: { status: "PENDING", usedAt: null },
+      })
+      .catch(() => {});
+    return NextResponse.json(
+      { error: "Could not save your registration. Please try again." },
+      { status: 500 }
+    );
+  }
 
   // Save uploaded documents (best-effort; collect any that fail).
   const docErrors: string[] = [];
@@ -158,11 +185,10 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Mark the invite used and link it to the vendor.
-  await prisma.vendorInvite.update({
-    where: { id: invite.id },
-    data: { status: "USED", usedAt: new Date(), vendorId: vendor.id },
-  });
+  // Link the (already consumed) invite to the created vendor.
+  await prisma.vendorInvite
+    .update({ where: { id: invite.id }, data: { vendorId: vendor.id } })
+    .catch(() => {});
 
   // Fire off notification emails (failures shouldn't fail the registration).
   const base = process.env.APP_BASE_URL || "http://localhost:3000";

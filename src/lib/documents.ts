@@ -32,8 +32,10 @@ export async function saveDocument(
   if (file.size > MAX_BYTES) {
     throw new Error(`File ${file.name} exceeds the 10 MB limit`);
   }
-  if (file.type && !ALLOWED.has(file.type)) {
-    throw new Error(`File type ${file.type} is not allowed (use PDF or image)`);
+  if (!file.type || !ALLOWED.has(file.type)) {
+    throw new Error(
+      `File type "${file.type || "unknown"}" is not allowed (use PDF or image)`
+    );
   }
 
   const original = Buffer.from(await file.arrayBuffer());

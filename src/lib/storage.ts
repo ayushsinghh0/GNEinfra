@@ -20,17 +20,27 @@ export interface Storage {
 // ── Local disk driver (development) ─────────────────────────────────────────
 const UPLOAD_ROOT = path.join(process.cwd(), "uploads");
 
+// Resolve a key under UPLOAD_ROOT, refusing any path-traversal escape.
+function safeLocalPath(key: string) {
+  const root = path.resolve(UPLOAD_ROOT);
+  const abs = path.resolve(root, key);
+  if (abs !== root && !abs.startsWith(root + path.sep)) {
+    throw new Error("Invalid storage key");
+  }
+  return abs;
+}
+
 const localStorage: Storage = {
   async put(key, body) {
-    const abs = path.join(UPLOAD_ROOT, key);
+    const abs = safeLocalPath(key);
     await mkdir(path.dirname(abs), { recursive: true });
     await writeFile(abs, body);
   },
   async get(key) {
-    return readFile(path.join(UPLOAD_ROOT, key));
+    return readFile(safeLocalPath(key));
   },
   async delete(key) {
-    await unlink(path.join(UPLOAD_ROOT, key)).catch(() => {});
+    await unlink(safeLocalPath(key)).catch(() => {});
   },
 };
 

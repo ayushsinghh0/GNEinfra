@@ -21,6 +21,7 @@ import {
   FileText,
   Eye,
   Download,
+  FileDown,
   CalendarDays,
 } from "lucide-react";
 
@@ -89,6 +90,10 @@ export default async function VendorDetail({
           <ArrowLeft className="h-4 w-4" />
           Vendors
         </Link>
+        <a href={`/vendors/${v.id}/print`} target="_blank" rel="noopener noreferrer" className={btn("primary", "sm")}>
+          <FileDown className="h-4 w-4" />
+          Download PDF
+        </a>
       </PageHeader>
 
       <div className="p-8 space-y-6">

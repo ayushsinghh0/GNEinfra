@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, FormEvent } from "react";
+import { compressFormImages } from "@/lib/compress-image";
 import {
   Card,
   CardHeader,
@@ -163,10 +164,11 @@ export default function RegistrationForm({
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    const form = e.currentTarget;
     setError(null);
     setSubmitting(true);
     try {
-      const fd = new FormData(e.currentTarget);
+      const fd = new FormData(form);
       fd.set("token", token);
       // Only include project rows the vendor actually filled in.
       const filled = projects.filter((p) =>
@@ -176,6 +178,9 @@ export default function RegistrationForm({
         "projects",
         JSON.stringify(filled.map((p, i) => ({ ...p, serialNo: i + 1 })))
       );
+
+      // Shrink images in the browser before uploading (keeps cloud cost minimal).
+      await compressFormImages(form, fd);
 
       const res = await fetch("/api/register", { method: "POST", body: fd });
       const data = await res.json().catch(() => ({}));

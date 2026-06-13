@@ -4,6 +4,7 @@ import { isAdminAuthed } from "@/lib/auth";
 import { fmtDate } from "@/lib/format";
 import Badge from "@/components/Badge";
 import InviteForm from "@/components/InviteForm";
+import { MonthlyBars, StatusBars } from "@/components/Charts";
 import {
   Building2,
   Clock,
@@ -12,6 +13,8 @@ import {
   CalendarDays,
   ChevronRight,
   Inbox,
+  BarChart3,
+  PieChart,
 } from "lucide-react";
 import {
   PageHeader,
@@ -38,7 +41,7 @@ export default async function DashboardPage() {
   startOfMonth.setDate(1);
   startOfMonth.setHours(0, 0, 0, 0);
 
-  const [total, awaiting, approved, pendingInvites, thisMonth, recent] =
+  const [total, awaiting, approved, pendingInvites, thisMonth, recent, statusGroups, monthlyRaw] =
     await Promise.all([
       prisma.vendor.count(),
       prisma.vendor.count({ where: { status: { in: ["SUBMITTED", "UNDER_REVIEW"] } } }),
@@ -50,7 +53,37 @@ export default async function DashboardPage() {
         take: 6,
         include: { _count: { select: { projects: true, documents: true } } },
       }),
+      prisma.vendor.groupBy({ by: ["status"], _count: { _all: true } }),
+      prisma.$queryRaw<{ month: Date; count: number }[]>`
+        SELECT date_trunc('month', "createdAt") AS month, count(*)::int AS count
+        FROM "Vendor"
+        WHERE "createdAt" >= date_trunc('month', now()) - interval '5 months'
+        GROUP BY 1 ORDER BY 1
+      `,
     ]);
+
+  // Build a fixed 6-month series (fill gaps with 0).
+  const monthCounts = new Map(
+    monthlyRaw.map((r) => [`${r.month.getFullYear()}-${r.month.getMonth()}`, Number(r.count)])
+  );
+  const months = Array.from({ length: 6 }, (_, idx) => {
+    const d = new Date(startOfMonth.getFullYear(), startOfMonth.getMonth() - (5 - idx), 1);
+    return {
+      label: d.toLocaleString("en-IN", { month: "short" }),
+      value: monthCounts.get(`${d.getFullYear()}-${d.getMonth()}`) ?? 0,
+    };
+  });
+
+  const STATUS_LABELS: Record<string, string> = {
+    SUBMITTED: "Submitted",
+    UNDER_REVIEW: "Under review",
+    APPROVED: "Approved",
+    REJECTED: "Rejected",
+  };
+  const statusCounts = new Map(statusGroups.map((g) => [g.status, g._count._all]));
+  const statusData = (["SUBMITTED", "UNDER_REVIEW", "APPROVED", "REJECTED"] as const).map(
+    (s) => ({ status: s, label: STATUS_LABELS[s], value: statusCounts.get(s) ?? 0 })
+  );
 
   return (
     <>
@@ -96,6 +129,38 @@ export default async function DashboardPage() {
             tone="slate"
             icon={<CalendarDays className="h-[18px] w-[18px]" />}
           />
+        </div>
+
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <Card className="lg:col-span-2">
+            <CardHeader
+              title={
+                <span className="flex items-center gap-2">
+                  <BarChart3 className="h-[18px] w-[18px] text-brand" />
+                  Registrations
+                </span>
+              }
+              subtitle="New vendors per month (last 6 months)"
+            />
+            <CardBody>
+              <MonthlyBars data={months} />
+            </CardBody>
+          </Card>
+
+          <Card>
+            <CardHeader
+              title={
+                <span className="flex items-center gap-2">
+                  <PieChart className="h-[18px] w-[18px] text-brand" />
+                  By status
+                </span>
+              }
+              subtitle="Vendor pipeline"
+            />
+            <CardBody>
+              <StatusBars data={statusData} />
+            </CardBody>
+          </Card>
         </div>
 
         <InviteForm />
