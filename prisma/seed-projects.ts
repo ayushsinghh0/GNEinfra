@@ -1,6 +1,33 @@
 import { PrismaClient } from "@prisma/client";
+import boqGhargaon from "./boq-ghargaon.json";
 
 const prisma = new PrismaClient();
+
+type BoqRow = {
+  category: string;
+  section: string | null;
+  serialNo: string | null;
+  description: string;
+  rating: string | null;
+  specification: string | null;
+  uom: string | null;
+  quantity: number | null;
+  responsibility?: string | null;
+};
+
+// All BOQ line items extracted from the BOQ-Ghargaon workbook (BOM-Supply,
+// BOM-Service, Line work) — 171 rows across every section.
+const boqCreate = (boqGhargaon as BoqRow[]).map((b) => ({
+  category: b.category as "SUPPLY" | "SERVICE" | "LINE_WORK",
+  section: b.section ?? undefined,
+  serialNo: b.serialNo ?? undefined,
+  description: b.description,
+  rating: b.rating ?? undefined,
+  specification: b.specification ?? undefined,
+  uom: b.uom ?? undefined,
+  quantity: b.quantity ?? undefined,
+  responsibility: b.responsibility ?? undefined,
+}));
 
 // Representative data drawn from the BOQ-Ghargaon + Project Details/DPR workbooks
 // for one project (GNEi-0001, Shivoor) so the Project Management module shows
@@ -27,19 +54,7 @@ async function main() {
       stage: "CONSTRUCTION",
       startDate: new Date("2026-05-16"),
       blocks: { create: [{ name: "Block-1" }, { name: "Block-2" }, { name: "Block-3" }] },
-      boqItems: {
-        create: [
-          { category: "SUPPLY", section: "Modules", serialNo: "1", description: "Modules", rating: "590 Wp", uom: "Nos", specification: "Monocrystalline Mono-PERC", quantity: 32212 },
-          { category: "SUPPLY", section: "Inverters", serialNo: "1", description: "Central Inverter", rating: "3.3 MW", uom: "Nos", quantity: 6 },
-          { category: "SUPPLY", section: "MMS", description: "2Px28 PV OUTER TABLE", uom: "Nos", quantity: 172 },
-          { category: "SUPPLY", section: "MMS", description: "2Px14 PV OUTER TABLE", uom: "Nos", quantity: 405 },
-          { category: "SUPPLY", section: "Major BOS", serialNo: "1", description: "Inverter Duty Transformer", rating: "5000 KVA", uom: "Nos", specification: "11KV/0.660kV, Ynd11, ONAN", quantity: 3 },
-          { category: "SUPPLY", section: "Major BOS", serialNo: "2", description: "SCMB", rating: "12 In 1 Out", uom: "Nos", quantity: 54 },
-          { category: "SERVICE", section: "Infrastructure Development", serialNo: "13", description: "Boundary Fencing", uom: "Mtr", specification: "As per approved GA Drawing", quantity: 6702 },
-          { category: "SERVICE", section: "Piling Works", serialNo: "1", description: "MMS Pile Foundations", uom: "Nos", quantity: 7104 },
-          { category: "LINE_WORK", section: "Plant to GSS line", serialNo: "1", description: "11KV OH/UG line from Comm. point", uom: "Mtr", quantity: 4500, responsibility: "KP" },
-        ],
-      },
+      boqItems: { create: boqCreate },
       milestones: {
         create: [
           { name: "Topographical Survey", category: "Engineering", plannedDate: new Date("2025-05-08"), actualDate: new Date("2025-05-08"), status: "DONE", sortOrder: 1 },

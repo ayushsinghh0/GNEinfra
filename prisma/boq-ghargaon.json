@@ -1,0 +1,1724 @@
+[
+{
+"category": "SUPPLY",
+"section": "Modules",
+"serialNo": "1",
+"description": "Modules",
+"rating": "590",
+"specification": "Monocrystalline -Monoperc- Bifacial",
+"uom": "Nos",
+"quantity": 32212
+},
+{
+"category": "SUPPLY",
+"section": "Inverters",
+"serialNo": "1",
+"description": "Central Inverter",
+"rating": "4.4 MW",
+"specification": "Central Inverter",
+"uom": "MW",
+"quantity": 0
+},
+{
+"category": "SUPPLY",
+"section": "MMS",
+"serialNo": "1",
+"description": "MMS with Hardwares",
+"rating": null,
+"specification": null,
+"uom": null,
+"quantity": null
+},
+{
+"category": "SUPPLY",
+"section": "MMS",
+"serialNo": null,
+"description": "2Px28 PV OUTER TABLE",
+"rating": null,
+"specification": null,
+"uom": "Nos",
+"quantity": 172
+},
+{
+"category": "SUPPLY",
+"section": "MMS",
+"serialNo": null,
+"description": "2Px28 PV INNER TABLE",
+"rating": null,
+"specification": null,
+"uom": "Nos",
+"quantity": 44
+},
+{
+"category": "SUPPLY",
+"section": "MMS",
+"serialNo": null,
+"description": "2Px14 PV OUTER TABLE",
+"rating": null,
+"specification": null,
+"uom": "Nos",
+"quantity": 405
+},
+{
+"category": "SUPPLY",
+"section": "MMS",
+"serialNo": null,
+"description": "2Px14 PV INNER TABLE",
+"rating": null,
+"specification": null,
+"uom": "Nos",
+"quantity": 293
+},
+{
+"category": "SUPPLY",
+"section": "Major BOS",
+"serialNo": "1",
+"description": "Inverter duty Transformer ( Aluminium Winding)",
+"rating": "5000KVA (10% Additional Cap. for Dharni)",
+"specification": "11KV/0.660kV - 0.660kV, Ynd11-d11 , ONAN",
+"uom": "MW",
+"quantity": 3
+},
+{
+"category": "SUPPLY",
+"section": "Major BOS",
+"serialNo": null,
+"description": "Inverter duty Transformer ( Aluminium Winding)",
+"rating": "4000KVA",
+"specification": "11KV/0.660kV, Ynd11, ONAN",
+"uom": "MW",
+"quantity": null
+},
+{
+"category": "SUPPLY",
+"section": "Major BOS",
+"serialNo": null,
+"description": "Inverter duty Transformer ( Aluminium Winding)",
+"rating": "4500KVA",
+"specification": "11KV/0.660kV, Ynd11, ONAN",
+"uom": "MW",
+"quantity": null
+},
+{
+"category": "SUPPLY",
+"section": "Major BOS",
+"serialNo": null,
+"description": "Inverter duty Transformer ( Aluminium Winding)",
+"rating": "3500KVA",
+"specification": "11KV/0.660kV, Ynd11, ONAN",
+"uom": "MW",
+"quantity": 1
+},
+{
+"category": "SUPPLY",
+"section": "Major BOS",
+"serialNo": null,
+"description": "Inverter duty Transformer ( Aluminium Winding)",
+"rating": "5500KVA",
+"specification": "11KV/0.660kV, Ynd11, ONAN",
+"uom": "MW",
+"quantity": null
+},
+{
+"category": "SUPPLY",
+"section": "Major BOS",
+"serialNo": "2",
+"description": "SCMB",
+"rating": "12 In 1 Out ( with Y connectors)",
+"specification": "12 In 1 Out",
+"uom": "Nos",
+"quantity": 54
+},
+{
+"category": "SUPPLY",
+"section": "Major BOS",
+"serialNo": null,
+"description": "SCMB",
+"rating": "10 In 1 Out ( with Y connectors)",
+"specification": "10 In 1 Out",
+"uom": "Nos",
+"quantity": null
+},
+{
+"category": "SUPPLY",
+"section": "Major BOS",
+"serialNo": null,
+"description": "SCMB",
+"rating": "9 In 1 Out ( with Y connectors)",
+"specification": "09 In 1 Out",
+"uom": "Nos",
+"quantity": null
+},
+{
+"category": "SUPPLY",
+"section": "Major BOS",
+"serialNo": "3",
+"description": "NIFPS",
+"rating": null,
+"specification": null,
+"uom": "MW",
+"quantity": 0
+},
+{
+"category": "SUPPLY",
+"section": "Major BOS",
+"serialNo": "3",
+"description": "ICOG Panel (1 IN 1 OUT)",
+"rating": "11 KV, 630A, VCB",
+"specification": "11KV, 630A, VCB",
+"uom": "Nos",
+"quantity": 3
+},
+{
+"category": "SUPPLY",
+"section": "Major BOS",
+"serialNo": "4",
+"description": "Plant End ABT Meter & its Accessories",
+"rating": "As per Discom Specifications(considering substation side)",
+"specification": "As per Discom Specifications*",
+"uom": "Nos",
+"quantity": 3
+},
+{
+"category": "SUPPLY",
+"section": "Major BOS",
+"serialNo": "5",
+"description": "11 KV CT & PT",
+"rating": "`",
+"specification": "As per Discom Specifications*",
+"uom": "Set",
+"quantity": 3
+},
+{
+"category": "SUPPLY",
+"section": "Major BOS",
+"serialNo": "6",
+"description": "Aux. Transformer with LTDB Panel",
+"rating": "20KVA-1no for MCR,Rest- 15KVA for ICR",
+"specification": "630/415V",
+"uom": "Nos",
+"quantity": 3
+},
+{
+"category": "SUPPLY",
+"section": "Major BOS",
+"serialNo": "7",
+"description": "Wall Mounted ACDB for MCR",
+"rating": "Power Supply from nearby ICR",
+"specification": null,
+"uom": "Nos",
+"quantity": 1
+},
+{
+"category": "SUPPLY",
+"section": "Major BOS",
+"serialNo": "8",
+"description": "UPS Cum Battery for ICR along with ACDB",
+"rating": "For Back up Supply for ICR",
+"specification": "2KVA with 42AH -16 Nos",
+"uom": "Nos",
+"quantity": 3
+},
+{
+"category": "SUPPLY",
+"section": "Major BOS",
+"serialNo": "9",
+"description": "UPS Cum Battery for MCR along with ACDB",
+"rating": "For Back up Supply for MCR",
+"specification": "3KVA with 65 AH -16 Nos",
+"uom": "Nos",
+"quantity": 1
+},
+{
+"category": "SUPPLY",
+"section": "Major BOS",
+"serialNo": "10",
+"description": "RTU Panel for SCADA",
+"rating": "For Plant end",
+"specification": null,
+"uom": "Nos",
+"quantity": 4
+},
+{
+"category": "SUPPLY",
+"section": "Major BOS",
+"serialNo": "11",
+"description": "SCADA along desktop & printer",
+"rating": null,
+"specification": null,
+"uom": "Set",
+"quantity": 1
+},
+{
+"category": "SUPPLY",
+"section": "Major BOS",
+"serialNo": "12",
+"description": "Dome Camera for MCR & Security Cabin",
+"rating": "Security Cabin, Inside MCR",
+"specification": null,
+"uom": "Nos",
+"quantity": 4
+},
+{
+"category": "SUPPLY",
+"section": "Major BOS",
+"serialNo": "13",
+"description": "Bullet Camera",
+"rating": "Outside - Main Control Room,Main Gate,Outside \u2013 Security Cabin,Main Switchyard & Pooling Substation,Weather Station",
+"specification": null,
+"uom": "Nos",
+"quantity": 10
+},
+{
+"category": "SUPPLY",
+"section": "Major BOS",
+"serialNo": "14",
+"description": "PTZ Camera",
+"rating": "Watch Tower",
+"specification": null,
+"uom": "Nos",
+"quantity": 3
+},
+{
+"category": "SUPPLY",
+"section": "Major BOS",
+"serialNo": "15",
+"description": "NVR with 90 days of data storage for CCTV",
+"rating": null,
+"specification": null,
+"uom": "Nos",
+"quantity": 1
+},
+{
+"category": "SUPPLY",
+"section": "Major BOS",
+"serialNo": "16",
+"description": "Only Smoke detector with Hooter to be supplied. No fire protection panel system required,",
+"rating": "SET of 5 Multisensor type smoke detectors & alarm notifications appliances",
+"specification": "Intelligent microprocessor based main fire alarm panel of modular construction complete with central processing unit, input and output modules, power supply module, supervision control and isolator modules with 10% spare provisions.",
+"uom": "Set",
+"quantity": 1
+},
+{
+"category": "SUPPLY",
+"section": "Major BOS",
+"serialNo": "17",
+"description": "Weather Moniter System",
+"rating": null,
+"specification": "Air temperature- 1 Nos, module temperature - 01 No, relative humidity- 01 Nos, wind speed- 01 Nos, wind direction- 01 Nos, rain accumulated- 1 Nos, barometric pressure- 1 Nos , Global Horizontal Irradiation- 01 Nos and Tilted Surface Irradiation 01 Nos,data Logger- 01 Nos with Tripod and accessories",
+"uom": "Set",
+"quantity": 1
+},
+{
+"category": "SUPPLY",
+"section": "Other Structures",
+"serialNo": "1",
+"description": "DP/FP Structure and Isolator",
+"rating": "As per Discom Specifications(considering in transmission line work scope)",
+"specification": null,
+"uom": "Set",
+"quantity": 3
+},
+{
+"category": "SUPPLY",
+"section": "Other Structures",
+"serialNo": "2",
+"description": "SMB Frame",
+"rating": "HDGI",
+"specification": "11 IN 1 OUT",
+"uom": "Set",
+"quantity": 54
+},
+{
+"category": "SUPPLY",
+"section": "Other Structures",
+"serialNo": "3",
+"description": "Watch Tower (If required)",
+"rating": null,
+"specification": "one (1) searchlight and one (1) floodlight along and one (1) siren",
+"uom": "Nos",
+"quantity": 3
+},
+{
+"category": "SUPPLY",
+"section": "Other Structures",
+"serialNo": "4",
+"description": "Yard Gate-3Mtrs",
+"rating": "For plant end Yard",
+"specification": "Local fabrication",
+"uom": "Nos",
+"quantity": 3
+},
+{
+"category": "SUPPLY",
+"section": "Other Structures",
+"serialNo": "5",
+"description": "Main Gate-5Mtrs",
+"rating": "Plant Entry Gate",
+"specification": "Local fabrication",
+"uom": "Nos",
+"quantity": 4
+},
+{
+"category": "SUPPLY",
+"section": "Other Structures",
+"serialNo": "6",
+"description": "Cable Tray (2500X750MM)",
+"rating": "Ladder Type",
+"specification": null,
+"uom": "Mtr",
+"quantity": 120
+},
+{
+"category": "SUPPLY",
+"section": "CABLES",
+"serialNo": "1",
+"description": "DC - 6 sqmm T.Cu Cable",
+"rating": "Red - 1.8 KV",
+"specification": null,
+"uom": "Mtr",
+"quantity": 30242
+},
+{
+"category": "SUPPLY",
+"section": "CABLES",
+"serialNo": "2",
+"description": "DC - 6 sqmm T.Cu Cable",
+"rating": "Black - 1.8 KV",
+"specification": null,
+"uom": "Mtr",
+"quantity": 30242
+},
+{
+"category": "SUPPLY",
+"section": "CABLES",
+"serialNo": "3",
+"description": "DC - 400 sqmm T.Al Cable ( SMB to Inverter)",
+"rating": "Red - 1.8 KV",
+"specification": null,
+"uom": "Mtr",
+"quantity": 10394
+},
+{
+"category": "SUPPLY",
+"section": "CABLES",
+"serialNo": "4",
+"description": "DC - 400 sqmm T.Alu Cable ( SMB to Inverter)",
+"rating": "Black - 1.8 KV",
+"specification": null,
+"uom": "Mtr",
+"quantity": 10394
+},
+{
+"category": "SUPPLY",
+"section": "CABLES",
+"serialNo": "5",
+"description": "LT AC - 1C x 400 Sq mm Al Arm Cable- From Central Inverter to IDT",
+"rating": "1.9/3.3 Kv",
+"specification": null,
+"uom": "Mtr",
+"quantity": 2160
+},
+{
+"category": "SUPPLY",
+"section": "CABLES",
+"serialNo": "6",
+"description": "HT Termination Cable-3C x 240 Sq.mm - 11 kv (Trafo-HT Panel-DP Pole)",
+"rating": "11 kV",
+"specification": null,
+"uom": "Mtr",
+"quantity": 255
+},
+{
+"category": "SUPPLY",
+"section": "CABLES",
+"serialNo": "7",
+"description": "HT Termination Kit-3C x 185 Sq.mm - 11 kv ( Upto 4 MVA)",
+"rating": null,
+"specification": null,
+"uom": null,
+"quantity": null
+},
+{
+"category": "SUPPLY",
+"section": "CABLES",
+"serialNo": "8",
+"description": "HT Termination Kit-3C x 300 Sq.mm - 11 kv ( ( For 5.5 MVA)",
+"rating": null,
+"specification": null,
+"uom": null,
+"quantity": null
+},
+{
+"category": "SUPPLY",
+"section": "CABLES",
+"serialNo": "9",
+"description": "4C x 2.5 Sqmm Cu, Arm Cable",
+"rating": "AI signal from MB(IDT) to SCADA Panel",
+"specification": null,
+"uom": "Mtr",
+"quantity": 150
+},
+{
+"category": "SUPPLY",
+"section": "CABLES",
+"serialNo": "10",
+"description": "LT - 3.0C X 25 sqmm Al Arm Cable",
+"rating": "1.1 kV - Plant aux supply Purpose Aux.Trafo to LTDB",
+"specification": null,
+"uom": "Mtr",
+"quantity": 45
+},
+{
+"category": "SUPPLY",
+"section": "CABLES",
+"serialNo": "11",
+"description": "4C X 10 Sqmm Cable al. arm Cable",
+"rating": "1.1 kV Control Cable for MCS System, UPS & MCR",
+"specification": null,
+"uom": "Mtr",
+"quantity": 255
+},
+{
+"category": "SUPPLY",
+"section": "CABLES",
+"serialNo": "12",
+"description": "4C X 10 Sqmm Al. Armoured Cable",
+"rating": "Street Lights, Security Room.",
+"specification": null,
+"uom": "Mtr",
+"quantity": 5500
+},
+{
+"category": "SUPPLY",
+"section": "CABLES",
+"serialNo": "13",
+"description": "19C X2.5 sqmm Cu. Armoured Cable",
+"rating": "Control Supply ( IDT to ICOG) & (ICOG to SCADA)",
+"specification": null,
+"uom": "Mtr",
+"quantity": 195
+},
+{
+"category": "SUPPLY",
+"section": "CABLES",
+"serialNo": "14",
+"description": "2C X2.5 Sqmm Cu.Flexible Cable",
+"rating": "Power Supply to Lights",
+"specification": null,
+"uom": "Mtr",
+"quantity": 300
+},
+{
+"category": "SUPPLY",
+"section": "CABLES",
+"serialNo": "15",
+"description": "OFC -12 Core",
+"rating": "As per SCADa Design",
+"specification": null,
+"uom": "Mtr",
+"quantity": 2500
+},
+{
+"category": "SUPPLY",
+"section": "CABLES",
+"serialNo": "16",
+"description": "CAT-6 Cable",
+"rating": "Inverter to Inverter, Equipment to SCADA",
+"specification": null,
+"uom": "Mtr",
+"quantity": 600
+},
+{
+"category": "SUPPLY",
+"section": "CABLES",
+"serialNo": "17",
+"description": "70 Sqmm Cu. Cable for Earthing",
+"rating": "1.1 Kv (IDT Earthing)",
+"specification": null,
+"uom": "Mtr",
+"quantity": 60
+},
+{
+"category": "SUPPLY",
+"section": "CABLES",
+"serialNo": "18",
+"description": "16 Sqmm Cu. Cable for Earthing",
+"rating": "1.1 Kv (Inverter)",
+"specification": null,
+"uom": "Mtr",
+"quantity": 300
+},
+{
+"category": "SUPPLY",
+"section": "CABLES",
+"serialNo": "17",
+"description": "Rs 485 2 pairX0.5 sqmm",
+"rating": "field equipment to SCADA panel",
+"specification": null,
+"uom": "Mtr",
+"quantity": 450
+},
+{
+"category": "SUPPLY",
+"section": "CONDUIT PIPE",
+"serialNo": "1",
+"description": "40mm DWC Flexible Pipe",
+"rating": "As per design & Site requirement)",
+"specification": null,
+"uom": "Mtr",
+"quantity": 8100
+},
+{
+"category": "SUPPLY",
+"section": "CONDUIT PIPE",
+"serialNo": "2",
+"description": "25mm HDPE Pipe (For SCADA FO Cable)",
+"rating": "As per design & Site requirement)",
+"specification": null,
+"uom": "Mtr",
+"quantity": 2500
+},
+{
+"category": "SUPPLY",
+"section": "CONDUIT PIPE",
+"serialNo": "3",
+"description": "T-Joints",
+"rating": "As per design & Site requirement)",
+"specification": null,
+"uom": "Lot",
+"quantity": 1
+},
+{
+"category": "SUPPLY",
+"section": "CONDUIT PIPE",
+"serialNo": "4",
+"description": "Elbow Joints",
+"rating": "As per design & Site requirement)",
+"specification": null,
+"uom": "Lot",
+"quantity": 1
+},
+{
+"category": "SUPPLY",
+"section": "CONDUIT PIPE",
+"serialNo": "5",
+"description": "Straight Joints",
+"rating": "(As per design & Site requirement)",
+"specification": null,
+"uom": "Lot",
+"quantity": 1
+},
+{
+"category": "SUPPLY",
+"section": "ELECTRICAL TERMINATION ITEMS",
+"serialNo": "1",
+"description": "MC4 - 6 sqmm",
+"rating": "Male (As per design & Site requirement)",
+"specification": null,
+"uom": "Nos",
+"quantity": 2500
+},
+{
+"category": "SUPPLY",
+"section": "ELECTRICAL TERMINATION ITEMS",
+"serialNo": "2",
+"description": "MC4 - 6 sqmm",
+"rating": "Female (As per design & Site requirement)",
+"specification": null,
+"uom": "Nos",
+"quantity": 2500
+},
+{
+"category": "SUPPLY",
+"section": "ELECTRICAL TERMINATION ITEMS",
+"serialNo": "3",
+"description": "Y-Connectors with Harness with Fuse - 6 sqmm for Positive",
+"rating": null,
+"specification": null,
+"uom": "Nos",
+"quantity": 600
+},
+{
+"category": "SUPPLY",
+"section": "ELECTRICAL TERMINATION ITEMS",
+"serialNo": "4",
+"description": "Y-Connectors with Harness with for Negative",
+"rating": null,
+"specification": null,
+"uom": "Nos",
+"quantity": 600
+},
+{
+"category": "SUPPLY",
+"section": "ELECTRICAL TERMINATION ITEMS",
+"serialNo": "5",
+"description": "Bi-Metallic Lug CU to AL - for 3Cx25 Sqmm 1.1 KV AL ARMD",
+"rating": "Auxilary INV O/P",
+"specification": null,
+"uom": "Nos",
+"quantity": 3
+},
+{
+"category": "SUPPLY",
+"section": "ELECTRICAL TERMINATION ITEMS",
+"serialNo": "6",
+"description": "Aluminium Lug for 3Cx25 Sqmm 1.1 KV AL ARMD",
+"rating": "Auxilary Panel I/P",
+"specification": null,
+"uom": "Nos",
+"quantity": 3
+},
+{
+"category": "SUPPLY",
+"section": "ELECTRICAL TERMINATION ITEMS",
+"serialNo": "7",
+"description": "Aluminium Lug - for 1Cx400 Sqmm 1.9/3.3 KV AL ARMD DC CABLE",
+"rating": "SCB O/P",
+"specification": null,
+"uom": "Nos",
+"quantity": 108
+},
+{
+"category": "SUPPLY",
+"section": "ELECTRICAL TERMINATION ITEMS",
+"serialNo": "8",
+"description": "Bi-Metallic Lug CU to AL - for 1Cx400 Sqmm 1.9/3.3 KV AL ARMD DC CABLE",
+"rating": "INV I/P",
+"specification": null,
+"uom": "Nos",
+"quantity": 108
+},
+{
+"category": "SUPPLY",
+"section": "ELECTRICAL TERMINATION ITEMS",
+"serialNo": "9",
+"description": "Bi-Metallic Lug CU to AL - for 1Cx400 Sqmm 1.9/3.3 KV AL ARMD",
+"rating": "INV O/P",
+"specification": null,
+"uom": "Nos",
+"quantity": 108
+},
+{
+"category": "SUPPLY",
+"section": "ELECTRICAL TERMINATION ITEMS",
+"serialNo": "10",
+"description": "Aluminium Lug - for 1Cx400 Sqmm 1.9/3.3 KV AL ARMD",
+"rating": "TRAFO I/P",
+"specification": null,
+"uom": "Nos",
+"quantity": 108
+},
+{
+"category": "SUPPLY",
+"section": "ELECTRICAL TERMINATION ITEMS",
+"serialNo": "11",
+"description": "HT Termination Kit (Indoor Application) - for 3Cx240 Sq.mm 11 KV HT Cable",
+"rating": "TRAFO O/P , HT I/P & O/P",
+"specification": null,
+"uom": "Nos",
+"quantity": 9
+},
+{
+"category": "SUPPLY",
+"section": "ELECTRICAL TERMINATION ITEMS",
+"serialNo": "12",
+"description": "HT Termination Kit (Outdoor Application) - for 3Cx240 Sq.mm 11 KV HT Cable",
+"rating": "DP Pole Structure",
+"specification": null,
+"uom": "Nos",
+"quantity": 3
+},
+{
+"category": "SUPPLY",
+"section": "ELECTRICAL TERMINATION ITEMS",
+"serialNo": "13",
+"description": "1C x 400 Sq.mm 1.9 kV Al Armd XLPE Cable (Double Bracing Metal Gland)",
+"rating": "INV I/P",
+"specification": null,
+"uom": "Nos",
+"quantity": 108
+},
+{
+"category": "SUPPLY",
+"section": "ELECTRICAL TERMINATION ITEMS",
+"serialNo": "14",
+"description": "1C x 400 Sq.mm 1.9 kV Al Armd XLPE Cable (Double Bracing Metal Gland)",
+"rating": "INV O/P / TRAFO I/P",
+"specification": null,
+"uom": "Nos",
+"quantity": 216
+},
+{
+"category": "SUPPLY",
+"section": "ELECTRICAL TERMINATION ITEMS",
+"serialNo": "15",
+"description": "3C x 240 Sq.mm 11 kV Al Armd XLPE Cable (Double Bracing Metal Gland)",
+"rating": "TRAFO O/P, HT PANEL I/P & O/P",
+"specification": null,
+"uom": "Nos",
+"quantity": 9
+},
+{
+"category": "SUPPLY",
+"section": "ELECTRICAL TERMINATION ITEMS",
+"serialNo": "16",
+"description": "3C x 25 Sq.mm 1.1 kV Al Armd XLPE Cable (Double Bracing Metal Gland)",
+"rating": "Auxilary Panel I/P",
+"specification": null,
+"uom": "Nos",
+"quantity": 3
+},
+{
+"category": "SUPPLY",
+"section": "ELECTRICAL TERMINATION ITEMS",
+"serialNo": "17",
+"description": "70 Sqmm Cu. Lug",
+"rating": "(Hole Dia - 10 mm) (As per design & site requirement).",
+"specification": null,
+"uom": "Lot",
+"quantity": 12
+},
+{
+"category": "SUPPLY",
+"section": "ELECTRICAL TERMINATION ITEMS",
+"serialNo": "18",
+"description": "16 Sqmm Cu. Lug",
+"rating": null,
+"specification": null,
+"uom": "Lot",
+"quantity": 24
+},
+{
+"category": "SUPPLY",
+"section": "ELECTRICAL TERMINATION ITEMS",
+"serialNo": "19",
+"description": "HT Straight Through Jointing Kit-3C x 240 Sq.mm-11kv",
+"rating": "(As per design & site requirement).",
+"specification": null,
+"uom": "Nos",
+"quantity": 0
+},
+{
+"category": "SUPPLY",
+"section": "ELECTRICAL TERMINATION ITEMS",
+"serialNo": "20",
+"description": "Miscelaneous items ( Cable Ties, Ferrules, Route Marker, Danger Boards, Pufseal, Sealant, Row Display Boards )",
+"rating": null,
+"specification": null,
+"uom": "MWp",
+"quantity": 19.029
+},
+{
+"category": "SUPPLY",
+"section": "Lighting & Lightning Material",
+"serialNo": "1",
+"description": "ESE LA",
+"rating": "12 Kv,50 Hz,ESE TYPE 107MTR RADIUS,Lightning Impulse withstand-75 Voltage (kVP),Power frequency withstand,28 Voltage (kV rms)",
+"specification": null,
+"uom": "Nos",
+"quantity": 14
+},
+{
+"category": "SUPPLY",
+"section": "Lighting & Lightning Material",
+"serialNo": "2",
+"description": "Chemical Earthing set including chemical compound-50Kgs",
+"rating": "3Mtr Length x 17.5 mm Dia Cu Bonded Pipe (As per design & site requirement).",
+"specification": null,
+"uom": "Nos",
+"quantity": 132
+},
+{
+"category": "SUPPLY",
+"section": "Lighting & Lightning Material",
+"serialNo": "3",
+"description": "GI Earthing Strips 25x 6mm-Field",
+"rating": "DC & AC Grid Earthing (As per design & site requirement).",
+"specification": null,
+"uom": "Mtr",
+"quantity": 11100
+},
+{
+"category": "SUPPLY",
+"section": "Lighting & Lightning Material",
+"serialNo": "4",
+"description": "GI Earthing Strips 75x8mm-Yard",
+"rating": "Yard Grid Earthing (As per design & site requirement).",
+"specification": null,
+"uom": "Mtr",
+"quantity": 750
+},
+{
+"category": "SUPPLY",
+"section": "Lighting & Lightning Material",
+"serialNo": "5",
+"description": "Earthing Chambers",
+"rating": "(As per design & site requirement).",
+"specification": null,
+"uom": "Nos",
+"quantity": 132
+},
+{
+"category": "SUPPLY",
+"section": "Lighting & Lightning Material",
+"serialNo": "6",
+"description": "Yard Lighting 4 Nos., LED 50 W each including mounting angles and cable for aux. supply",
+"rating": "As per approved design & site requirement",
+"specification": null,
+"uom": "Set",
+"quantity": 24
+},
+{
+"category": "SUPPLY",
+"section": "Lighting & Lightning Material",
+"serialNo": "7",
+"description": "Street Light including poles & ascessories for Plant pheriphery & Internal plant (minimum 70 m between two adjacent lamps).As per RFP",
+"rating": "As per Drawing",
+"specification": null,
+"uom": "Lot",
+"quantity": 75
+},
+{
+"category": "SUPPLY",
+"section": "Safety Material",
+"serialNo": "1",
+"description": "Sand Bucket along with Stand",
+"rating": "Inside Yard (As per design)",
+"specification": "For each MCR 3, For each INV 2, for each T/F 3, for each Switchyard 3, for each security room 1.",
+"uom": "Set",
+"quantity": 36
+},
+{
+"category": "SUPPLY",
+"section": "Safety Material",
+"serialNo": "2",
+"description": "CO2 Stored pressure type 9 Kg Fire Extinguishers",
+"rating": "Inside Yard (As per design)",
+"specification": "For each MCR 3, For each INV 1, for each T/F 1, for each Switchyard 2, for each security room 1.",
+"uom": "Set",
+"quantity": 18
+},
+{
+"category": "SUPPLY",
+"section": "Safety Material",
+"serialNo": "3",
+"description": "Foam Type Hand held (9kg)",
+"rating": "Inside Yard (As per design)",
+"specification": "For each MCR 3.",
+"uom": "Set",
+"quantity": 3
+},
+{
+"category": "SUPPLY",
+"section": "Safety Material",
+"serialNo": "4",
+"description": "ABC type 10 Kg Fire Extinguishers",
+"rating": "Inside Yard (As per design)",
+"specification": "For each MCR 3, For each INV 1, for each T/F 1, for each Switchyard 2.",
+"uom": "Nos",
+"quantity": 18
+},
+{
+"category": "SUPPLY",
+"section": "Safety Material",
+"serialNo": "5",
+"description": "Hand Portable Pressurized water CO2 (9 Ltr)",
+"rating": null,
+"specification": "For each MCR 3, for each security room 1.",
+"uom": "Nos",
+"quantity": 6
+},
+{
+"category": "SUPPLY",
+"section": "MCS",
+"serialNo": "1",
+"description": "Module Cleaning system",
+"rating": null,
+"specification": null,
+"uom": "MWp",
+"quantity": 19.029
+},
+{
+"category": "SUPPLY",
+"section": "MCS",
+"serialNo": "2",
+"description": "One Tube Well",
+"rating": null,
+"specification": null,
+"uom": "Nos",
+"quantity": 0
+},
+{
+"category": "SUPPLY",
+"section": "Precommissioning & Commissioning Charges",
+"serialNo": "1",
+"description": "Precommissioning & Commissioning",
+"rating": null,
+"specification": null,
+"uom": "MWp",
+"quantity": 19.029
+},
+{
+"category": "SUPPLY",
+"section": "Bay Construction at SS",
+"serialNo": "1",
+"description": "Bay Construction Cost for 33kV at PSS",
+"rating": null,
+"specification": null,
+"uom": "Nos",
+"quantity": 0
+},
+{
+"category": "SUPPLY",
+"section": "Overhead Transmission Line",
+"serialNo": "1",
+"description": "Overhead Line double ckt including ROW",
+"rating": "11 KV",
+"specification": null,
+"uom": "KM",
+"quantity": null
+},
+{
+"category": "SUPPLY",
+"section": "Spares Considered for O&M",
+"serialNo": "1",
+"description": "IDT Spares",
+"rating": null,
+"specification": "As per Standard Spares - 10% Qty",
+"uom": "Lot",
+"quantity": 1
+},
+{
+"category": "SUPPLY",
+"section": "Spares Considered for O&M",
+"serialNo": "2",
+"description": "DC Cables",
+"rating": null,
+"specification": "As per Standard Spares - 10% Qty",
+"uom": "Lot",
+"quantity": 1
+},
+{
+"category": "SUPPLY",
+"section": "Spares Considered for O&M",
+"serialNo": "3",
+"description": "AC Cables",
+"rating": null,
+"specification": "As per Standard Spares - 10% Qty",
+"uom": "Lot",
+"quantity": 1
+},
+{
+"category": "SUPPLY",
+"section": "Spares Considered for O&M",
+"serialNo": "4",
+"description": "HT Cables",
+"rating": null,
+"specification": "As per Standard Spares - 10% Qty",
+"uom": "Lot",
+"quantity": 1
+},
+{
+"category": "SUPPLY",
+"section": "Spares Considered for O&M",
+"serialNo": "5",
+"description": "SMB",
+"rating": null,
+"specification": "As per Standard Spares - 10% Qty",
+"uom": "Lot",
+"quantity": 1
+},
+{
+"category": "SUPPLY",
+"section": "Spares Considered for O&M",
+"serialNo": "6",
+"description": "Connectors",
+"rating": null,
+"specification": "As per Standard Spares - 10% Qty",
+"uom": "Lot",
+"quantity": 1
+},
+{
+"category": "SUPPLY",
+"section": "Spares Considered for O&M",
+"serialNo": "7",
+"description": "Y Connector",
+"rating": null,
+"specification": "As per Standard Spares - 10% Qty",
+"uom": "Lot",
+"quantity": 1
+},
+{
+"category": "SUPPLY",
+"section": "Spares Considered for O&M",
+"serialNo": "8",
+"description": "Fuse Connector",
+"rating": null,
+"specification": "As per Standard Spares - 10% Qty",
+"uom": "Lot",
+"quantity": 1
+},
+{
+"category": "SUPPLY",
+"section": "Spares Considered for O&M",
+"serialNo": "9",
+"description": "HT Panel Spares",
+"rating": null,
+"specification": "As per Standard Spares - 10% Qty",
+"uom": "Lot",
+"quantity": 1
+},
+{
+"category": "SUPPLY",
+"section": "Spares Considered for O&M",
+"serialNo": "10",
+"description": "Inverter Spares",
+"rating": null,
+"specification": "As per Standard Spares - 10% Qty",
+"uom": "Lot",
+"quantity": 1
+},
+{
+"category": "SUPPLY",
+"section": "Reactive Power Required for the Plant",
+"serialNo": "1",
+"description": "Reactive Power Requirement",
+"rating": null,
+"specification": "As per Study Requirements",
+"uom": "Lot",
+"quantity": 1
+},
+{
+"category": "SERVICE",
+"section": "Infrastructure Development",
+"serialNo": "1",
+"description": "Preliminary & detailed site survey of proposed project site (Topographical survey)",
+"rating": null,
+"specification": "5mX5m ,The formation level shall be at least 1.5m above the HFL",
+"uom": "MWp",
+"quantity": 19.5
+},
+{
+"category": "SERVICE",
+"section": "Infrastructure Development",
+"serialNo": "2",
+"description": "Soil sample collection, Soil Test and submission of Soil Test Report (Soil Test)",
+"rating": null,
+"specification": "Minimum 1 bore holes/ 5 acres of land, load bearing capacity, ground water level, settlement, and sub soil condition, soil resistivity tests and CBR tests, water analysis test",
+"uom": "Lot",
+"quantity": 1
+},
+{
+"category": "SERVICE",
+"section": "Infrastructure Development",
+"serialNo": "3",
+"description": "Site Preparation & Land levelling & Filling (if required)",
+"rating": null,
+"specification": "The formation level shall be at least 1.5m above the HFL, soil filling in bidder scope along eith disposal of the cutting trees & debris",
+"uom": "Acres",
+"quantity": 68.25
+},
+{
+"category": "SERVICE",
+"section": "Infrastructure Development",
+"serialNo": "4",
+"description": "Engineering & Design work, Documentation, submission etc",
+"rating": null,
+"specification": null,
+"uom": "MWp",
+"quantity": 19.5
+},
+{
+"category": "SERVICE",
+"section": "Infrastructure Development",
+"serialNo": "5",
+"description": "Pull-out Test ,Lateral Load Test, Cube Test & other civil related test",
+"rating": null,
+"specification": "Pull out Inclusive of lateral & Compressive Test",
+"uom": "Lot",
+"quantity": 1
+},
+{
+"category": "SERVICE",
+"section": "Infrastructure Development",
+"serialNo": "6",
+"description": "EAR Policy of Plant",
+"rating": null,
+"specification": null,
+"uom": "MWp",
+"quantity": 19.5
+},
+{
+"category": "SERVICE",
+"section": "Infrastructure Development",
+"serialNo": "7",
+"description": "Health, Quality & Safety Charts",
+"rating": null,
+"specification": null,
+"uom": "LS",
+"quantity": 1
+},
+{
+"category": "SERVICE",
+"section": "Infrastructure Development",
+"serialNo": "8",
+"description": "HSE complainces",
+"rating": null,
+"specification": null,
+"uom": "LS",
+"quantity": 1
+},
+{
+"category": "SERVICE",
+"section": "Infrastructure Development",
+"serialNo": "9",
+"description": "Office Establishment Cost",
+"rating": null,
+"specification": null,
+"uom": "LS",
+"quantity": 1
+},
+{
+"category": "SERVICE",
+"section": "Infrastructure Development",
+"serialNo": "10",
+"description": "MCR Buidlings",
+"rating": null,
+"specification": null,
+"uom": "Nos",
+"quantity": 2
+},
+{
+"category": "SERVICE",
+"section": "Infrastructure Development",
+"serialNo": "11",
+"description": "Security Cabin along with Chair-1No",
+"rating": null,
+"specification": null,
+"uom": "Nos",
+"quantity": 3
+},
+{
+"category": "SERVICE",
+"section": "Infrastructure Development",
+"serialNo": "12",
+"description": "Security guards ( 3 Manpower)",
+"rating": null,
+"specification": null,
+"uom": "Months",
+"quantity": 6
+},
+{
+"category": "SERVICE",
+"section": "Infrastructure Development",
+"serialNo": "13",
+"description": "Bounday Fencing",
+"rating": null,
+"specification": "As per approved GA Drawing",
+"uom": "Mtr",
+"quantity": 6702
+},
+{
+"category": "SERVICE",
+"section": "Service Activity -Purchase",
+"serialNo": "1",
+"description": "SCMB Frame",
+"rating": null,
+"specification": null,
+"uom": "Set",
+"quantity": 54
+},
+{
+"category": "SERVICE",
+"section": "Service Activity -Purchase",
+"serialNo": "2",
+"description": "Yard Gate-3Mtrs",
+"rating": null,
+"specification": null,
+"uom": "Nos",
+"quantity": 3
+},
+{
+"category": "SERVICE",
+"section": "Service Activity -Purchase",
+"serialNo": "3",
+"description": "Main Gate-5Mtrs",
+"rating": null,
+"specification": null,
+"uom": "Nos",
+"quantity": 4
+},
+{
+"category": "SERVICE",
+"section": "Pilling Works",
+"serialNo": "1",
+"description": "MMS Pile Foundations",
+"rating": null,
+"specification": null,
+"uom": "Nos",
+"quantity": 7104
+},
+{
+"category": "SERVICE",
+"section": "Equipment Foundation Cost",
+"serialNo": "1",
+"description": "Inverter duty Transformer,",
+"rating": null,
+"specification": null,
+"uom": "Nos",
+"quantity": 0
+},
+{
+"category": "SERVICE",
+"section": "Equipment Foundation Cost",
+"serialNo": "2",
+"description": "11 kV ICOG",
+"rating": null,
+"specification": null,
+"uom": "Nos",
+"quantity": 0
+},
+{
+"category": "SERVICE",
+"section": "Equipment Foundation Cost",
+"serialNo": "3",
+"description": "String Combiner Cum Monitoring box",
+"rating": null,
+"specification": null,
+"uom": "Nos",
+"quantity": 54
+},
+{
+"category": "SERVICE",
+"section": "Equipment Foundation Cost",
+"serialNo": "4",
+"description": "Central Inverters with canopy",
+"rating": null,
+"specification": null,
+"uom": "Nos",
+"quantity": 6
+},
+{
+"category": "SERVICE",
+"section": "Equipment Foundation Cost",
+"serialNo": "5",
+"description": "Operational Clearances around Inverter with Hand rail & Steps",
+"rating": null,
+"specification": null,
+"uom": "Nos",
+"quantity": null
+},
+{
+"category": "SERVICE",
+"section": "Equipment Foundation Cost",
+"serialNo": "6",
+"description": "Prefabricated Building",
+"rating": null,
+"specification": null,
+"uom": "Nos",
+"quantity": null
+},
+{
+"category": "SERVICE",
+"section": "Equipment Foundation Cost",
+"serialNo": "7",
+"description": "NIFPS Foundation",
+"rating": null,
+"specification": null,
+"uom": "Nos",
+"quantity": null
+},
+{
+"category": "SERVICE",
+"section": "Equipment Foundation Cost",
+"serialNo": "8",
+"description": "BOT Foundation",
+"rating": null,
+"specification": null,
+"uom": "Lot",
+"quantity": 0
+},
+{
+"category": "SERVICE",
+"section": "Equipment Foundation Cost",
+"serialNo": "9",
+"description": "Aux. Trafo Foundation cum Panel",
+"rating": null,
+"specification": null,
+"uom": "Nos",
+"quantity": 3
+},
+{
+"category": "SERVICE",
+"section": "Equipment Foundation Cost",
+"serialNo": "10",
+"description": "LA Foundation",
+"rating": null,
+"specification": null,
+"uom": "Lot",
+"quantity": 14
+},
+{
+"category": "SERVICE",
+"section": "Equipment Foundation Cost",
+"serialNo": "11",
+"description": "Water Tank Foundation inclusive of water harvesting -10,000 Ltr",
+"rating": null,
+"specification": null,
+"uom": "Nos",
+"quantity": 3
+},
+{
+"category": "SERVICE",
+"section": "Equipment Foundation Cost",
+"serialNo": "12",
+"description": "Aux LTDB Foundation",
+"rating": null,
+"specification": null,
+"uom": "Nos",
+"quantity": 0
+},
+{
+"category": "SERVICE",
+"section": "Equipment Foundation Cost",
+"serialNo": "13",
+"description": "CT/PT Foundation with four Pole Structure",
+"rating": null,
+"specification": "NOT CONSIDER IN SOLAR PLANT SITE",
+"uom": "Nos",
+"quantity": 0
+},
+{
+"category": "SERVICE",
+"section": "Equipment Foundation Cost",
+"serialNo": "14",
+"description": "ABT Meter Foundation",
+"rating": null,
+"specification": "NOT CONSIDER IN SOLAR PLANT SITE",
+"uom": "Nos",
+"quantity": 0
+},
+{
+"category": "SERVICE",
+"section": "Equipment Foundation Cost",
+"serialNo": "15",
+"description": "Watch Tower",
+"rating": null,
+"specification": null,
+"uom": "Nos",
+"quantity": 3
+},
+{
+"category": "SERVICE",
+"section": "Equipment Foundation Cost",
+"serialNo": "16",
+"description": "SCADA Foundation",
+"rating": null,
+"specification": null,
+"uom": "Nos",
+"quantity": 0
+},
+{
+"category": "SERVICE",
+"section": "Equipment Foundation Cost",
+"serialNo": "17",
+"description": "WMS Foundation",
+"rating": null,
+"specification": null,
+"uom": "Nos",
+"quantity": 1
+},
+{
+"category": "SERVICE",
+"section": "Equipment Foundation Cost",
+"serialNo": "18",
+"description": "Gravelling for Plant end Yard",
+"rating": null,
+"specification": null,
+"uom": "Sft",
+"quantity": 0
+},
+{
+"category": "SERVICE",
+"section": "Equipment Foundation Cost",
+"serialNo": "19",
+"description": "Switchyard 1.8m Height Chain Link Fencing",
+"rating": null,
+"specification": "ICR+WMS",
+"uom": "Mtr",
+"quantity": 0
+},
+{
+"category": "SERVICE",
+"section": "Equipment Foundation Cost",
+"serialNo": "20",
+"description": "Equipment Nomenclature for the Components",
+"rating": null,
+"specification": null,
+"uom": "LS",
+"quantity": 2
+},
+{
+"category": "SERVICE",
+"section": "Equipment Foundation Cost",
+"serialNo": "21",
+"description": "Security Cabin",
+"rating": null,
+"specification": null,
+"uom": "LS",
+"quantity": 3
+},
+{
+"category": "SERVICE",
+"section": "Equipment Foundation Cost",
+"serialNo": "22",
+"description": "Office Container with Sewage Desposal",
+"rating": null,
+"specification": null,
+"uom": "Nos",
+"quantity": 1
+},
+{
+"category": "SERVICE",
+"section": "Equipment Foundation Cost",
+"serialNo": "23",
+"description": "Miscellaneous including ( Fire Bucket, White Wash, UPS, Main Gate)",
+"rating": null,
+"specification": null,
+"uom": "LS",
+"quantity": 1
+},
+{
+"category": "SERVICE",
+"section": "Equipment Foundation Cost",
+"serialNo": "24",
+"description": "Miscellaneous items including Raw water, Electricity etc for construction activities",
+"rating": null,
+"specification": null,
+"uom": "Months",
+"quantity": 6
+},
+{
+"category": "SERVICE",
+"section": "Road & Drainage Cost",
+"serialNo": "1",
+"description": "Earthen Drainage works including Road Drain Crossing",
+"rating": null,
+"specification": "Minimum width as 450mm and minimum depth as 300mm. bed slope of the drains shall be milder than 1 in 1000. Three (3) hour storm value and/ or one hour rainfall intensity value. Concrete/Brick masonry drains shall be provided on one side of roads for proper drainage of rainwater",
+"uom": "Mtr",
+"quantity": null
+},
+{
+"category": "SERVICE",
+"section": "Road & Drainage Cost",
+"serialNo": "2",
+"description": "Approach Road to Solar Plant",
+"rating": null,
+"specification": "3 Mtr Wide+ 0.5 Mtr shoulder - 200 mm thick murram layer, 150 thick rubble soiling, 150 mm thick WBM compacted in two layer Mtr 75mm thick Bitumin macadam binder course with 10 to 12 mm seal coat",
+"uom": "Mtr",
+"quantity": null
+},
+{
+"category": "SERVICE",
+"section": "Road & Drainage Cost",
+"serialNo": "3",
+"description": "Periphery Road",
+"rating": null,
+"specification": "3 Mtr Wide + 300mm Murrum Layer (Compacted in 3 layers upto 95% MDD by roller)",
+"uom": "Mtr",
+"quantity": null
+},
+{
+"category": "SERVICE",
+"section": "Road & Drainage Cost",
+"serialNo": "4",
+"description": "Pathway / Internal Road/Approach Road inside Plant.",
+"rating": null,
+"specification": "3 Mtr Wide+ 150 thick rubble soiling, 100 mm tick murram layer, 250 mm thick WBM compacted in two layer Mtr shoulder both sides- 80/100mm top coat Bitumin Grade",
+"uom": "Mtr",
+"quantity": null
+},
+{
+"category": "SERVICE",
+"section": "Road & Drainage Cost",
+"serialNo": null,
+"description": "I&C Works",
+"rating": null,
+"specification": null,
+"uom": null,
+"quantity": null
+},
+{
+"category": "SERVICE",
+"section": "Road & Drainage Cost",
+"serialNo": "1",
+"description": "Installation & Commissioning Works ( Electrical)",
+"rating": null,
+"specification": null,
+"uom": "MWp",
+"quantity": 19.5
+},
+{
+"category": "SERVICE",
+"section": "Road & Drainage Cost",
+"serialNo": null,
+"description": "I&C Works",
+"rating": null,
+"specification": null,
+"uom": null,
+"quantity": null
+},
+{
+"category": "SERVICE",
+"section": "Road & Drainage Cost",
+"serialNo": "1",
+"description": "Construction of MCR for Civil & Electrical Works",
+"rating": null,
+"specification": null,
+"uom": "Sft",
+"quantity": 2400
+},
+{
+"category": "SERVICE",
+"section": "Road & Drainage Cost",
+"serialNo": null,
+"description": "I&C Works",
+"rating": null,
+"specification": null,
+"uom": null,
+"quantity": null
+},
+{
+"category": "LINE_WORK",
+"section": "Plant to GSS Line",
+"serialNo": "1",
+"description": "11KV OH/UG line fromCommon ICOG to GSS DP",
+"rating": null,
+"specification": "Inculding Installation",
+"uom": "MTR",
+"quantity": 4500,
+"responsibility": "Supply:KP Install:KP"
+},
+{
+"category": "LINE_WORK",
+"section": "Plant to GSS Line",
+"serialNo": "2",
+"description": "11KV OH/UG line fromCommon GSS DP to VCB Panel",
+"rating": null,
+"specification": "Inculding Installation",
+"uom": "MTR",
+"quantity": 50,
+"responsibility": "Supply:KP Install:KP"
+},
+{
+"category": "LINE_WORK",
+"section": "Plant to GSS Line",
+"serialNo": "3",
+"description": "11KV HT Straight Through Joint Kit",
+"rating": null,
+"specification": "Inculding Installation",
+"uom": "Nos",
+"quantity": 9,
+"responsibility": "Supply:KP Install:KP"
+},
+{
+"category": "LINE_WORK",
+"section": "Plant to GSS Line",
+"serialNo": "4",
+"description": "11KV HT Indoor Termination Kit",
+"rating": null,
+"specification": "Inculding Installation",
+"uom": "Nos",
+"quantity": 2,
+"responsibility": "Supply:KP Install:KP"
+},
+{
+"category": "LINE_WORK",
+"section": "Plant to GSS Line",
+"serialNo": "5",
+"description": "11KV HT Outdoor Termination Kit",
+"rating": null,
+"specification": "Inculding Installation",
+"uom": "Nos",
+"quantity": 2,
+"responsibility": "Supply:KP Install:KP"
+},
+{
+"category": "LINE_WORK",
+"section": "Plant to GSS Line",
+"serialNo": "6",
+"description": "ABT Meter including Acessories",
+"rating": null,
+"specification": "Commom GSS End",
+"uom": "Nos",
+"quantity": 2,
+"responsibility": "Supply:KP Install:KP"
+},
+{
+"category": "LINE_WORK",
+"section": "Plant to GSS Line",
+"serialNo": "7",
+"description": "METERING CT/PT UNIT",
+"rating": null,
+"specification": "Substation",
+"uom": "Nos",
+"quantity": 1,
+"responsibility": "Supply:KP Install:KP"
+},
+{
+"category": "LINE_WORK",
+"section": "Plant to GSS Line",
+"serialNo": "8",
+"description": "DP for CT/PT Installation with AB Switch",
+"rating": null,
+"specification": "SS End As per Getco Strandard",
+"uom": "Nos",
+"quantity": 1,
+"responsibility": "Supply:KP Install:KP"
+},
+{
+"category": "LINE_WORK",
+"section": "Plant to GSS Line",
+"serialNo": "9",
+"description": "Earthing & other work for DP",
+"rating": null,
+"specification": "SS End As per Getco Strandard",
+"uom": "Lot",
+"quantity": 1,
+"responsibility": "Supply:KP Install:KP"
+},
+{
+"category": "LINE_WORK",
+"section": "Plant to GSS Line",
+"serialNo": "10",
+"description": "RTU & Internet lease line connectivity work",
+"rating": null,
+"specification": "As per GETCO / SLDC specification",
+"uom": "Lot",
+"quantity": 1,
+"responsibility": "Supply:KP Install:KP"
+},
+{
+"category": "LINE_WORK",
+"section": "Plant to GSS Line",
+"serialNo": "11",
+"description": "VCB panel Feeder",
+"rating": null,
+"specification": "GETCO END VCB PANEL AS PER GETCO SPECIFICATIONS",
+"uom": "Nos",
+"quantity": 1,
+"responsibility": "Supply:KP Install:KP"
+},
+{
+"category": "LINE_WORK",
+"section": "Plant to GSS Line",
+"serialNo": "12",
+"description": "VCB Installation & Integration",
+"rating": null,
+"specification": "SS End As per Getco Strandard",
+"uom": "Nos",
+"quantity": 1,
+"responsibility": "Supply:KP Install:KP"
+}
+]
