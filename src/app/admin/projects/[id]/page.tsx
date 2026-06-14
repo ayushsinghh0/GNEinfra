@@ -6,6 +6,7 @@ import { isAdminAuthed } from "@/lib/auth";
 import { fmtDate } from "@/lib/format";
 import RecordForm from "@/components/RecordForm";
 import ExcelImport from "@/components/ExcelImport";
+import VendorAssign from "@/components/VendorAssign";
 import { BOQ_SECTIONS } from "@/lib/boq-sections";
 import {
   STAGE_LABELS,
@@ -210,6 +211,12 @@ export default async function ProjectDetail({
     },
   });
   if (!project) notFound();
+
+  // Invited/registered vendors available to assign to BOQ items.
+  const vendors = await prisma.vendor.findMany({
+    orderBy: { companyName: "asc" },
+    select: { id: true, companyName: true },
+  });
 
   const activeTab: TabKey = TABS.some((t) => t.key === tab)
     ? (tab as TabKey)
@@ -529,12 +536,13 @@ export default async function ProjectDetail({
                     />
                     <table className="w-full table-fixed text-sm">
                       <colgroup>
-                        <col className="w-[8%]" />
-                        <col className="w-[34%]" />
+                        <col className="w-[6%]" />
+                        <col className="w-[28%]" />
+                        <col className="w-[13%]" />
                         <col className="w-[16%]" />
-                        <col className="w-[20%]" />
+                        <col className="w-[7%]" />
                         <col className="w-[10%]" />
-                        <col className="w-[12%]" />
+                        <col className="w-[20%]" />
                       </colgroup>
                       <thead>
                         <tr className={theadRowCls}>
@@ -544,6 +552,7 @@ export default async function ProjectDetail({
                           <th className={thCls}>Spec</th>
                           <th className={thCls}>UOM</th>
                           <th className={cn(thCls, "text-right")}>Qty</th>
+                          <th className={thCls}>Vendor</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -551,7 +560,7 @@ export default async function ProjectDetail({
                           <Fragment key={g.section}>
                             <tr>
                               <td
-                                colSpan={6}
+                                colSpan={7}
                                 className="border-y border-slate-100 bg-slate-50/80 px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-brand-700"
                               >
                                 {g.section}
@@ -592,6 +601,14 @@ export default async function ProjectDetail({
                                         .join(" · ")}
                                     </div>
                                   ) : null}
+                                </td>
+                                <td className={tdCls}>
+                                  <VendorAssign
+                                    projectId={project.id}
+                                    itemId={b.id}
+                                    currentVendorId={b.vendorId}
+                                    vendors={vendors}
+                                  />
                                 </td>
                               </tr>
                             ))}
@@ -648,9 +665,12 @@ export default async function ProjectDetail({
                     <CardBody className="p-5">
                       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
                         <div className="min-w-0">
-                          <div className="font-medium text-slate-900">
+                          <Link
+                            href={`/admin/projects/${project.id}/activities/${a.id}`}
+                            className="font-medium text-slate-900 transition-colors hover:text-brand-700"
+                          >
                             {a.activity}
-                          </div>
+                          </Link>
                           {a.subActivity && (
                             <div className="text-sm text-slate-500">
                               {a.subActivity}

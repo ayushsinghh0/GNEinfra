@@ -78,10 +78,11 @@ model Vendor {
   vendorPostingGroup    String?
 
   // ── Relations ──
-  projects    VendorProject[]
-  documents   VendorDocument[]
-  invite      VendorInvite?
-  epcProjects Project[] @relation("VendorEpcProjects") // GNE projects where this vendor is the sub-partner
+  projects       VendorProject[]
+  documents      VendorDocument[]
+  invite         VendorInvite?
+  epcProjects    Project[] @relation("VendorEpcProjects") // GNE projects where this vendor is the sub-partner
+  boqAssignments BoqItem[] @relation("BoqItemVendor") // BOQ scope items assigned to this vendor
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -259,10 +260,15 @@ model BoqItem {
   unitRate       Float? // optional cost per unit
   responsibility String? // who supplies/installs
 
+  // The vendor (invited via Phase 1) assigned to supply/execute this item.
+  vendorId String?
+  vendor   Vendor? @relation("BoqItemVendor", fields: [vendorId], references: [id])
+
   createdAt DateTime @default(now())
 
   @@index([projectId])
   @@index([category])
+  @@index([vendorId])
 }
 
 // An execution activity (from the DPR). Daily progress is recorded as DprEntry.
