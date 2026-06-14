@@ -9,7 +9,7 @@ import { Button, Field, Input, Textarea, Select, btn, cn } from "@/components/ui
 export type FieldDef = {
   name: string;
   label: string;
-  type?: "text" | "number" | "date" | "time" | "select" | "textarea" | "checkbox";
+  type?: "text" | "number" | "date" | "time" | "select" | "textarea" | "checkbox" | "datalist";
   options?: { value: string; label: string }[];
   required?: boolean;
   placeholder?: string;
@@ -121,6 +121,22 @@ export default function RecordForm({
                         <Field label={f.label} required={f.required} hint={f.hint}>
                           {f.type === "textarea" ? (
                             <Textarea name={f.name} rows={2} defaultValue={f.defaultValue as string} placeholder={f.placeholder} />
+                          ) : f.type === "datalist" ? (
+                            <>
+                              <Input
+                                name={f.name}
+                                list={`dl-${f.name}`}
+                                required={f.required}
+                                placeholder={f.placeholder}
+                                defaultValue={f.defaultValue as string | undefined}
+                                autoComplete="off"
+                              />
+                              <datalist id={`dl-${f.name}`}>
+                                {f.options?.map((o) => (
+                                  <option key={o.value} value={o.value} />
+                                ))}
+                              </datalist>
+                            </>
                           ) : f.type === "select" ? (
                             <Select name={f.name} defaultValue={f.defaultValue as string} required={f.required}>
                               {f.options?.map((o) => (

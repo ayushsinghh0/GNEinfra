@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { isAdminAuthed } from "@/lib/auth";
 import { fmtDate } from "@/lib/format";
 import RecordForm from "@/components/RecordForm";
+import ExcelImport from "@/components/ExcelImport";
+import { ALL_BOQ_SECTIONS } from "@/lib/boq-sections";
 import {
   STAGE_LABELS,
   STAGE_TONE,
@@ -45,6 +47,8 @@ import {
   ShieldCheck,
   Target,
   TrendingUp,
+  FileDown,
+  FileSpreadsheet,
 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -421,7 +425,17 @@ export default async function ProjectDetail({
               <h3 className="text-base font-semibold text-slate-900">
                 Bill of Quantities
               </h3>
-              <RecordForm
+              <div className="flex flex-wrap items-center gap-2">
+                <a href={`/api/projects/${project.id}/boq/export`} className={btn("secondary", "sm")}>
+                  <FileDown className="h-4 w-4" />
+                  Download Excel
+                </a>
+                <a href={`/api/projects/${project.id}/boq/template`} className={btn("ghost", "sm")}>
+                  <FileSpreadsheet className="h-4 w-4" />
+                  Template
+                </a>
+                <ExcelImport endpoint={`/api/projects/${project.id}/boq/import`} />
+                <RecordForm
                 title="Add BOQ item"
                 triggerLabel="Add BOQ item"
                 triggerIcon={<Plus className="h-4 w-4" />}
@@ -437,7 +451,14 @@ export default async function ProjectDetail({
                       { value: "LINE_WORK", label: "Line Work" },
                     ],
                   },
-                  { name: "section", label: "Section" },
+                  {
+                    name: "section",
+                    label: "Section",
+                    type: "datalist",
+                    placeholder: "e.g. Modules",
+                    hint: "pick or type",
+                    options: ALL_BOQ_SECTIONS.map((s) => ({ value: s, label: s })),
+                  },
                   {
                     name: "description",
                     label: "Description",
@@ -449,7 +470,8 @@ export default async function ProjectDetail({
                   { name: "uom", label: "UOM" },
                   { name: "quantity", label: "Quantity", type: "number" },
                 ]}
-              />
+                />
+              </div>
             </div>
             {project.boqItems.length === 0 ? (
               <Card>
