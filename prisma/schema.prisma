@@ -78,9 +78,10 @@ model Vendor {
   vendorPostingGroup    String?
 
   // ── Relations ──
-  projects  VendorProject[]
-  documents VendorDocument[]
-  invite    VendorInvite?
+  projects    VendorProject[]
+  documents   VendorDocument[]
+  invite      VendorInvite?
+  epcProjects Project[] @relation("VendorEpcProjects") // GNE projects where this vendor is the sub-partner
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -156,4 +157,187 @@ model VendorInvite {
 
   @@index([email])
   @@index([status])
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// PHASE 2 — Project Management
+// Models the lifecycle of a GNE EPC solar project: scope (BOQ), execution
+// (activities + daily progress), milestones, and material procurement (MRC).
+// Mirrors the "Project Details & DPR" and "BOQ" workbooks.
+// ─────────────────────────────────────────────────────────────────────────
+
+enum ProjectStage {
+  PLANNING
+  ENGINEERING
+  PROCUREMENT
+  CONSTRUCTION
+  TESTING
+  COMMISSIONING
+  LIVE
+  HANDOVER
+  CLOSED
+}
+
+model Project {
+  id   String @id @default(cuid())
+  gneId String @unique // e.g. GNEi-0001
+
+  clientName    String? // BEL
+  tenderId      String? // 569
+  state         String? // MH
+  cluster       String? // Shambhajinagar
+  plantName     String? // Shivoor
+  capacityAcMw  Float? // 13
+  capacityDcMw  Float? // 16.9
+  epcScope      String? // "EPC, Without PV"
+
+  poNumber  String?
+  poValueCr Float? // PO value in crores
+
+  // The sub-partner executing the work (free text + optional link to a Vendor).
+  subPartner String? // Datum / SES
+  vendorId   String?
+  vendor     Vendor? @relation("VendorEpcProjects", fields: [vendorId], references: [id])
+
+  plantAddress  String?
+  clientAddress String?
+
+  stage        ProjectStage @default(PLANNING)
+  startDate    DateTime?
+  liveDate     DateTime?
+  completeDate DateTime?
+  handoverDate DateTime?
+
+  blocks     ProjectBlock[]
+  boqItems   BoqItem[]
+  activities ProjectActivity[]
+  milestones Milestone[]
+  materials  ProcurementItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([stage])
+  @@index([clientName])
+}
+
+model ProjectBlock {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name      String // Block-1, Parcel-1
+
+  activities ProjectActivity[]
+
+  @@index([projectId])
+}
+
+enum BoqCategory {
+  SUPPLY
+  SERVICE
+  LINE_WORK
+}
+
+// A scope / bill-of-quantities line item (from the BOQ workbook).
+model BoqItem {
+  id        String      @id @default(cuid())
+  projectId String
+  project   Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  category  BoqCategory @default(SUPPLY)
+
+  section        String? // Modules, Inverters, MMS, Infrastructure Development...
+  serialNo       String?
+  description    String
+  rating         String?
+  specification  String?
+  uom            String?
+  quantity       Float?
+  unitRate       Float? // optional cost per unit
+  responsibility String? // who supplies/installs
+
+  createdAt DateTime @default(now())
+
+  @@index([projectId])
+  @@index([category])
+}
+
+// An execution activity (from the DPR). Daily progress is recorded as DprEntry.
+model ProjectActivity {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  blockId   String?
+  block     ProjectBlock? @relation(fields: [blockId], references: [id])
+
+  activity    String // Topographical Survey
+  subActivity String? // Topo survey, Bore Hole
+  uom         String?
+  totalQty    Float? // planned total
+  startDate   DateTime?
+  endDate     DateTime? // target completion
+
+  entries DprEntry[]
+
+  @@index([projectId])
+}
+
+// One day's progress against an activity (the daily columns in the DPR sheet).
+model DprEntry {
+  id         String          @id @default(cuid())
+  activityId String
+  activity   ProjectActivity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  date       DateTime
+  qtyDone    Float
+  note       String?
+
+  createdAt DateTime @default(now())
+
+  @@unique([activityId, date])
+  @@index([activityId])
+}
+
+enum MilestoneStatus {
+  PENDING
+  IN_PROGRESS
+  DONE
+}
+
+model Milestone {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  name        String // Topo, Land Grading, Commissioning, Plant Live date...
+  category    String? // Engineering / Civil / Electrical / Testing
+  plannedDate DateTime?
+  actualDate  DateTime?
+  status      MilestoneStatus @default(PENDING)
+  sortOrder   Int             @default(0)
+
+  @@index([projectId])
+}
+
+// Material procurement + receipt tracking (the "PO & MRC" sheet).
+model ProcurementItem {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  partner         String? // Datum
+  type            String? // BOS, Civil, Electrical
+  description     String
+  uom             String?
+  approvedQty     Float?
+  drawingApproved Boolean @default(false)
+  poReleased      Boolean @default(false)
+  receivedQty     Float?
+  receivedDate    DateTime?
+  qualitySignoff  Boolean @default(false)
+  mrcStatus       String? // MRC done / WIP
+  paymentStatus   String?
+  remarks         String?
+
+  createdAt DateTime @default(now())
+
+  @@index([projectId])
 }

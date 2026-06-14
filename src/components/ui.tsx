@@ -256,6 +256,30 @@ export function PageHeader({
   );
 }
 
+/* ── Progress bar ───────────────────────────────────────────────────────── */
+export function ProgressBar({
+  value,
+  tone = "brand",
+  className,
+}: {
+  value: number; // 0–100
+  tone?: "brand" | "amber" | "emerald" | "blue";
+  className?: string;
+}) {
+  const tones: Record<string, string> = {
+    brand: "bg-brand",
+    amber: "bg-amber-500",
+    emerald: "bg-emerald-500",
+    blue: "bg-blue-500",
+  };
+  const v = Math.max(0, Math.min(100, value));
+  return (
+    <div className={cn("h-2 overflow-hidden rounded-full bg-slate-100", className)}>
+      <div className={cn("h-2 rounded-full transition-all", tones[tone])} style={{ width: `${v}%` }} />
+    </div>
+  );
+}
+
 /* ── Table helpers ──────────────────────────────────────────────────────── */
 export function Table({ children }: { children: React.ReactNode }) {
   return <table className="w-full text-sm">{children}</table>;

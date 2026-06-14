@@ -90,3 +90,47 @@ export type InviteInput = z.infer<typeof inviteSchema>;
 export const testEmailSchema = z.object({
   to: z.string().trim().email("A valid recipient email is required"),
 });
+
+// Creating a project (Phase 2).
+const optNum = z
+  .union([z.string(), z.number()])
+  .optional()
+  .transform((v) => {
+    if (v === undefined || v === "") return undefined;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : undefined;
+  });
+
+export const projectSchemaCreate = z.object({
+  gneId: z.string().trim().min(2, "GNE ID is required").max(40),
+  clientName: optionalStr,
+  tenderId: optionalStr,
+  state: optionalStr,
+  cluster: optionalStr,
+  plantName: optionalStr,
+  capacityAcMw: optNum,
+  capacityDcMw: optNum,
+  epcScope: optionalStr,
+  poNumber: optionalStr,
+  poValueCr: optNum,
+  subPartner: optionalStr,
+  vendorId: optionalStr,
+  plantAddress: optionalStr,
+  clientAddress: optionalStr,
+  stage: z
+    .enum([
+      "PLANNING",
+      "ENGINEERING",
+      "PROCUREMENT",
+      "CONSTRUCTION",
+      "TESTING",
+      "COMMISSIONING",
+      "LIVE",
+      "HANDOVER",
+      "CLOSED",
+    ])
+    .optional()
+    .default("PLANNING"),
+  startDate: optionalStr,
+});
+export type ProjectCreateInput = z.infer<typeof projectSchemaCreate>;
