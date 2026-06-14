@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -493,6 +494,22 @@ export default async function ProjectDetail({
                   (b) => b.category === category
                 );
                 if (items.length === 0) return null;
+                // Group the category's items by section, preserving order, so
+                // each section reads as a sub-heading (like the BOQ workbook).
+                const bySection = (() => {
+                  type Row = (typeof items)[number];
+                  const order: string[] = [];
+                  const map = new Map<string, Row[]>();
+                  for (const b of items) {
+                    const k = b.section || "Other";
+                    if (!map.has(k)) {
+                      map.set(k, []);
+                      order.push(k);
+                    }
+                    map.get(k)!.push(b);
+                  }
+                  return order.map((s) => ({ section: s, rows: map.get(s)! }));
+                })();
                 return (
                   <Card key={category} className="overflow-hidden">
                     <CardHeader
@@ -525,36 +542,46 @@ export default async function ProjectDetail({
                         </tr>
                       </thead>
                       <tbody>
-                        {items.map((b) => (
-                          <tr key={b.id} className={trCls}>
-                            <td className={cn(tdCls, "text-slate-400 tabular-nums")}>
-                              {b.serialNo || "—"}
-                            </td>
-                            <td className={cn(tdCls, "font-medium text-slate-900")}>
-                              <div className="truncate" title={b.description}>
-                                {b.description}
-                              </div>
-                              {b.section && (
-                                <div className="truncate text-xs text-slate-400">
-                                  {b.section}
-                                </div>
-                              )}
-                            </td>
-                            <td className={tdCls}>
-                              <div className="truncate" title={b.rating ?? ""}>
-                                {b.rating || "—"}
-                              </div>
-                            </td>
-                            <td className={tdCls}>
-                              <div className="truncate" title={b.specification ?? ""}>
-                                {b.specification || "—"}
-                              </div>
-                            </td>
-                            <td className={tdCls}>{b.uom || "—"}</td>
-                            <td className={cn(tdCls, "text-right tabular-nums")}>
-                              {fmtNum(b.quantity)}
-                            </td>
-                          </tr>
+                        {bySection.map((g) => (
+                          <Fragment key={g.section}>
+                            <tr>
+                              <td
+                                colSpan={6}
+                                className="border-y border-slate-100 bg-slate-50/80 px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-brand-700"
+                              >
+                                {g.section}
+                                <span className="ml-2 font-normal normal-case tracking-normal text-slate-400">
+                                  {g.rows.length} item(s)
+                                </span>
+                              </td>
+                            </tr>
+                            {g.rows.map((b) => (
+                              <tr key={b.id} className={trCls}>
+                                <td className={cn(tdCls, "text-slate-400 tabular-nums")}>
+                                  {b.serialNo || "—"}
+                                </td>
+                                <td className={cn(tdCls, "font-medium text-slate-900")}>
+                                  <div className="truncate" title={b.description}>
+                                    {b.description}
+                                  </div>
+                                </td>
+                                <td className={tdCls}>
+                                  <div className="truncate" title={b.rating ?? ""}>
+                                    {b.rating || "—"}
+                                  </div>
+                                </td>
+                                <td className={tdCls}>
+                                  <div className="truncate" title={b.specification ?? ""}>
+                                    {b.specification || "—"}
+                                  </div>
+                                </td>
+                                <td className={tdCls}>{b.uom || "—"}</td>
+                                <td className={cn(tdCls, "text-right tabular-nums")}>
+                                  {fmtNum(b.quantity)}
+                                </td>
+                              </tr>
+                            ))}
+                          </Fragment>
                         ))}
                       </tbody>
                     </table>
