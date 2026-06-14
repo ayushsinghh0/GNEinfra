@@ -1,7 +1,75 @@
 import { PrismaClient } from "@prisma/client";
 import boqGhargaon from "./boq-ghargaon.json";
+import dprShivoor from "./dpr-shivoor.json";
+import mrcShivoor from "./mrc-shivoor.json";
 
 const prisma = new PrismaClient();
+
+function d(v: string | null | undefined): Date | null {
+  if (!v) return null;
+  const dt = new Date(v);
+  return isNaN(dt.getTime()) ? null : dt;
+}
+
+type DprRow = {
+  activity: string;
+  subActivity: string | null;
+  uom: string | null;
+  totalQty: number | null;
+  cumulative: number | null;
+  startDate: string | null;
+  endDate: string | null;
+};
+type MrcRow = {
+  partner: string | null;
+  type: string | null;
+  description: string;
+  uom: string | null;
+  approvedQty: number | null;
+  receivedQty: number | null;
+  receivedDate: string | null;
+  drawingApproved: boolean;
+  poReleased: boolean;
+  qualitySignoff: boolean;
+  mrcStatus: string | null;
+  paymentStatus: string | null;
+  remarks: string | null;
+};
+
+// 225 real DPR activities for Shivoor; create one summarising progress entry
+// (= cumulative qty) for each activity that has progress.
+const activityCreate = (dprShivoor as DprRow[]).map((a) => {
+  const entryDate = d(a.endDate) ?? d(a.startDate) ?? new Date("2026-02-10");
+  return {
+    activity: a.activity,
+    subActivity: a.subActivity ?? undefined,
+    uom: a.uom ?? undefined,
+    totalQty: a.totalQty ?? undefined,
+    startDate: d(a.startDate) ?? undefined,
+    endDate: d(a.endDate) ?? undefined,
+    entries:
+      a.cumulative && a.cumulative > 0
+        ? { create: [{ date: entryDate, qtyDone: a.cumulative }] }
+        : undefined,
+  };
+});
+
+// 72 real PO & MRC rows for Shivoor.
+const materialCreate = (mrcShivoor as MrcRow[]).map((m) => ({
+  partner: m.partner ?? undefined,
+  type: m.type ?? undefined,
+  description: m.description,
+  uom: m.uom ?? undefined,
+  approvedQty: m.approvedQty ?? undefined,
+  receivedQty: m.receivedQty ?? undefined,
+  receivedDate: d(m.receivedDate) ?? undefined,
+  drawingApproved: m.drawingApproved,
+  poReleased: m.poReleased,
+  qualitySignoff: m.qualitySignoff,
+  mrcStatus: m.mrcStatus ?? undefined,
+  paymentStatus: m.paymentStatus ?? undefined,
+  remarks: m.remarks ?? undefined,
+}));
 
 type BoqRow = {
   category: string;
@@ -67,14 +135,7 @@ async function main() {
           { name: "Plant Live", category: "Testing", plannedDate: new Date("2026-03-01"), status: "PENDING", sortOrder: 8 },
         ],
       },
-      materials: {
-        create: [
-          { partner: "Datum", type: "BOS", description: "Fencing", uom: "Mtr", approvedQty: 4500, drawingApproved: true, poReleased: true, receivedQty: 4500, receivedDate: new Date("2025-08-07"), qualitySignoff: true, mrcStatus: "Done" },
-          { partner: "Datum", type: "BOS", description: "MMS Column", uom: "Nos", approvedQty: 6636, drawingApproved: true, poReleased: true, receivedQty: 6692, receivedDate: new Date("2025-12-04"), qualitySignoff: true, mrcStatus: "WIP" },
-          { partner: "Datum", type: "BOS", description: "Quta Cabin", uom: "Nos", approvedQty: 1, drawingApproved: false, poReleased: false, mrcStatus: "Pending" },
-          { partner: "Datum", type: "Supply", description: "Modules 590Wp", uom: "Nos", approvedQty: 32212, drawingApproved: true, poReleased: true, receivedQty: 18000, receivedDate: new Date("2026-01-15"), mrcStatus: "WIP" },
-        ],
-      },
+      materials: { create: materialCreate },
       weatherLogs: {
         create: [
           { date: new Date("2025-05-16"), intensity: "HEAVY", fromTime: "14:57", toTime: "18:30", totalHours: 3.5, daysImpacted: 1 },
@@ -100,35 +161,16 @@ async function main() {
     },
   });
 
-  // Activities with daily DPR entries.
-  const activities: {
-    activity: string;
-    subActivity?: string;
-    uom: string;
-    totalQty: number;
-    entries: [string, number][];
-  }[] = [
-    { activity: "Topographical Survey", subActivity: "Topo survey", uom: "Acres", totalQty: 60, entries: [["2025-08-30", 20], ["2025-08-31", 20], ["2025-09-01", 20]] },
-    { activity: "Fencing", subActivity: "Boundary", uom: "Mtr", totalQty: 6702, entries: [["2025-09-05", 770], ["2025-09-06", 1110], ["2025-09-07", 900], ["2025-09-08", 1473]] },
-    { activity: "MMS Pile Casting", subActivity: "Piling", uom: "Nos", totalQty: 7104, entries: [["2025-10-01", 400], ["2025-10-02", 520], ["2025-10-03", 610], ["2025-10-04", 480]] },
-    { activity: "Module Mounting", subActivity: "MMS Install", uom: "Nos", totalQty: 32212, entries: [["2025-11-10", 1200], ["2025-11-11", 1500], ["2025-11-12", 1800]] },
-  ];
-
-  for (const a of activities) {
+  // 225 real DPR activities (with a summarising progress entry each).
+  for (const a of activityCreate) {
     await prisma.projectActivity.create({
-      data: {
-        projectId: project.id,
-        activity: a.activity,
-        subActivity: a.subActivity,
-        uom: a.uom,
-        totalQty: a.totalQty,
-        startDate: new Date(a.entries[0][0]),
-        entries: { create: a.entries.map(([d, q]) => ({ date: new Date(d), qtyDone: q })) },
-      },
+      data: { projectId: project.id, ...a },
     });
   }
 
-  console.log("Seeded project", project.gneId, project.id);
+  console.log(
+    `Seeded ${project.gneId}: ${boqCreate.length} BOQ, ${activityCreate.length} activities, ${materialCreate.length} materials`
+  );
 }
 
 main()

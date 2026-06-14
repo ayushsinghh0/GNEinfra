@@ -1,19 +1,9 @@
 import ExcelJS from "exceljs";
-import { ALL_BOQ_SECTIONS, BOQ_SECTIONS, categoryForSection } from "@/lib/boq-sections";
+import { BOQ_SECTIONS, categoryForSection } from "@/lib/boq-sections";
 
-// Column layout shared by the export, the import template, and the importer.
-const COLUMNS = [
-  { header: "Category", key: "category", width: 14 },
-  { header: "Section", key: "section", width: 28 },
-  { header: "S.No", key: "serialNo", width: 8 },
-  { header: "Description", key: "description", width: 42 },
-  { header: "Rating", key: "rating", width: 14 },
-  { header: "Specification", key: "specification", width: 30 },
-  { header: "UOM", key: "uom", width: 8 },
-  { header: "Quantity", key: "quantity", width: 12 },
-  { header: "Unit Rate", key: "unitRate", width: 12 },
-  { header: "Responsibility", key: "responsibility", width: 16 },
-];
+// Export/import that mirror the original GNE BOQ workbook layout: one sheet per
+// category (BOM-Supply / BOM-Service / Line work), a capacity header, and the
+// items grouped under section heading rows (Modules, Inverters, MMS, ...).
 
 type BoqRow = {
   category: string;
@@ -24,58 +14,99 @@ type BoqRow = {
   specification: string | null;
   uom: string | null;
   quantity: number | null;
-  unitRate: number | null;
-  responsibility: string | null;
+  unitRate?: number | null;
+  responsibility?: string | null;
 };
 
-function styleHeader(ws: ExcelJS.Worksheet) {
-  const row = ws.getRow(1);
-  row.font = { bold: true, color: { argb: "FFFFFFFF" } };
-  row.eachCell((c) => {
-    c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0F766E" } };
-    c.alignment = { vertical: "middle" };
-  });
+const SHEETS: {
+  cat: "SUPPLY" | "SERVICE" | "LINE_WORK";
+  name: string;
+  cols: string[];
+}[] = [
+  { cat: "SUPPLY", name: "BOM-Supply", cols: ["S.No", "Item Description", "Rating/Uses", "UOM", "Specification", "Quantity"] },
+  { cat: "SERVICE", name: "BOM-Service", cols: ["S.No", "Item Description", "Specifications", "UOM", "Quantity"] },
+  { cat: "LINE_WORK", name: "Line work", cols: ["S.No", "Item Description", "Specification", "UOM", "Quantity", "Responsibility"] },
+];
+
+function itemToRow(cat: string, it: BoqRow): (string | number | null)[] {
+  if (cat === "SUPPLY") return [it.serialNo, it.description, it.rating, it.uom, it.specification, it.quantity];
+  if (cat === "SERVICE") return [it.serialNo, it.description, it.specification, it.uom, it.quantity];
+  return [it.serialNo, it.description, it.specification, it.uom, it.quantity, it.responsibility ?? null];
 }
 
-// Build the export workbook (current BOQ rows) OR a blank template.
+function groupBySection(items: BoqRow[]): { section: string; rows: BoqRow[] }[] {
+  const order: string[] = [];
+  const map = new Map<string, BoqRow[]>();
+  for (const it of items) {
+    const k = it.section || "Other";
+    if (!map.has(k)) { map.set(k, []); order.push(k); }
+    map.get(k)!.push(it);
+  }
+  return order.map((s) => ({ section: s, rows: map.get(s)! }));
+}
+
+const BRAND = "FF0F766E";
+
 export async function buildBoqWorkbook(opts: {
   gneId: string;
+  capacityAcMw?: number | null;
+  capacityDcMw?: number | null;
   items?: BoqRow[];
   template?: boolean;
 }): Promise<ExcelJS.Buffer> {
   const wb = new ExcelJS.Workbook();
   wb.creator = "GNE ERP";
-  const ws = wb.addWorksheet("BOQ");
-  ws.columns = COLUMNS;
-  styleHeader(ws);
 
-  if (opts.template) {
-    ws.addRow({
-      category: "SUPPLY",
-      section: "Modules",
-      serialNo: "1",
-      description: "Example — replace this row",
-      rating: "590 Wp",
-      uom: "Nos",
-      quantity: 1000,
+  for (const def of SHEETS) {
+    const ws = wb.addWorksheet(def.name);
+    ws.columns = def.cols.map((c, i) => ({
+      width: i === 0 ? 7 : i === 1 ? 48 : c === "Specification" || c === "Specifications" ? 32 : 14,
+    }));
+
+    ws.addRow([`BOQ — ${opts.gneId}`]).font = { bold: true, size: 13 };
+    ws.addRow(["Plant DC Capacity (MWp)", opts.capacityDcMw ?? ""]);
+    ws.addRow(["Plant AC Capacity (MW)", opts.capacityAcMw ?? ""]);
+    ws.addRow([]);
+
+    const header = ws.addRow(def.cols);
+    header.font = { bold: true, color: { argb: "FFFFFFFF" } };
+    header.eachCell((c) => {
+      c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: BRAND } };
     });
-  } else {
-    for (const it of opts.items ?? []) ws.addRow(it);
-  }
 
-  // Reference sheet listing valid categories + standard sections.
-  const ref = wb.addWorksheet("Sections (reference)");
-  ref.columns = [
-    { header: "Category", key: "c", width: 14 },
-    { header: "Standard section", key: "s", width: 36 },
-  ];
-  styleHeader(ref);
-  (["SUPPLY", "SERVICE", "LINE_WORK"] as const).forEach((cat) => {
-    BOQ_SECTIONS[cat].forEach((s) => ref.addRow({ c: cat, s }));
-  });
+    const sectionRow = (name: string) => {
+      const r = ws.addRow([name]);
+      // Style the whole row WITHOUT merging — merged cells make every cell
+      // return the master value, which would make the importer read the
+      // section heading as an item. The other cells stay genuinely empty.
+      for (let c = 1; c <= def.cols.length; c++) {
+        const cell = r.getCell(c);
+        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFE2E8F0" } };
+        if (c === 1) cell.font = { bold: true };
+      }
+    };
+
+    if (opts.template) {
+      const eg = def.cat === "SUPPLY" ? BOQ_SECTIONS.SUPPLY[0] : def.cat === "SERVICE" ? BOQ_SECTIONS.SERVICE[0] : BOQ_SECTIONS.LINE_WORK[0];
+      sectionRow(eg);
+      ws.addRow(itemToRow(def.cat, {
+        category: def.cat, section: eg, serialNo: "1",
+        description: "Example — add your rows under the matching section heading",
+        rating: null, specification: null, uom: "Nos", quantity: 1,
+      }));
+    } else {
+      const items = (opts.items ?? []).filter((i) => i.category === def.cat);
+      for (const g of groupBySection(items)) {
+        sectionRow(g.section);
+        for (const it of g.rows) ws.addRow(itemToRow(def.cat, it));
+      }
+    }
+  }
 
   return wb.xlsx.writeBuffer();
 }
+
+// ── Import ──────────────────────────────────────────────────────────────────
 
 function cellText(v: ExcelJS.CellValue): string | null {
   if (v === null || v === undefined) return null;
@@ -83,75 +114,115 @@ function cellText(v: ExcelJS.CellValue): string | null {
     const o = v as { text?: string; result?: unknown; richText?: { text: string }[] };
     if (o.richText) return o.richText.map((r) => r.text).join("").trim() || null;
     if (o.text) return String(o.text).trim() || null;
-    if (o.result !== undefined) return String(o.result).trim() || null;
+    if (o.result !== undefined && o.result !== null) return String(o.result).trim() || null;
     return null;
   }
   return String(v).trim() || null;
 }
-
 function cellNum(v: ExcelJS.CellValue): number | null {
   const t = cellText(v);
   if (t === null) return null;
   const n = Number(t.replace(/,/g, ""));
   return Number.isFinite(n) ? n : null;
 }
-
+const isNumeric = (s: string) => /^-?\d+(\.\d+)?$/.test(s.trim());
 const VALID_CAT = new Set(["SUPPLY", "SERVICE", "LINE_WORK"]);
 
-// Parse an uploaded BOQ workbook into rows ready for prisma.boqItem.createMany.
+function sheetCategory(name: string): string | null {
+  const n = name.toLowerCase();
+  if (n.includes("service")) return "SERVICE";
+  if (n.includes("supply")) return "SUPPLY";
+  if (n.includes("line")) return "LINE_WORK";
+  return null;
+}
+
+// Parse an uploaded BOQ workbook (the exported / template format — one sheet per
+// category, section heading rows). Also tolerates a flat sheet with explicit
+// Category/Section columns.
 export async function parseBoqWorkbook(
   buffer: Buffer,
   projectId: string
 ): Promise<{ rows: (BoqRow & { projectId: string })[]; skipped: number }> {
   const wb = new ExcelJS.Workbook();
   await wb.xlsx.load(buffer as unknown as ArrayBuffer);
-  const ws = wb.worksheets[0];
-  if (!ws) return { rows: [], skipped: 0 };
-
-  // Map header names -> column numbers (case-insensitive).
-  const header: Record<string, number> = {};
-  ws.getRow(1).eachCell((cell, col) => {
-    const k = cellText(cell.value)?.toLowerCase();
-    if (k) header[k] = col;
-  });
-  const col = (name: string) => header[name.toLowerCase()];
-  const at = (row: ExcelJS.Row, name: string) => {
-    const c = col(name);
-    return c ? row.getCell(c).value : null;
-  };
 
   const rows: (BoqRow & { projectId: string })[] = [];
   let skipped = 0;
 
-  ws.eachRow((row, n) => {
-    if (n === 1) return; // header
-    const description = cellText(at(row, "description"));
-    if (!description) {
-      // ignore fully-blank rows; count rows that have data but no description
-      const hasAny = ["category", "section", "quantity", "uom"].some((k) => cellText(at(row, k)));
-      if (hasAny) skipped++;
-      return;
-    }
-    let category = cellText(at(row, "category"))?.toUpperCase() ?? "";
-    const section = cellText(at(row, "section"));
-    if (!VALID_CAT.has(category)) category = categoryForSection(section);
+  for (const ws of wb.worksheets) {
+    if (/reference|section/i.test(ws.name) && !sheetCategory(ws.name)) continue;
+    const sheetCat = sheetCategory(ws.name);
 
-    rows.push({
-      projectId,
-      category,
-      section,
-      serialNo: cellText(at(row, "s.no")) ?? cellText(at(row, "sno")),
-      description,
-      rating: cellText(at(row, "rating")),
-      specification: cellText(at(row, "specification")),
-      uom: cellText(at(row, "uom")),
-      quantity: cellNum(at(row, "quantity")),
-      unitRate: cellNum(at(row, "unit rate")),
-      responsibility: cellText(at(row, "responsibility")),
-    });
-  });
+    // Locate the header row (the one containing "Item Description" / "Description").
+    let headerRowNum = 0;
+    const colMap: Record<string, number> = {};
+    for (let n = 1; n <= Math.min(ws.rowCount, 12); n++) {
+      const row = ws.getRow(n);
+      const texts: Record<string, number> = {};
+      let hasDesc = false;
+      row.eachCell((cell, c) => {
+        const k = cellText(cell.value)?.toLowerCase();
+        if (!k) return;
+        texts[k] = c;
+        if (/item description|^description$/.test(k)) hasDesc = true;
+      });
+      if (hasDesc) {
+        headerRowNum = n;
+        Object.assign(colMap, texts);
+        break;
+      }
+    }
+    if (!headerRowNum) continue;
+
+    const find = (...names: string[]) => {
+      for (const nm of names) {
+        for (const key of Object.keys(colMap)) if (key === nm || key.startsWith(nm)) return colMap[key];
+      }
+      return undefined;
+    };
+    const cDesc = find("item description", "description");
+    const cSerial = find("s.no", "sno", "s no", "sr. no", "sr.no");
+    const cRating = find("rating/uses", "rating");
+    const cSpec = find("specification", "specifications");
+    const cUom = find("uom", "unit");
+    const cQty = find("quantity", "qty", "total");
+    const cCat = find("category");
+    const cSec = find("section");
+    const cResp = find("responsibility");
+    if (!cDesc) continue;
+
+    let currentSection: string | null = null;
+    for (let n = headerRowNum + 1; n <= ws.rowCount; n++) {
+      const row = ws.getRow(n);
+      const description = cellText(row.getCell(cDesc).value);
+      if (!description) {
+        // A section heading row: text in the S.No column, not numeric, not "total".
+        const a = cellText(row.getCell(cSerial ?? 1).value);
+        if (a && !isNumeric(a) && !/^total/i.test(a)) currentSection = a;
+        else if (a) skipped++;
+        continue;
+      }
+      if (/^total/i.test(description)) continue;
+
+      const section = (cSec && cellText(row.getCell(cSec).value)) || currentSection;
+      let category = (cCat && cellText(row.getCell(cCat).value)?.toUpperCase()) || sheetCat || "";
+      if (!VALID_CAT.has(category)) category = categoryForSection(section);
+
+      rows.push({
+        projectId,
+        category,
+        section,
+        serialNo: cSerial ? cellText(row.getCell(cSerial).value) : null,
+        description,
+        rating: cRating ? cellText(row.getCell(cRating).value) : null,
+        specification: cSpec ? cellText(row.getCell(cSpec).value) : null,
+        uom: cUom ? cellText(row.getCell(cUom).value) : null,
+        quantity: cQty ? cellNum(row.getCell(cQty).value) : null,
+        unitRate: null,
+        responsibility: cResp ? cellText(row.getCell(cResp).value) : null,
+      });
+    }
+  }
 
   return { rows, skipped };
 }
-
-export { ALL_BOQ_SECTIONS };

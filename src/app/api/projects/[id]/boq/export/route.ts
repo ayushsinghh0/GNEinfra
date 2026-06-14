@@ -20,6 +20,8 @@ export async function GET(
 
   const buf = await buildBoqWorkbook({
     gneId: project.gneId,
+    capacityAcMw: project.capacityAcMw,
+    capacityDcMw: project.capacityDcMw,
     items: project.boqItems.map((b) => ({
       category: b.category,
       section: b.section,

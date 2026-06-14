@@ -1,0 +1,2027 @@
+[
+{
+"activity": "Topographical Survey",
+"subActivity": "Topo survey",
+"uom": "Acers",
+"totalQty": 60,
+"cumulative": 60,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Topographical Survey",
+"subActivity": "Bore Hole",
+"uom": "No's",
+"totalQty": 11,
+"cumulative": 11,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Topographical Survey",
+"subActivity": "ERT",
+"uom": "No's",
+"totalQty": 11,
+"cumulative": 11,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Topographical Survey",
+"subActivity": "Pull Out Test",
+"uom": "No's",
+"totalQty": 27,
+"cumulative": 27,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Grading / Land Development",
+"subActivity": "Clearing & Grubbing",
+"uom": "Acers",
+"totalQty": 52,
+"cumulative": 52,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Grading / Land Development",
+"subActivity": "Topsoil Stripping",
+"uom": "Acers",
+"totalQty": 52,
+"cumulative": 52,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Grading / Land Development",
+"subActivity": "Earth Cutting / Filling",
+"uom": "Acers",
+"totalQty": 52,
+"cumulative": 52,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Grading / Land Development",
+"subActivity": "Leveling & Compaction",
+"uom": "Acers",
+"totalQty": 52,
+"cumulative": 52,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Fencing",
+"subActivity": "Stake & Marking of Posts",
+"uom": "Mtr",
+"totalQty": 4500,
+"cumulative": 4500,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Fencing",
+"subActivity": "Excavation for Posts",
+"uom": "No's",
+"totalQty": 1800,
+"cumulative": 1800,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Fencing",
+"subActivity": "Vertical Post Installation",
+"uom": "No's",
+"totalQty": 1800,
+"cumulative": 1551,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Fencing",
+"subActivity": "PCC / Brickwork",
+"uom": "Mtr",
+"totalQty": 4500,
+"cumulative": 4180,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Fencing",
+"subActivity": "Chain-link Fixing",
+"uom": "Mtr",
+"totalQty": 4500,
+"cumulative": 4300,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Fencing",
+"subActivity": "Barbed wire Installation",
+"uom": "Mtr",
+"totalQty": 4500,
+"cumulative": 4180,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "MMS Pile Works",
+"subActivity": "Marking",
+"uom": "No's",
+"totalQty": 6636,
+"cumulative": 6636,
+"startDate": null,
+"endDate": "1970-01-01"
+},
+{
+"activity": "MMS Pile Works",
+"subActivity": "Drilling",
+"uom": "No's",
+"totalQty": 6636,
+"cumulative": 6636,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "MMS Pile Works",
+"subActivity": "Vertical Post Installation",
+"uom": "No's",
+"totalQty": 6624,
+"cumulative": 5770,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "MMS Pile Works",
+"subActivity": "Pile Casting",
+"uom": "No's",
+"totalQty": 6624,
+"cumulative": 5770,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "MMS Pile Works",
+"subActivity": "Pile Capping",
+"uom": "No's",
+"totalQty": 6624,
+"cumulative": 4731,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "MMS Installation",
+"subActivity": "Base plate & foundation check",
+"uom": "table",
+"totalQty": 553,
+"cumulative": 271,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "MMS Installation",
+"subActivity": "MMS primary beam erection",
+"uom": "table",
+"totalQty": 553,
+"cumulative": 271,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "MMS Installation",
+"subActivity": "Rail installation",
+"uom": "table",
+"totalQty": 553,
+"cumulative": 271,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "MMS Installation",
+"subActivity": "Alignment & torqueing",
+"uom": "table",
+"totalQty": 553,
+"cumulative": 130,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Module Mounting",
+"subActivity": "Module mounting on MMS",
+"uom": "No's",
+"totalQty": 29231,
+"cumulative": 11770,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Module Mounting",
+"subActivity": "Earthing / grounding connection",
+"uom": "No's",
+"totalQty": 29231,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Module Mounting",
+"subActivity": "Cleaning & final tightening",
+"uom": "No's",
+"totalQty": 29231,
+"cumulative": 6760,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "MCR Civil Works",
+"subActivity": "Foundation excavation / PCC",
+"uom": "Cubic",
+"totalQty": 1,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "MCR Civil Works",
+"subActivity": "Raft Steel Binding & fixing",
+"uom": "Cubic",
+"totalQty": 1,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "MCR Civil Works",
+"subActivity": "Colunm Steel Binding & Fxing",
+"uom": "Cubic",
+"totalQty": 1,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "MCR Civil Works",
+"subActivity": "Raft Casting",
+"uom": "Cubic",
+"totalQty": 1,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "MCR Civil Works",
+"subActivity": "Colunm Casting",
+"uom": "Cubic",
+"totalQty": 1,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "MCR Civil Works",
+"subActivity": "Beem Steel & Casting",
+"uom": "Cubic",
+"totalQty": 1,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "MCR Civil Works",
+"subActivity": "Slap Steel & Casting",
+"uom": "Cubic",
+"totalQty": 1,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "MCR Civil Works",
+"subActivity": "Second Colunm",
+"uom": "Cubic",
+"totalQty": 1,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "MCR Civil Works",
+"subActivity": "Wall & roof structure",
+"uom": "Cubic",
+"totalQty": 1,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "MCR Civil Works",
+"subActivity": "Flooring & plastering",
+"uom": "Cubic",
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "MCR Civil Works",
+"subActivity": "Painting & waterproofing",
+"uom": "Cubic",
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "MCR Civil Works",
+"subActivity": "Cable entry pits",
+"uom": "Cubic",
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "MCR MEP",
+"subActivity": "Lighting installation",
+"uom": "LS",
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "MCR MEP",
+"subActivity": "Power socket installation",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "MCR MEP",
+"subActivity": "HVAC installation",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "MCR MEP",
+"subActivity": "Fire safety installation",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "MCR MEP",
+"subActivity": "Earthing & lightning",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "ICR0 Civil Work-1",
+"subActivity": "Foundation excavation / PCC",
+"uom": null,
+"totalQty": 1,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "ICR0 Civil Work-1",
+"subActivity": "Raft Steel Binding & fixing",
+"uom": null,
+"totalQty": 1,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "ICR0 Civil Work-1",
+"subActivity": "Colunm Steel Binding & Fxing",
+"uom": null,
+"totalQty": 1,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "ICR0 Civil Work-1",
+"subActivity": "Raft Casting",
+"uom": null,
+"totalQty": 1,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "ICR0 Civil Work-1",
+"subActivity": "Colunm Casting",
+"uom": null,
+"totalQty": 1,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "ICR0 Civil Work-1",
+"subActivity": "Beem Steel & Casting",
+"uom": null,
+"totalQty": 1,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "ICR0 Civil Work-1",
+"subActivity": "Slap Steel & Casting",
+"uom": null,
+"totalQty": 1,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "ICR0 Civil Work-1",
+"subActivity": "Equipment installation",
+"uom": null,
+"totalQty": 1,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "ICR0 Civil Work-1",
+"subActivity": "Tin Shade with Brick work",
+"uom": null,
+"totalQty": 1,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "ICR0 Civil Work-1",
+"subActivity": "Cable trenches",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "ICR0 Civil Work-1",
+"subActivity": "Oil containment bund",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "ICR0 Civil Work-1",
+"subActivity": "Finishing & handover",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "IDT Civil Work-1",
+"subActivity": "Foundation excavation / PCC",
+"uom": null,
+"totalQty": 1,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "IDT Civil Work-1",
+"subActivity": "Raft Steel Binding & fixing",
+"uom": null,
+"totalQty": 1,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "IDT Civil Work-1",
+"subActivity": "Colunm Steel Binding & Fxing",
+"uom": null,
+"totalQty": 1,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "IDT Civil Work-1",
+"subActivity": "Raft Casting",
+"uom": null,
+"totalQty": 1,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "IDT Civil Work-1",
+"subActivity": "Colunm Casting",
+"uom": null,
+"totalQty": 1,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "IDT Civil Work-1",
+"subActivity": "Beem Steel & Casting",
+"uom": null,
+"totalQty": 1,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "IDT Civil Work-1",
+"subActivity": "Slap Steel & Casting",
+"uom": null,
+"totalQty": 1,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "IDT Civil Work-1",
+"subActivity": "Cable trenches",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "IDT Civil Work-1",
+"subActivity": "Finishing & handover by Vendor",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "ICR0 Civil Work-2",
+"subActivity": "Foundation excavation / PCC",
+"uom": null,
+"totalQty": 1,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "ICR0 Civil Work-2",
+"subActivity": "Raft Steel Binding & fixing",
+"uom": null,
+"totalQty": 1,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "ICR0 Civil Work-2",
+"subActivity": "Colunm Steel Binding & Fxing",
+"uom": null,
+"totalQty": 1,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "ICR0 Civil Work-2",
+"subActivity": "Raft Casting",
+"uom": null,
+"totalQty": 1,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "ICR0 Civil Work-2",
+"subActivity": "Colunm Casting",
+"uom": null,
+"totalQty": 1,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "ICR0 Civil Work-2",
+"subActivity": "Beem Steel & Casting",
+"uom": null,
+"totalQty": 1,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "ICR0 Civil Work-2",
+"subActivity": "Slap Steel & Casting",
+"uom": null,
+"totalQty": 1,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "ICR0 Civil Work-2",
+"subActivity": "Equipment installation",
+"uom": null,
+"totalQty": 1,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "ICR0 Civil Work-2",
+"subActivity": "Tin Shade with Brick work",
+"uom": null,
+"totalQty": 1,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "ICR0 Civil Work-2",
+"subActivity": "Cable trenches",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "ICR0 Civil Work-2",
+"subActivity": "Oil containment bund",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "ICR0 Civil Work-2",
+"subActivity": "Finishing & handover",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "IDT Civil Work-2",
+"subActivity": "Foundation excavation / PCC",
+"uom": null,
+"totalQty": 1,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "IDT Civil Work-2",
+"subActivity": "Raft Steel Binding & fixing",
+"uom": null,
+"totalQty": 1,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "IDT Civil Work-2",
+"subActivity": "Colunm Steel Binding & Fxing",
+"uom": null,
+"totalQty": 1,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "IDT Civil Work-2",
+"subActivity": "Raft Casting",
+"uom": null,
+"totalQty": 1,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "IDT Civil Work-2",
+"subActivity": "Colunm Casting",
+"uom": null,
+"totalQty": 1,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "IDT Civil Work-2",
+"subActivity": "Beem Steel & Casting",
+"uom": null,
+"totalQty": 1,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "IDT Civil Work-2",
+"subActivity": "Slap Steel & Casting",
+"uom": null,
+"totalQty": 1,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "IDT Civil Work-2",
+"subActivity": "Cable trenches",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "IDT Civil Work-2",
+"subActivity": "Finishing & handover",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "ICR0 Civil Work-3",
+"subActivity": "Foundation excavation / PCC",
+"uom": null,
+"totalQty": 1,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "ICR0 Civil Work-3",
+"subActivity": "Raft Steel Binding & fixing",
+"uom": null,
+"totalQty": 1,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "ICR0 Civil Work-3",
+"subActivity": "Colunm Steel Binding & Fxing",
+"uom": null,
+"totalQty": 1,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "ICR0 Civil Work-3",
+"subActivity": "Raft Casting",
+"uom": null,
+"totalQty": 1,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "ICR0 Civil Work-3",
+"subActivity": "Colunm Casting",
+"uom": null,
+"totalQty": 1,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "ICR0 Civil Work-3",
+"subActivity": "Beem Steel & Casting",
+"uom": null,
+"totalQty": 1,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "ICR0 Civil Work-3",
+"subActivity": "Slap Steel & Casting",
+"uom": null,
+"totalQty": 1,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "ICR0 Civil Work-3",
+"subActivity": "Equipment installation",
+"uom": null,
+"totalQty": 1,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "ICR0 Civil Work-3",
+"subActivity": "Tin Shade with Brick work",
+"uom": null,
+"totalQty": 1,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "ICR0 Civil Work-3",
+"subActivity": "Cable trenches",
+"uom": null,
+"totalQty": 1,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "ICR0 Civil Work-3",
+"subActivity": "Oil containment bund",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "ICR0 Civil Work-3",
+"subActivity": "Finishing & handover",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "IDT Civil Work-3",
+"subActivity": "Foundation excavation / PCC",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "IDT Civil Work-3",
+"subActivity": "Raft Steel Binding & fixing",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "IDT Civil Work-3",
+"subActivity": "Colunm Steel Binding & Fxing",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "IDT Civil Work-3",
+"subActivity": "Raft Casting",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "IDT Civil Work-3",
+"subActivity": "Colunm Casting",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "IDT Civil Work-3",
+"subActivity": "Beem Steel & Casting",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "IDT Civil Work-3",
+"subActivity": "Slap Steel & Casting",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "IDT Civil Work-3",
+"subActivity": "Cable trenches",
+"uom": null,
+"totalQty": 1,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "IDT Civil Work-3",
+"subActivity": "Finishing & handover",
+"uom": null,
+"totalQty": 1,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Watch Tower Civil",
+"subActivity": "Foundation works",
+"uom": "No's",
+"totalQty": 4,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Watch Tower Civil",
+"subActivity": "Tower erection",
+"uom": "No's",
+"totalQty": 4,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Watch Tower Civil",
+"subActivity": "Stairs & handrails",
+"uom": "No's",
+"totalQty": 4,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Watch Tower Civil",
+"subActivity": "Platform & mounting",
+"uom": "No's",
+"totalQty": 4,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Watch Tower Civil",
+"subActivity": "Painting & anti-corrosion",
+"uom": null,
+"totalQty": 4,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "CCTV and Illumination System",
+"subActivity": "Pole erection",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "CCTV and Illumination System",
+"subActivity": "CCTV installation",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "CCTV and Illumination System",
+"subActivity": "Light fitting installation",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "CCTV and Illumination System",
+"subActivity": "Wiring & DB connection",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "CCTV and Illumination System",
+"subActivity": "Testing & commissioning",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "DC Trench Excavation",
+"subActivity": "Route marking",
+"uom": null,
+"totalQty": 2460,
+"cumulative": 2240,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "DC Trench Excavation",
+"subActivity": "Excavation",
+"uom": null,
+"totalQty": 2460,
+"cumulative": 2240,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "DC Trench Excavation",
+"subActivity": "Sand bedding",
+"uom": null,
+"totalQty": 2460,
+"cumulative": 1640,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "DC Trench Excavation",
+"subActivity": "Conduit/duct laying",
+"uom": null,
+"totalQty": 8100,
+"cumulative": 700,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "DC Trench Excavation",
+"subActivity": "Backfilling & warning tape",
+"uom": null,
+"totalQty": 2460,
+"cumulative": 1000,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "AC Trench Excavation Works",
+"subActivity": "Route marking",
+"uom": null,
+"totalQty": 1459,
+"cumulative": 363,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "AC Trench Excavation Works",
+"subActivity": "Excavation",
+"uom": null,
+"totalQty": 1459,
+"cumulative": 363,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "AC Trench Excavation Works",
+"subActivity": "Granular bedding",
+"uom": null,
+"totalQty": 1459,
+"cumulative": 363,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "AC Trench Excavation Works",
+"subActivity": "Duct bank installation",
+"uom": null,
+"totalQty": 1459,
+"cumulative": 363,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "AC Trench Excavation Works",
+"subActivity": "Backfilling & compaction",
+"uom": null,
+"totalQty": 1459,
+"cumulative": 363,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Earth Pit Digging",
+"subActivity": "Excavation",
+"uom": null,
+"totalQty": 96,
+"cumulative": 96,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Earth Pit Digging",
+"subActivity": "Electrode installation",
+"uom": null,
+"totalQty": 96,
+"cumulative": 96,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Earth Pit Digging",
+"subActivity": "Salt/charcoal filling",
+"uom": null,
+"totalQty": 96,
+"cumulative": 96,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Earth Pit Digging",
+"subActivity": "Backfilling",
+"uom": null,
+"totalQty": 96,
+"cumulative": 96,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Earth Pit Digging",
+"subActivity": "Earth resistance testing",
+"uom": null,
+"totalQty": 96,
+"cumulative": 31,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "DC Cable Laying",
+"subActivity": "Pre-pull inspection",
+"uom": "Mtr",
+"totalQty": 14646,
+"cumulative": 10288,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "DC Cable Laying",
+"subActivity": "Cable pulling",
+"uom": "Mtr",
+"totalQty": 14646,
+"cumulative": 10288,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "DC Cable Laying",
+"subActivity": "Cable dressing",
+"uom": "Mtr",
+"totalQty": 14646,
+"cumulative": 10022,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "DC Cable Laying",
+"subActivity": "Labeling & tagging",
+"uom": "Mtr",
+"totalQty": 14646,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "DC Cable Laying",
+"subActivity": "Megger & continuity test",
+"uom": "Mtr",
+"totalQty": 14646,
+"cumulative": 6036,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "AC Cable Laying",
+"subActivity": "Route marking",
+"uom": "Mtr",
+"totalQty": 1459,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "AC Cable Laying",
+"subActivity": "Cable pulling",
+"uom": "Mtr",
+"totalQty": 1459,
+"cumulative": 363,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "AC Cable Laying",
+"subActivity": "Fixing & clamping",
+"uom": "Mtr",
+"totalQty": 1459,
+"cumulative": 363,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "AC Cable Laying",
+"subActivity": "Labeling",
+"uom": "Mtr",
+"totalQty": 1459,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "AC Cable Laying",
+"subActivity": "Testing",
+"uom": "Mtr",
+"totalQty": 1459,
+"cumulative": 363,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "MV Cable Laying",
+"subActivity": "Duct/route preparation",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "MV Cable Laying",
+"subActivity": "Cable pulling",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "MV Cable Laying",
+"subActivity": "Spacing & separation",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "MV Cable Laying",
+"subActivity": "Backfilling",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "MV Cable Laying",
+"subActivity": "HV testing",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Control Cable Laying",
+"subActivity": "Route marking",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Control Cable Laying",
+"subActivity": "Cable pulling",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Control Cable Laying",
+"subActivity": "Fixing & tagging",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Control Cable Laying",
+"subActivity": "Continuity check",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Control Cable Laying",
+"subActivity": "Testing",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Auxiliary Cable Laying",
+"subActivity": "Route marking",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Auxiliary Cable Laying",
+"subActivity": "Pulling",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Auxiliary Cable Laying",
+"subActivity": "Fixing",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Auxiliary Cable Laying",
+"subActivity": "Labeling",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Auxiliary Cable Laying",
+"subActivity": "Testing",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Communication Cable Laying",
+"subActivity": "Route marking",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Communication Cable Laying",
+"subActivity": "Conduit installation",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Communication Cable Laying",
+"subActivity": "Fiber pulling",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Communication Cable Laying",
+"subActivity": "Termination box installation",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Communication Cable Laying",
+"subActivity": "Testing (OTDR/loopback)",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Conduit Pipe Laying",
+"subActivity": "Route marking",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Conduit Pipe Laying",
+"subActivity": "Trench excavation",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Conduit Pipe Laying",
+"subActivity": "Pipe laying",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Conduit Pipe Laying",
+"subActivity": "Backfilling",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Conduit Pipe Laying",
+"subActivity": "QC check",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Module Interconnection",
+"subActivity": "String connection",
+"uom": "No's",
+"totalQty": 553,
+"cumulative": 178,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Module Interconnection",
+"subActivity": "Polarity check",
+"uom": "No's",
+"totalQty": 553,
+"cumulative": 178,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Module Interconnection",
+"subActivity": "Labeling",
+"uom": "No's",
+"totalQty": 553,
+"cumulative": 178,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Module Interconnection",
+"subActivity": "String testing",
+"uom": "No's",
+"totalQty": 553,
+"cumulative": 178,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Module Interconnection",
+"subActivity": "IR inspection",
+"uom": "No's",
+"totalQty": 553,
+"cumulative": 20,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Equipment Installation0 Inverter & ACDB",
+"subActivity": "Foundation preparation",
+"uom": null,
+"totalQty": 3,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Equipment Installation0 Inverter & ACDB",
+"subActivity": "Equipment placement",
+"uom": null,
+"totalQty": 3,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Equipment Installation0 Inverter & ACDB",
+"subActivity": "Cable entry arrangement",
+"uom": null,
+"totalQty": 3,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Equipment Installation0 Inverter & ACDB",
+"subActivity": "Earthing connection",
+"uom": null,
+"totalQty": 3,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Equipment Installation0 Inverter & ACDB",
+"subActivity": "Functional testing",
+"uom": null,
+"totalQty": 3,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Equipment Installation0 Inverter & ACDB",
+"subActivity": "Plinth preparation",
+"uom": null,
+"totalQty": 3,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Equipment Installation0 Inverter & ACDB",
+"subActivity": "Transformer placement",
+"uom": null,
+"totalQty": 3,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Equipment Installation0 Inverter & ACDB",
+"subActivity": "Bushing installation",
+"uom": null,
+"totalQty": 3,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Equipment Installation0 Inverter & ACDB",
+"subActivity": "Oil containment bund",
+"uom": null,
+"totalQty": 3,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Equipment Installation0 Inverter & ACDB",
+"subActivity": "Pre-commissioning tests",
+"uom": null,
+"totalQty": 3,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "AC Cable Termination at IDT End",
+"subActivity": "Cable preparation",
+"uom": null,
+"totalQty": 3,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "AC Cable Termination at IDT End",
+"subActivity": "Glanding",
+"uom": null,
+"totalQty": 3,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "AC Cable Termination at IDT End",
+"subActivity": "Crimping & lugging",
+"uom": null,
+"totalQty": 3,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "AC Cable Termination at IDT End",
+"subActivity": "Torque tightening",
+"uom": null,
+"totalQty": 3,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "AC Cable Termination at IDT End",
+"subActivity": "Testing",
+"uom": null,
+"totalQty": 3,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "MV Cable Termination IDT to RMU",
+"subActivity": "Cable preparation",
+"uom": null,
+"totalQty": 3,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "MV Cable Termination IDT to RMU",
+"subActivity": "Stress cone installation",
+"uom": null,
+"totalQty": 3,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "MV Cable Termination IDT to RMU",
+"subActivity": "Lug connection",
+"uom": null,
+"totalQty": 3,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "MV Cable Termination IDT to RMU",
+"subActivity": "Insulation testing",
+"uom": null,
+"totalQty": 3,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "MV Cable Termination IDT to RMU",
+"subActivity": "QC check",
+"uom": null,
+"totalQty": 3,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "AC Cable Termination at Inverter End",
+"subActivity": "Cable preparation",
+"uom": null,
+"totalQty": 3,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "AC Cable Termination at Inverter End",
+"subActivity": "Glanding",
+"uom": null,
+"totalQty": 3,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "AC Cable Termination at Inverter End",
+"subActivity": "Termination",
+"uom": null,
+"totalQty": 3,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "AC Cable Termination at Inverter End",
+"subActivity": "Torque tightening",
+"uom": null,
+"totalQty": 3,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "AC Cable Termination at Inverter End",
+"subActivity": "Testing",
+"uom": null,
+"totalQty": 3,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Control Cable Termination",
+"subActivity": "Ferruling",
+"uom": null,
+"totalQty": 3,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Control Cable Termination",
+"subActivity": "Termination at TB",
+"uom": null,
+"totalQty": 3,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Control Cable Termination",
+"subActivity": "Labeling",
+"uom": null,
+"totalQty": 3,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Control Cable Termination",
+"subActivity": "Continuity check",
+"uom": null,
+"totalQty": 3,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Control Cable Termination",
+"subActivity": "QC check",
+"uom": null,
+"totalQty": 3,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Auxiliary Cable Termination",
+"subActivity": "Ferruling",
+"uom": null,
+"totalQty": 3,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Auxiliary Cable Termination",
+"subActivity": "Termination at DB",
+"uom": null,
+"totalQty": 3,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Auxiliary Cable Termination",
+"subActivity": "Testing",
+"uom": null,
+"totalQty": 3,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Auxiliary Cable Termination",
+"subActivity": "QC check",
+"uom": null,
+"totalQty": 3,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "SCADA",
+"subActivity": "Equipment installation",
+"uom": null,
+"totalQty": 3,
+"cumulative": 1,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "SCADA",
+"subActivity": "Communication linking",
+"uom": null,
+"totalQty": 3,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "SCADA",
+"subActivity": "Tag mapping",
+"uom": null,
+"totalQty": 3,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "SCADA",
+"subActivity": "I/O testing",
+"uom": null,
+"totalQty": 3,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "SCADA",
+"subActivity": "Final handover",
+"uom": null,
+"totalQty": 3,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Communication Cable Termination",
+"subActivity": "Fiber termination",
+"uom": null,
+"totalQty": 3,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Communication Cable Termination",
+"subActivity": "Copper termination",
+"uom": null,
+"totalQty": 3,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Communication Cable Termination",
+"subActivity": "Patch panel installation",
+"uom": null,
+"totalQty": 3,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Communication Cable Termination",
+"subActivity": "Testing",
+"uom": null,
+"totalQty": 3,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "Communication Cable Termination",
+"subActivity": "Labeling",
+"uom": null,
+"totalQty": 3,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "11kV/33kV Feeder Line Installation",
+"subActivity": "Survey & ROW clearance",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "11kV/33kV Feeder Line Installation",
+"subActivity": "Pole erection",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "11kV/33kV Feeder Line Installation",
+"subActivity": "Conductor stringing",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "11kV/33kV Feeder Line Installation",
+"subActivity": "Earthing & lightning",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "11kV/33kV Feeder Line Installation",
+"subActivity": "Testing & commissioning",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "TL Feeding Arrangement (Bay Installation)",
+"subActivity": "Foundation work",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "TL Feeding Arrangement (Bay Installation)",
+"subActivity": "Bay equipment installation",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "TL Feeding Arrangement (Bay Installation)",
+"subActivity": "Busbar connection",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "TL Feeding Arrangement (Bay Installation)",
+"subActivity": "Relay testing",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+},
+{
+"activity": "TL Feeding Arrangement (Bay Installation)",
+"subActivity": "Commissioning & handover",
+"uom": null,
+"totalQty": 1,
+"cumulative": 0,
+"startDate": null,
+"endDate": null
+}
+]
