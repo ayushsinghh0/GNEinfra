@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FolderKanban, Sun, Gauge, IndianRupee, Plus } from "lucide-react";
+import { FolderKanban, Sun, Gauge, IndianRupee, Plus, TrendingUp } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { isAdminAuthed } from "@/lib/auth";
 import {
@@ -53,6 +53,10 @@ export default async function ProjectsPage() {
   return (
     <>
       <PageHeader title="Projects" subtitle={`${projects.length} project(s)`}>
+        <Link href="/admin/projects/summary" className={btn("secondary")}>
+          <TrendingUp className="h-4 w-4" />
+          Activity summary
+        </Link>
         {newProjectLink}
       </PageHeader>
 

@@ -630,20 +630,31 @@ export default async function ProjectDetail({
               <h3 className="text-base font-semibold text-slate-900">
                 Execution Progress
               </h3>
-              <RecordForm
-                title="Add activity"
-                triggerLabel="Add activity"
-                triggerIcon={<Plus className="h-4 w-4" />}
-                endpoint={`/api/projects/${project.id}/activities`}
-                fields={[
-                  { name: "activity", label: "Activity", required: true, span: 2 },
-                  { name: "subActivity", label: "Sub-activity", span: 2 },
-                  { name: "uom", label: "UOM" },
-                  { name: "totalQty", label: "Total qty", type: "number" },
-                  { name: "startDate", label: "Start date", type: "date" },
-                  { name: "endDate", label: "End date", type: "date" },
-                ]}
-              />
+              <div className="flex flex-wrap items-center gap-2">
+                <a href={`/api/projects/${project.id}/activities/export`} className={btn("secondary", "sm")}>
+                  <FileDown className="h-4 w-4" />
+                  Download Excel
+                </a>
+                <a href={`/api/projects/${project.id}/activities/template`} className={btn("ghost", "sm")}>
+                  <FileSpreadsheet className="h-4 w-4" />
+                  Template
+                </a>
+                <ExcelImport endpoint={`/api/projects/${project.id}/activities/import`} />
+                <RecordForm
+                  title="Add activity"
+                  triggerLabel="Add activity"
+                  triggerIcon={<Plus className="h-4 w-4" />}
+                  endpoint={`/api/projects/${project.id}/activities`}
+                  fields={[
+                    { name: "activity", label: "Activity", required: true, span: 2 },
+                    { name: "subActivity", label: "Sub-activity", span: 2 },
+                    { name: "uom", label: "UOM" },
+                    { name: "totalQty", label: "Total qty", type: "number" },
+                    { name: "startDate", label: "Start date", type: "date" },
+                    { name: "endDate", label: "End date", type: "date" },
+                  ]}
+                />
+              </div>
             </div>
             {project.activities.length === 0 ? (
               <Card>

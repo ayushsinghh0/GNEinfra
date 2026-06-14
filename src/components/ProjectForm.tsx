@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useRef, useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { FolderPlus, AlertTriangle } from "lucide-react";
 import {
@@ -43,6 +43,9 @@ export default function ProjectForm({ vendors }: { vendors: Vendor[] }) {
   const [form, setForm] = useState({ ...EMPTY });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [status, setStatus] = useState<string | null>(null);
+  const bomInputRef = useRef<HTMLInputElement>(null);
+  const [bomName, setBomName] = useState<string | null>(null);
 
   function set<K extends keyof typeof form>(key: K, value: string) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -52,6 +55,7 @@ export default function ProjectForm({ vendors }: { vendors: Vendor[] }) {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setStatus(null);
     try {
       const res = await fetch("/api/projects", {
         method: "POST",
@@ -60,9 +64,34 @@ export default function ProjectForm({ vendors }: { vendors: Vendor[] }) {
       });
       const d = await res.json().catch(() => ({}));
       if (!res.ok || !d.ok) throw new Error(d.error || "Failed to create project");
+
+      const bom = bomInputRef.current?.files?.[0];
+      if (bom) {
+        setStatus("Importing BOM…");
+        try {
+          const fd = new FormData();
+          fd.append("file", bom);
+          const imp = await fetch(`/api/projects/${d.id}/boq/import`, {
+            method: "POST",
+            body: fd,
+          });
+          const id = await imp.json().catch(() => ({}));
+          if (!imp.ok) throw new Error(id.error || "BOM import failed");
+        } catch (impErr) {
+          setError(
+            impErr instanceof Error
+              ? `Project created, but BOM import failed: ${impErr.message}`
+              : "Project created, but BOM import failed."
+          );
+        }
+        router.push(`/admin/projects/${d.id}?tab=boq`);
+        return;
+      }
+
       router.push(`/admin/projects/${d.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create project");
+      setStatus(null);
       setLoading(false);
     }
   }
@@ -270,6 +299,34 @@ export default function ProjectForm({ vendors }: { vendors: Vendor[] }) {
             </div>
           </section>
 
+          {/* ── Bill of materials ────────────────────────────────────── */}
+          <section>
+            <h3 className="mb-4 text-[13px] font-semibold uppercase tracking-wider text-slate-400">
+              Bill of materials
+            </h3>
+            <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2">
+              <Field
+                label="BOM file (.xlsx)"
+                hint="optional — imports the BOQ now"
+                htmlFor="bomFile"
+              >
+                <input
+                  ref={bomInputRef}
+                  id="bomFile"
+                  type="file"
+                  accept=".xlsx"
+                  onChange={(e) => setBomName(e.target.files?.[0]?.name ?? null)}
+                  className="block w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-teal-50 file:px-3.5 file:py-2 file:text-sm file:font-medium file:text-teal-700 hover:file:bg-teal-100"
+                />
+                {bomName && (
+                  <p className="mt-1.5 text-xs text-slate-500">
+                    Selected: {bomName}
+                  </p>
+                )}
+              </Field>
+            </div>
+          </section>
+
           {error && (
             <div
               className={cn(
@@ -283,9 +340,12 @@ export default function ProjectForm({ vendors }: { vendors: Vendor[] }) {
           )}
 
           <div className="flex items-center justify-end gap-3 border-t border-slate-100 pt-6">
+            {status && (
+              <span className="text-sm text-slate-500">{status}</span>
+            )}
             <Button type="submit" variant="primary" disabled={loading}>
               {loading ? (
-                "Creating…"
+                status ?? "Creating…"
               ) : (
                 <>
                   <FolderPlus className="h-4 w-4" />
