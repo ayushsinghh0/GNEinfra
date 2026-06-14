@@ -1,11 +1,6 @@
 import { mkdir, writeFile, readFile, unlink } from "fs/promises";
 import path from "path";
-import {
-  S3Client,
-  PutObjectCommand,
-  GetObjectCommand,
-  DeleteObjectCommand,
-} from "@aws-sdk/client-s3";
+import type { S3Client } from "@aws-sdk/client-s3";
 
 // A tiny storage abstraction so the rest of the app never cares where files
 // live. Local disk in development; S3 (or any S3-compatible store, e.g. MinIO)
@@ -45,9 +40,12 @@ const localStorage: Storage = {
 };
 
 // ── S3 driver (production) ──────────────────────────────────────────────────
+// The AWS SDK (~50 MB) is imported lazily so a local-disk deployment (the
+// default, cheapest option) never loads it — keeping memory and cold-start low.
 let _s3: S3Client | null = null;
-function s3Client() {
+async function s3Client(): Promise<S3Client> {
   if (_s3) return _s3;
+  const { S3Client } = await import("@aws-sdk/client-s3");
   _s3 = new S3Client({
     region: process.env.AWS_REGION || "ap-south-1",
     // endpoint/forcePathStyle let this talk to MinIO locally; unset in real AWS.
@@ -72,26 +70,29 @@ function bucket() {
 
 const s3Storage: Storage = {
   async put(key, body, contentType) {
-    await s3Client().send(
-      new PutObjectCommand({
-        Bucket: bucket(),
-        Key: key,
-        Body: body,
-        ContentType: contentType,
-      })
+    const [client, { PutObjectCommand }] = await Promise.all([
+      s3Client(),
+      import("@aws-sdk/client-s3"),
+    ]);
+    await client.send(
+      new PutObjectCommand({ Bucket: bucket(), Key: key, Body: body, ContentType: contentType })
     );
   },
   async get(key) {
-    const res = await s3Client().send(
-      new GetObjectCommand({ Bucket: bucket(), Key: key })
-    );
+    const [client, { GetObjectCommand }] = await Promise.all([
+      s3Client(),
+      import("@aws-sdk/client-s3"),
+    ]);
+    const res = await client.send(new GetObjectCommand({ Bucket: bucket(), Key: key }));
     const bytes = await res.Body!.transformToByteArray();
     return Buffer.from(bytes);
   },
   async delete(key) {
-    await s3Client().send(
-      new DeleteObjectCommand({ Bucket: bucket(), Key: key })
-    );
+    const [client, { DeleteObjectCommand }] = await Promise.all([
+      s3Client(),
+      import("@aws-sdk/client-s3"),
+    ]);
+    await client.send(new DeleteObjectCommand({ Bucket: bucket(), Key: key }));
   },
 };
 

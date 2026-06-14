@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useEffect, FormEvent } from "react";
+import { useState, FormEvent } from "react";
 import { Search } from "lucide-react";
 import { Button, Select, inputCls, cn } from "@/components/ui";
 
@@ -10,14 +10,20 @@ const STATUSES = ["", "SUBMITTED", "UNDER_REVIEW", "APPROVED", "REJECTED"];
 export default function VendorSearch() {
   const router = useRouter();
   const params = useSearchParams();
-  const [q, setQ] = useState(params.get("q") ?? "");
-  const [status, setStatus] = useState(params.get("status") ?? "");
+  const urlQ = params.get("q") ?? "";
+  const urlStatus = params.get("status") ?? "";
 
-  // Keep inputs in sync if the URL changes (e.g. dashboard card link).
-  useEffect(() => {
-    setQ(params.get("q") ?? "");
-    setStatus(params.get("status") ?? "");
-  }, [params]);
+  const [q, setQ] = useState(urlQ);
+  const [status, setStatus] = useState(urlStatus);
+
+  // Re-sync inputs when the URL changes (e.g. a dashboard card link sets a
+  // filter). React pattern: adjust state during render, not in an effect.
+  const [seen, setSeen] = useState(`${urlQ}|${urlStatus}`);
+  if (seen !== `${urlQ}|${urlStatus}`) {
+    setSeen(`${urlQ}|${urlStatus}`);
+    setQ(urlQ);
+    setStatus(urlStatus);
+  }
 
   function apply(nextQ: string, nextStatus: string) {
     const sp = new URLSearchParams();

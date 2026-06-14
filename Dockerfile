@@ -8,7 +8,7 @@ RUN apt-get update \
   && apt-get install -y --no-install-recommends openssl ca-certificates \
   && rm -rf /var/lib/apt/lists/*
 
-# ── Dependencies ──
+# ── Dependencies (all, for the build) ──
 FROM base AS deps
 COPY package.json package-lock.json ./
 RUN npm ci
@@ -19,18 +19,19 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npx prisma generate && npm run build
 
-# ── Runtime ──
+# ── Runtime (production deps only — smaller image, cheaper to host) ──
 FROM base AS runtime
 ENV NODE_ENV=production
 ENV PORT=3000
-# Bring over everything needed to run `next start` and `prisma migrate deploy`.
-COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/package.json /app/package-lock.json ./
+# Install ONLY production dependencies (drops typescript, eslint, tailwind, etc.)
+RUN npm ci --omit=dev && npm cache clean --force
+# Re-generate the Prisma client for the runtime deps, then bring the build output.
+COPY --from=build /app/prisma ./prisma
+RUN npx prisma generate
 COPY --from=build /app/.next ./.next
 COPY --from=build /app/public ./public
-COPY --from=build /app/package.json ./package.json
-COPY --from=build /app/next.config.ts ./next.config.ts
-COPY --from=build /app/tsconfig.json ./tsconfig.json
-COPY --from=build /app/prisma ./prisma
+COPY --from=build /app/next.config.mjs ./next.config.mjs
 
 EXPOSE 3000
 # Apply any pending DB migrations, then start the server.
