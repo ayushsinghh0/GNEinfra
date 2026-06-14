@@ -60,6 +60,28 @@ async function main() {
           { partner: "Datum", type: "Supply", description: "Modules 590Wp", uom: "Nos", approvedQty: 32212, drawingApproved: true, poReleased: true, receivedQty: 18000, receivedDate: new Date("2026-01-15"), mrcStatus: "WIP" },
         ],
       },
+      weatherLogs: {
+        create: [
+          { date: new Date("2025-05-16"), intensity: "HEAVY", fromTime: "14:57", toTime: "18:30", totalHours: 3.5, daysImpacted: 1 },
+          { date: new Date("2025-05-23"), intensity: "HEAVY", fromTime: "10:45", toTime: "18:30", totalHours: 7.75, daysImpacted: 1 },
+          { date: new Date("2025-06-05"), intensity: "MODERATE", fromTime: "14:00", toTime: "18:30", totalHours: 4.5, daysImpacted: 1 },
+        ],
+      },
+      approvals: {
+        create: [
+          { parcel: "1", block: "B-1", item: "IDT", equipment: "4.5", capacityUom: "MVA", uom: "Nos", requiredQty: 1, receivedQty: 0 },
+          { parcel: "1", block: "B-1", item: "Inverter", equipment: "4.4", capacityUom: "MVA", uom: "Nos", requiredQty: 1, receivedQty: 1, receivedAt: new Date("2025-12-20") },
+          { parcel: "1", block: "B-1", item: "Modules", equipment: "590", capacityUom: "Wp", uom: "Nos", requiredQty: 10192, receivedQty: 6000, receivedAt: new Date("2026-01-15") },
+        ],
+      },
+      safetyItems: {
+        create: [
+          { description: "Hard Hat", unit: "Set", qty: "Each person", available: true, remarks: "5 extra for visitors" },
+          { description: "Eye Protective Equipment", unit: "Set", qty: "Each person", available: true },
+          { description: "Safety Belts", unit: "Set", qty: "10", available: true },
+          { description: "Insulated Tools", unit: "Set", qty: "1", available: false },
+        ],
+      },
     },
   });
 

@@ -208,11 +208,14 @@ model Project {
   completeDate DateTime?
   handoverDate DateTime?
 
-  blocks     ProjectBlock[]
-  boqItems   BoqItem[]
-  activities ProjectActivity[]
-  milestones Milestone[]
-  materials  ProcurementItem[]
+  blocks      ProjectBlock[]
+  boqItems    BoqItem[]
+  activities  ProjectActivity[]
+  milestones  Milestone[]
+  materials   ProcurementItem[]
+  weatherLogs WeatherLog[]
+  approvals   MaterialApproval[]
+  safetyItems SafetyItem[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -336,6 +339,70 @@ model ProcurementItem {
   mrcStatus       String? // MRC done / WIP
   paymentStatus   String?
   remarks         String?
+
+  createdAt DateTime @default(now())
+
+  @@index([projectId])
+}
+
+enum RainIntensity {
+  LIGHT
+  MODERATE
+  HEAVY
+}
+
+// Rain / weather day log (the "Rain" sheet) — impacts the construction schedule.
+model WeatherLog {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  date         DateTime
+  intensity    RainIntensity @default(MODERATE)
+  fromTime     String? // "14:57"
+  toTime       String? // "18:30"
+  totalHours   Float? // hours lost
+  daysImpacted Float? @default(1)
+  note         String?
+
+  createdAt DateTime @default(now())
+
+  @@index([projectId])
+}
+
+// Approved-material delivery tracker per parcel/block (the "App materials" sheet).
+model MaterialApproval {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  parcel      String?
+  block       String?
+  item        String // IDT, Inverter, Modules...
+  equipment   String? // rating, e.g. "4.5"
+  capacityUom String? // MVA, MW
+  uom         String? // Nos
+  requiredQty Float?
+  receivedQty Float?
+  receivedAt  DateTime?
+  note        String?
+
+  createdAt DateTime @default(now())
+
+  @@index([projectId])
+}
+
+// Site safety / PPE checklist item (the "PPE" sheet).
+model SafetyItem {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  description String // Hard Hat, Safety Belts...
+  unit        String? // Set
+  qty         String? // "Each person", "5"
+  available   Boolean @default(false)
+  remarks     String?
 
   createdAt DateTime @default(now())
 

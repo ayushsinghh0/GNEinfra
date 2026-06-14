@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { isAdminAuthed } from "@/lib/auth";
 import { fmtDate } from "@/lib/format";
+import RecordForm from "@/components/RecordForm";
 import {
   STAGE_LABELS,
   STAGE_TONE,
@@ -19,6 +20,7 @@ import {
   StatCard,
   ProgressBar,
   EmptyState,
+  Table,
   thCls,
   tdCls,
   theadRowCls,
@@ -33,10 +35,14 @@ import {
   CalendarClock,
   CheckCircle2,
   CircleDashed,
+  ClipboardCheck,
+  CloudRain,
   Layers,
   ListChecks,
   MapPin,
   Package,
+  Plus,
+  ShieldCheck,
   Target,
   TrendingUp,
 } from "lucide-react";
@@ -50,6 +56,9 @@ const TABS = [
   { key: "progress", label: "Progress" },
   { key: "materials", label: "Materials" },
   { key: "milestones", label: "Milestones" },
+  { key: "rain", label: "Rain" },
+  { key: "approvals", label: "Approvals" },
+  { key: "safety", label: "Safety" },
 ] as const;
 
 type TabKey = (typeof TABS)[number]["key"];
@@ -70,6 +79,12 @@ const MS_LABEL: Record<string, string> = {
   DONE: "Done",
   IN_PROGRESS: "In Progress",
   PENDING: "Pending",
+};
+
+const RAIN_TONE: Record<string, string> = {
+  LIGHT: "bg-sky-50 text-sky-700",
+  MODERATE: "bg-amber-50 text-amber-700",
+  HEAVY: "bg-rose-50 text-rose-700",
 };
 
 /* ── Small presentational helpers ───────────────────────────────────────── */
@@ -184,6 +199,9 @@ export default async function ProjectDetail({
       activities: { include: { entries: true }, orderBy: { id: "asc" } },
       milestones: { orderBy: { sortOrder: "asc" } },
       materials: { orderBy: { createdAt: "asc" } },
+      weatherLogs: { orderBy: { date: "desc" } },
+      approvals: { orderBy: { createdAt: "asc" } },
+      safetyItems: { orderBy: { createdAt: "asc" } },
     },
   });
   if (!project) notFound();
@@ -280,7 +298,7 @@ export default async function ProjectDetail({
         </div>
 
         {/* Tabs */}
-        <nav className="flex items-center gap-1 border-b border-slate-200/80">
+        <nav className="flex flex-wrap items-center gap-1 border-b border-slate-200/80">
           {TABS.map((t) => {
             const active = t.key === activeTab;
             return (
@@ -399,6 +417,40 @@ export default async function ProjectDetail({
         {/* ── Tab: BOQ ──────────────────────────────────────────────────── */}
         {activeTab === "boq" && (
           <div className="space-y-6">
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-base font-semibold text-slate-900">
+                Bill of Quantities
+              </h3>
+              <RecordForm
+                title="Add BOQ item"
+                triggerLabel="Add BOQ item"
+                triggerIcon={<Plus className="h-4 w-4" />}
+                endpoint={`/api/projects/${project.id}/boq`}
+                fields={[
+                  {
+                    name: "category",
+                    label: "Category",
+                    type: "select",
+                    options: [
+                      { value: "SUPPLY", label: "Supply" },
+                      { value: "SERVICE", label: "Service" },
+                      { value: "LINE_WORK", label: "Line Work" },
+                    ],
+                  },
+                  { name: "section", label: "Section" },
+                  {
+                    name: "description",
+                    label: "Description",
+                    required: true,
+                    span: 2,
+                  },
+                  { name: "rating", label: "Rating" },
+                  { name: "specification", label: "Specification", span: 2 },
+                  { name: "uom", label: "UOM" },
+                  { name: "quantity", label: "Quantity", type: "number" },
+                ]}
+              />
+            </div>
             {project.boqItems.length === 0 ? (
               <Card>
                 <EmptyState
@@ -488,6 +540,25 @@ export default async function ProjectDetail({
         {/* ── Tab: Progress ─────────────────────────────────────────────── */}
         {activeTab === "progress" && (
           <div className="space-y-4">
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-base font-semibold text-slate-900">
+                Execution Progress
+              </h3>
+              <RecordForm
+                title="Add activity"
+                triggerLabel="Add activity"
+                triggerIcon={<Plus className="h-4 w-4" />}
+                endpoint={`/api/projects/${project.id}/activities`}
+                fields={[
+                  { name: "activity", label: "Activity", required: true, span: 2 },
+                  { name: "subActivity", label: "Sub-activity", span: 2 },
+                  { name: "uom", label: "UOM" },
+                  { name: "totalQty", label: "Total qty", type: "number" },
+                  { name: "startDate", label: "Start date", type: "date" },
+                  { name: "endDate", label: "End date", type: "date" },
+                ]}
+              />
+            </div>
             {project.activities.length === 0 ? (
               <Card>
                 <EmptyState
@@ -523,6 +594,24 @@ export default async function ProjectDetail({
                             {a.totalQty != null && ` / ${fmtNum(a.totalQty)}`}
                           </span>
                           {a.uom && <Chip>{a.uom}</Chip>}
+                          <RecordForm
+                            title="Log progress"
+                            triggerLabel="Log progress"
+                            triggerVariant="secondary"
+                            triggerSize="sm"
+                            endpoint={`/api/projects/${project.id}/dpr`}
+                            hidden={{ activityId: a.id }}
+                            fields={[
+                              { name: "date", label: "Date", type: "date", required: true },
+                              {
+                                name: "qtyDone",
+                                label: "Qty done",
+                                type: "number",
+                                required: true,
+                              },
+                              { name: "note", label: "Note", type: "textarea" },
+                            ]}
+                          />
                         </div>
                       </div>
                       <div className="mt-3 flex items-center gap-3">
@@ -551,8 +640,34 @@ export default async function ProjectDetail({
 
         {/* ── Tab: Materials ────────────────────────────────────────────── */}
         {activeTab === "materials" && (
-          <Card className="overflow-hidden">
-            {project.materials.length === 0 ? (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-base font-semibold text-slate-900">
+                Materials &amp; Procurement
+              </h3>
+              <RecordForm
+                title="Add material"
+                triggerLabel="Add material"
+                triggerIcon={<Plus className="h-4 w-4" />}
+                endpoint={`/api/projects/${project.id}/materials`}
+                fields={[
+                  { name: "description", label: "Description", required: true, span: 2 },
+                  { name: "type", label: "Type" },
+                  { name: "partner", label: "Partner" },
+                  { name: "uom", label: "UOM" },
+                  { name: "approvedQty", label: "Approved qty", type: "number" },
+                  { name: "receivedQty", label: "Received qty", type: "number" },
+                  { name: "receivedDate", label: "Received date", type: "date" },
+                  { name: "mrcStatus", label: "MRC status" },
+                  { name: "drawingApproved", label: "Drawing approved", type: "checkbox" },
+                  { name: "poReleased", label: "PO released", type: "checkbox" },
+                  { name: "qualitySignoff", label: "Quality signoff", type: "checkbox" },
+                  { name: "remarks", label: "Remarks", type: "textarea" },
+                ]}
+              />
+            </div>
+            <Card className="overflow-hidden">
+              {project.materials.length === 0 ? (
               <EmptyState
                 icon={<Package className="h-6 w-6" />}
                 title="No materials"
@@ -617,8 +732,9 @@ export default async function ProjectDetail({
                   ))}
                 </tbody>
               </table>
-            )}
-          </Card>
+              )}
+            </Card>
+          </div>
         )}
 
         {/* ── Tab: Milestones ───────────────────────────────────────────── */}
@@ -632,6 +748,19 @@ export default async function ProjectDetail({
                 </span>
               }
               subtitle={`${doneMilestones} of ${project.milestones.length} complete`}
+              action={
+                <RecordForm
+                  title="Add milestone"
+                  triggerLabel="Add milestone"
+                  triggerIcon={<Plus className="h-4 w-4" />}
+                  endpoint={`/api/projects/${project.id}/milestones`}
+                  fields={[
+                    { name: "name", label: "Name", required: true, span: 2 },
+                    { name: "category", label: "Category" },
+                    { name: "plannedDate", label: "Planned date", type: "date" },
+                  ]}
+                />
+              }
             />
             <CardBody>
               {project.milestones.length === 0 ? (
@@ -658,6 +787,31 @@ export default async function ProjectDetail({
                         <span className="text-xs text-slate-400">
                           {MS_LABEL[m.status] ?? m.status}
                         </span>
+                        <span className="ml-auto">
+                          <RecordForm
+                            title="Update milestone"
+                            triggerLabel="Update"
+                            triggerVariant="ghost"
+                            triggerSize="sm"
+                            method="PATCH"
+                            endpoint={`/api/projects/${project.id}/milestones`}
+                            hidden={{ milestoneId: m.id }}
+                            fields={[
+                              {
+                                name: "status",
+                                label: "Status",
+                                type: "select",
+                                defaultValue: m.status,
+                                options: [
+                                  { value: "PENDING", label: "Pending" },
+                                  { value: "IN_PROGRESS", label: "In Progress" },
+                                  { value: "DONE", label: "Done" },
+                                ],
+                              },
+                              { name: "actualDate", label: "Actual date", type: "date" },
+                            ]}
+                          />
+                        </span>
                       </div>
                       <div className="mt-1 flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-slate-500">
                         <span>
@@ -675,6 +829,231 @@ export default async function ProjectDetail({
               )}
             </CardBody>
           </Card>
+        )}
+
+        {/* ── Tab: Rain ─────────────────────────────────────────────────── */}
+        {activeTab === "rain" && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-base font-semibold text-slate-900">
+                Rain &amp; Weather Logs
+              </h3>
+              <RecordForm
+                title="Log rain"
+                triggerLabel="Log rain"
+                triggerIcon={<Plus className="h-4 w-4" />}
+                endpoint={`/api/projects/${project.id}/weather`}
+                fields={[
+                  { name: "date", label: "Date", type: "date", required: true },
+                  {
+                    name: "intensity",
+                    label: "Intensity",
+                    type: "select",
+                    options: [
+                      { value: "LIGHT", label: "Light" },
+                      { value: "MODERATE", label: "Moderate" },
+                      { value: "HEAVY", label: "Heavy" },
+                    ],
+                  },
+                  { name: "fromTime", label: "From", type: "time" },
+                  { name: "toTime", label: "To", type: "time" },
+                  { name: "totalHours", label: "Total hours", type: "number" },
+                  { name: "daysImpacted", label: "Days impacted", type: "number" },
+                  { name: "note", label: "Note", type: "textarea" },
+                ]}
+              />
+            </div>
+            <Card className="overflow-hidden">
+              {project.weatherLogs.length === 0 ? (
+                <EmptyState
+                  icon={<CloudRain className="h-6 w-6" />}
+                  title="No rain logs"
+                  description="No weather / rain days have been recorded yet."
+                />
+              ) : (
+                <Table>
+                  <thead>
+                    <tr className={theadRowCls}>
+                      <th className={thCls}>Date</th>
+                      <th className={thCls}>Intensity</th>
+                      <th className={thCls}>From</th>
+                      <th className={thCls}>To</th>
+                      <th className={cn(thCls, "text-right")}>Hours</th>
+                      <th className={cn(thCls, "text-right")}>Days impacted</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {project.weatherLogs.map((w) => (
+                      <tr key={w.id} className={trCls}>
+                        <td className={cn(tdCls, "font-medium text-slate-900")}>
+                          {fmtDate(w.date)}
+                        </td>
+                        <td className={tdCls}>
+                          <Chip className={RAIN_TONE[w.intensity]}>
+                            {w.intensity}
+                          </Chip>
+                        </td>
+                        <td className={tdCls}>{w.fromTime || "—"}</td>
+                        <td className={tdCls}>{w.toTime || "—"}</td>
+                        <td className={cn(tdCls, "text-right tabular-nums")}>
+                          {fmtNum(w.totalHours)}
+                        </td>
+                        <td className={cn(tdCls, "text-right tabular-nums")}>
+                          {fmtNum(w.daysImpacted)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              )}
+            </Card>
+          </div>
+        )}
+
+        {/* ── Tab: Approvals ────────────────────────────────────────────── */}
+        {activeTab === "approvals" && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-base font-semibold text-slate-900">
+                Approved Material Deliveries
+              </h3>
+              <RecordForm
+                title="Add approval"
+                triggerLabel="Add approval"
+                triggerIcon={<Plus className="h-4 w-4" />}
+                endpoint={`/api/projects/${project.id}/approvals`}
+                fields={[
+                  { name: "item", label: "Item", required: true, span: 2 },
+                  { name: "parcel", label: "Parcel" },
+                  { name: "block", label: "Block" },
+                  { name: "equipment", label: "Equipment" },
+                  { name: "capacityUom", label: "Capacity UOM" },
+                  { name: "uom", label: "UOM" },
+                  { name: "requiredQty", label: "Required qty", type: "number" },
+                  { name: "receivedQty", label: "Received qty", type: "number" },
+                  { name: "receivedAt", label: "Received date", type: "date" },
+                  { name: "note", label: "Note", type: "textarea" },
+                ]}
+              />
+            </div>
+            <Card className="overflow-hidden">
+              {project.approvals.length === 0 ? (
+                <EmptyState
+                  icon={<ClipboardCheck className="h-6 w-6" />}
+                  title="No approvals"
+                  description="No approved-material deliveries have been logged yet."
+                />
+              ) : (
+                <Table>
+                  <thead>
+                    <tr className={theadRowCls}>
+                      <th className={thCls}>Item</th>
+                      <th className={thCls}>Parcel / Block</th>
+                      <th className={thCls}>Equipment</th>
+                      <th className={cn(thCls, "text-right")}>Required</th>
+                      <th className={cn(thCls, "text-right")}>Received</th>
+                      <th className={cn(thCls, "text-right")}>Balance</th>
+                      <th className={thCls}>Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {project.approvals.map((ap) => {
+                      const balance =
+                        ap.requiredQty != null
+                          ? ap.requiredQty - (ap.receivedQty ?? 0)
+                          : null;
+                      return (
+                        <tr key={ap.id} className={trCls}>
+                          <td className={cn(tdCls, "font-medium text-slate-900")}>
+                            {ap.item}
+                          </td>
+                          <td className={tdCls}>
+                            {[ap.parcel, ap.block].filter(Boolean).join(" / ") ||
+                              "—"}
+                          </td>
+                          <td className={tdCls}>{ap.equipment || "—"}</td>
+                          <td className={cn(tdCls, "text-right tabular-nums")}>
+                            {fmtNum(ap.requiredQty)}
+                          </td>
+                          <td className={cn(tdCls, "text-right tabular-nums")}>
+                            {fmtNum(ap.receivedQty)}
+                          </td>
+                          <td className={cn(tdCls, "text-right tabular-nums")}>
+                            {fmtNum(balance)}
+                          </td>
+                          <td className={tdCls}>{fmtDate(ap.receivedAt) || "—"}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </Table>
+              )}
+            </Card>
+          </div>
+        )}
+
+        {/* ── Tab: Safety ───────────────────────────────────────────────── */}
+        {activeTab === "safety" && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-base font-semibold text-slate-900">
+                Safety / PPE Checklist
+              </h3>
+              <RecordForm
+                title="Add PPE item"
+                triggerLabel="Add PPE item"
+                triggerIcon={<Plus className="h-4 w-4" />}
+                endpoint={`/api/projects/${project.id}/safety`}
+                fields={[
+                  { name: "description", label: "Description", required: true, span: 2 },
+                  { name: "unit", label: "Unit" },
+                  { name: "qty", label: "Qty" },
+                  { name: "available", label: "Available", type: "checkbox" },
+                  { name: "remarks", label: "Remarks", type: "textarea" },
+                ]}
+              />
+            </div>
+            <Card className="overflow-hidden">
+              {project.safetyItems.length === 0 ? (
+                <EmptyState
+                  icon={<ShieldCheck className="h-6 w-6" />}
+                  title="No PPE items"
+                  description="No safety / PPE checklist items have been added yet."
+                />
+              ) : (
+                <Table>
+                  <thead>
+                    <tr className={theadRowCls}>
+                      <th className={thCls}>Description</th>
+                      <th className={thCls}>Unit</th>
+                      <th className={thCls}>Qty</th>
+                      <th className={thCls}>Available</th>
+                      <th className={thCls}>Remarks</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {project.safetyItems.map((s) => (
+                      <tr key={s.id} className={trCls}>
+                        <td className={cn(tdCls, "font-medium text-slate-900")}>
+                          {s.description}
+                        </td>
+                        <td className={tdCls}>{s.unit || "—"}</td>
+                        <td className={tdCls}>{s.qty || "—"}</td>
+                        <td className={tdCls}>
+                          <CheckChip ok={s.available} label={s.available ? "Yes" : "No"} />
+                        </td>
+                        <td className={tdCls}>
+                          <div className="truncate" title={s.remarks ?? ""}>
+                            {s.remarks || "—"}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              )}
+            </Card>
+          </div>
         )}
       </div>
     </>
