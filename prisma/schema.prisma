@@ -254,7 +254,8 @@ model BoqItem {
   rating         String?
   specification  String?
   uom            String?
-  quantity       Float?
+  quantity       Float? // total quantity
+  blockQty       Json? // per-block split, e.g. { "BLOCK-1": 10192, "BLOCK-2": 11032 }
   unitRate       Float? // optional cost per unit
   responsibility String? // who supplies/installs
 

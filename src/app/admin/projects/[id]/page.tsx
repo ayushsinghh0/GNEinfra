@@ -578,6 +578,15 @@ export default async function ProjectDetail({
                                 <td className={tdCls}>{b.uom || "—"}</td>
                                 <td className={cn(tdCls, "text-right tabular-nums")}>
                                   {fmtNum(b.quantity)}
+                                  {b.blockQty &&
+                                  typeof b.blockQty === "object" &&
+                                  !Array.isArray(b.blockQty) ? (
+                                    <div className="text-[10px] font-normal text-slate-400">
+                                      {Object.entries(b.blockQty as Record<string, number>)
+                                        .map(([k, v]) => `${k.replace("BLOCK-", "B")} ${fmtNum(v)}`)
+                                        .join(" · ")}
+                                    </div>
+                                  ) : null}
                                 </td>
                               </tr>
                             ))}

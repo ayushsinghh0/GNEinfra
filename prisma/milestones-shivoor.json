@@ -1,0 +1,828 @@
+[
+{
+"name": "Site Allotment at",
+"plannedDate": "2025-05-08",
+"actualDate": "2025-05-08",
+"status": "DONE",
+"sortOrder": 7
+},
+{
+"name": "Hoto Approval",
+"plannedDate": "2025-05-08",
+"actualDate": "2025-05-08",
+"status": "DONE",
+"sortOrder": 8
+},
+{
+"name": "KMZ file received",
+"plannedDate": "2025-05-15",
+"actualDate": "2025-05-15",
+"status": "DONE",
+"sortOrder": 9
+},
+{
+"name": "Site Survey",
+"plannedDate": "2025-05-08",
+"actualDate": "2025-05-08",
+"status": "DONE",
+"sortOrder": 10
+},
+{
+"name": "land Permission",
+"plannedDate": "2025-05-08",
+"actualDate": "2025-05-08",
+"status": "DONE",
+"sortOrder": 11
+},
+{
+"name": "Land Parcels",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 12
+},
+{
+"name": "D-marcation activities",
+"plannedDate": "2025-05-08",
+"actualDate": "2025-05-08",
+"status": "DONE",
+"sortOrder": 13
+},
+{
+"name": "Topographical Survey",
+"plannedDate": "2025-05-16",
+"actualDate": "2025-05-16",
+"status": "DONE",
+"sortOrder": 14
+},
+{
+"name": "Survey Submitted",
+"plannedDate": "2026-05-20",
+"actualDate": "2026-05-20",
+"status": "DONE",
+"sortOrder": 16
+},
+{
+"name": "Bore marking by BEL",
+"plannedDate": "2025-05-21",
+"actualDate": "2025-05-21",
+"status": "DONE",
+"sortOrder": 17
+},
+{
+"name": "Soil Test survey",
+"plannedDate": "2025-05-30",
+"actualDate": "2025-05-30",
+"status": "DONE",
+"sortOrder": 18
+},
+{
+"name": "Soil Test Submitted report",
+"plannedDate": "2025-06-27",
+"actualDate": "2025-06-27",
+"status": "DONE",
+"sortOrder": 20
+},
+{
+"name": "Civil Mix design Submitted",
+"plannedDate": "2025-05-24",
+"actualDate": "2025-05-24",
+"status": "DONE",
+"sortOrder": 21
+},
+{
+"name": "PT approval",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 24
+},
+{
+"name": "PT , LT , CT",
+"plannedDate": "2025-07-10",
+"actualDate": "2025-07-10",
+"status": "DONE",
+"sortOrder": 25
+},
+{
+"name": "PT Cube test Report",
+"plannedDate": "2025-07-19",
+"actualDate": "2025-07-19",
+"status": "DONE",
+"sortOrder": 27
+},
+{
+"name": "Report",
+"plannedDate": "2025-08-09",
+"actualDate": "2025-08-09",
+"status": "DONE",
+"sortOrder": 30
+},
+{
+"name": "Hydrological Survey & approval",
+"plannedDate": "2025-05-31",
+"actualDate": "2025-05-31",
+"status": "DONE",
+"sortOrder": 31
+},
+{
+"name": "Plant Board",
+"plannedDate": "2025-05-28",
+"actualDate": "2025-05-28",
+"status": "DONE",
+"sortOrder": 32
+},
+{
+"name": "ERT",
+"plannedDate": "2025-06-16",
+"actualDate": "2025-06-16",
+"status": "DONE",
+"sortOrder": 33
+},
+{
+"name": "TL Survey done",
+"plannedDate": "2025-05-28",
+"actualDate": "2025-05-28",
+"status": "DONE",
+"sortOrder": 34
+},
+{
+"name": "Estimate",
+"plannedDate": "2025-07-23",
+"actualDate": "2025-07-23",
+"status": "DONE",
+"sortOrder": 35
+},
+{
+"name": "Boundary Wall",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 36
+},
+{
+"name": "Gate Drawing",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 37
+},
+{
+"name": "Watch Tower",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 38
+},
+{
+"name": "MMS Drawing development",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 39
+},
+{
+"name": "Mater plan layout",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 40
+},
+{
+"name": "Pilling Layout",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 41
+},
+{
+"name": "GTP & CRS Approval of all electrical equip.",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 42
+},
+{
+"name": "AC SLD Development",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 43
+},
+{
+"name": "DC SLD Development",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 44
+},
+{
+"name": "PSS / GSS marking",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 45
+},
+{
+"name": "Drainage , Internal road , Water cleaning system",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 46
+},
+{
+"name": "AC Cable Routing Inv",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 47
+},
+{
+"name": "DC Cable Routing ( SMB)",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 48
+},
+{
+"name": "String Calculation",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 49
+},
+{
+"name": "Comm. & Control cable routing & scheduling",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 50
+},
+{
+"name": "Shadow Analyzation",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 51
+},
+{
+"name": "Yard equim. Civil & Canopy degine",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 52
+},
+{
+"name": "ICR layout",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 53
+},
+{
+"name": "MCR Layout",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 54
+},
+{
+"name": "Earthing Degine",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 55
+},
+{
+"name": "LA placing drawing",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 56
+},
+{
+"name": "Voltage drop Resistance losses & cable size degine",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 57
+},
+{
+"name": "SCADA",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 58
+},
+{
+"name": "Pile Coodinate",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 59
+},
+{
+"name": "Miscellaneous",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 60
+},
+{
+"name": "Sub Station Electrical Drawing and Layouts",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 61
+},
+{
+"name": "Container",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 62
+},
+{
+"name": "Fencing",
+"plannedDate": "2025-09-06",
+"actualDate": "2025-09-06",
+"status": "DONE",
+"sortOrder": 63
+},
+{
+"name": "Civil materials",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 64
+},
+{
+"name": "MMS",
+"plannedDate": "2025-08-22",
+"actualDate": "2025-08-22",
+"status": "DONE",
+"sortOrder": 65
+},
+{
+"name": "PV",
+"plannedDate": "2025-08-18",
+"actualDate": "2025-08-18",
+"status": "DONE",
+"sortOrder": 66
+},
+{
+"name": "Electrical Equipment",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 67
+},
+{
+"name": "NIDT",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 68
+},
+{
+"name": "Inverter",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 69
+},
+{
+"name": "DC , Comm, Cable",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 70
+},
+{
+"name": "AC , Comm, Cable",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 71
+},
+{
+"name": "SCADA",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 72
+},
+{
+"name": "WMS & RMS",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 73
+},
+{
+"name": "Miscellaneous Items",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 74
+},
+{
+"name": "Land Leveling",
+"plannedDate": "2025-05-31",
+"actualDate": "2025-05-31",
+"status": "DONE",
+"sortOrder": 75
+},
+{
+"name": "Boundary & Fencing",
+"plannedDate": "2025-06-04",
+"actualDate": "2025-06-04",
+"status": "DONE",
+"sortOrder": 77
+},
+{
+"name": "TS Coordinate Marking",
+"plannedDate": "2025-08-24",
+"actualDate": "2025-08-24",
+"status": "DONE",
+"sortOrder": 79
+},
+{
+"name": "Aurging / Drilling works",
+"plannedDate": "2025-08-28",
+"actualDate": "2025-08-28",
+"status": "DONE",
+"sortOrder": 81
+},
+{
+"name": "Column Post Installation & Pile Casting",
+"plannedDate": "2025-08-30",
+"actualDate": "2025-08-30",
+"status": "DONE",
+"sortOrder": 83
+},
+{
+"name": "MCR Civil",
+"plannedDate": "2025-08-24",
+"actualDate": "2025-08-24",
+"status": "DONE",
+"sortOrder": 85
+},
+{
+"name": "ICR & IDT Civil",
+"plannedDate": "2025-08-24",
+"actualDate": "2025-08-24",
+"status": "DONE",
+"sortOrder": 87
+},
+{
+"name": "ICR & IDT Civil",
+"plannedDate": "2025-08-26",
+"actualDate": "2025-08-26",
+"status": "DONE",
+"sortOrder": 89
+},
+{
+"name": "ICR & IDT Civil",
+"plannedDate": "2025-09-02",
+"actualDate": "2025-09-02",
+"status": "DONE",
+"sortOrder": 91
+},
+{
+"name": "DC Trench Excavation",
+"plannedDate": "2025-11-08",
+"actualDate": "2025-11-08",
+"status": "DONE",
+"sortOrder": 93
+},
+{
+"name": "Civil Work at Electrical equipment",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 95
+},
+{
+"name": "LT MCR civil work",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 97
+},
+{
+"name": "MMS Installation",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 99
+},
+{
+"name": "Module Mounting",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 101
+},
+{
+"name": "Inverter Mounting",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 103
+},
+{
+"name": "CCTV and Illumination System",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 105
+},
+{
+"name": "Earth Pit Digging",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 107
+},
+{
+"name": "DC Cable laying from Array to Inverter",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 109
+},
+{
+"name": "AC Cable laying between IDT and Inverter end",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 111
+},
+{
+"name": "Communication Cable laying",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 113
+},
+{
+"name": "MV Cable laying from IDT to RMU",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 115
+},
+{
+"name": "Conduit Pipe Laying from Module to Inverter",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 117
+},
+{
+"name": "Module Interconnection",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 119
+},
+{
+"name": "Equipment Installation : Inverter & ACDB",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 121
+},
+{
+"name": "Equipment Installation : IDT and ICOG",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 123
+},
+{
+"name": "AC Cable Termination at Inverter end",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 125
+},
+{
+"name": "Control Cable Termination",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 127
+},
+{
+"name": "Auxiliary Cable Termination",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 129
+},
+{
+"name": "11kV/33kV Feeder Line Installation",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 131
+},
+{
+"name": "TL Feeding Arrangement (Bay Installation)",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 133
+},
+{
+"name": "DC Side Testing (PV Array)",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 135
+},
+{
+"name": "IDT Functional Tests",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 136
+},
+{
+"name": "ICOG Testing",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 137
+},
+{
+"name": "Inverter Start-Up and Performance Testing",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 138
+},
+{
+"name": "AC Cabling & Panel Testing",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 139
+},
+{
+"name": "MCR testing and ready for energization",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 140
+},
+{
+"name": "Transmission Line & Grid Synchronization",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 141
+},
+{
+"name": "Commissioning",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 142
+},
+{
+"name": "Plant Live date",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 143
+},
+{
+"name": "Preparation and Submission of As Built Drawings",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 144
+},
+{
+"name": "Punch point closing",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 145
+},
+{
+"name": "Review and Approval of Project",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 146
+},
+{
+"name": "Latlongs Plants",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 147
+},
+{
+"name": "Substation",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 148
+},
+{
+"name": "Project Name",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 150
+},
+{
+"name": "Topo",
+"plannedDate": "1970-01-01",
+"actualDate": "1970-01-01",
+"status": "DONE",
+"sortOrder": 151
+},
+{
+"name": "land Grading",
+"plannedDate": "1970-01-01",
+"actualDate": "1970-01-01",
+"status": "DONE",
+"sortOrder": 152
+},
+{
+"name": "Fencing",
+"plannedDate": "1970-01-01",
+"actualDate": "1970-01-01",
+"status": "DONE",
+"sortOrder": 153
+},
+{
+"name": "ICR Civil Work -!",
+"plannedDate": "1970-01-01",
+"actualDate": "1970-01-01",
+"status": "DONE",
+"sortOrder": 154
+},
+{
+"name": "ICR Civil Work -2",
+"plannedDate": "1970-01-01",
+"actualDate": "1970-01-01",
+"status": "DONE",
+"sortOrder": 155
+},
+{
+"name": "ICR Civil Work -3",
+"plannedDate": "1970-01-01",
+"actualDate": "1970-01-01",
+"status": "DONE",
+"sortOrder": 156
+},
+{
+"name": "IDT Civil -1",
+"plannedDate": "1970-01-01",
+"actualDate": "1970-01-01",
+"status": "DONE",
+"sortOrder": 157
+},
+{
+"name": "IDT Civil -2",
+"plannedDate": "1970-01-01",
+"actualDate": "1970-01-01",
+"status": "DONE",
+"sortOrder": 158
+},
+{
+"name": "IDT Civil -3",
+"plannedDate": "1970-01-01",
+"actualDate": "1970-01-01",
+"status": "DONE",
+"sortOrder": 159
+},
+{
+"name": "MCR Civil",
+"plannedDate": "1970-01-01",
+"actualDate": "1970-01-01",
+"status": "DONE",
+"sortOrder": 160
+},
+{
+"name": "MCR Room",
+"plannedDate": null,
+"actualDate": null,
+"status": "PENDING",
+"sortOrder": 161
+},
+{
+"name": "MMS Pile Casting",
+"plannedDate": "1970-01-01",
+"actualDate": "1970-01-01",
+"status": "DONE",
+"sortOrder": 162
+}
+]

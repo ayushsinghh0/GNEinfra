@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { isAdminAuthed } from "@/lib/auth";
 import { parseBoqWorkbook } from "@/lib/boq-excel";
@@ -47,8 +48,8 @@ export async function POST(
     await prisma.boqItem.createMany({
       data: rows.map((r) => ({
         ...r,
-        category: r.category as "SUPPLY" | "SERVICE" | "LINE_WORK",
-      })),
+        blockQty: r.blockQty ?? undefined,
+      })) as Prisma.BoqItemCreateManyInput[],
     });
     return NextResponse.json({ ok: true, imported: rows.length, skipped });
   } catch (e) {

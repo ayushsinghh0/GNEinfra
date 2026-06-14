@@ -2,6 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import boqGhargaon from "./boq-ghargaon.json";
 import dprShivoor from "./dpr-shivoor.json";
 import mrcShivoor from "./mrc-shivoor.json";
+import milestonesShivoor from "./milestones-shivoor.json";
 
 const prisma = new PrismaClient();
 
@@ -54,6 +55,22 @@ const activityCreate = (dprShivoor as DprRow[]).map((a) => {
   };
 });
 
+type MsRow = {
+  name: string;
+  plannedDate: string | null;
+  actualDate: string | null;
+  status: string;
+  sortOrder: number;
+};
+// 118 real Summary milestones for Shivoor.
+const milestoneCreate = (milestonesShivoor as MsRow[]).map((m) => ({
+  name: m.name,
+  plannedDate: d(m.plannedDate) ?? undefined,
+  actualDate: d(m.actualDate) ?? undefined,
+  status: m.status as "PENDING" | "IN_PROGRESS" | "DONE",
+  sortOrder: m.sortOrder,
+}));
+
 // 72 real PO & MRC rows for Shivoor.
 const materialCreate = (mrcShivoor as MrcRow[]).map((m) => ({
   partner: m.partner ?? undefined,
@@ -80,6 +97,7 @@ type BoqRow = {
   specification: string | null;
   uom: string | null;
   quantity: number | null;
+  blockQty?: Record<string, number> | null;
   responsibility?: string | null;
 };
 
@@ -94,6 +112,7 @@ const boqCreate = (boqGhargaon as BoqRow[]).map((b) => ({
   specification: b.specification ?? undefined,
   uom: b.uom ?? undefined,
   quantity: b.quantity ?? undefined,
+  blockQty: b.blockQty ?? undefined,
   responsibility: b.responsibility ?? undefined,
 }));
 
@@ -123,18 +142,7 @@ async function main() {
       startDate: new Date("2026-05-16"),
       blocks: { create: [{ name: "Block-1" }, { name: "Block-2" }, { name: "Block-3" }] },
       boqItems: { create: boqCreate },
-      milestones: {
-        create: [
-          { name: "Topographical Survey", category: "Engineering", plannedDate: new Date("2025-05-08"), actualDate: new Date("2025-05-08"), status: "DONE", sortOrder: 1 },
-          { name: "Soil Test", category: "Engineering", plannedDate: new Date("2025-05-20"), actualDate: new Date("2025-05-22"), status: "DONE", sortOrder: 2 },
-          { name: "Civil Mix Design", category: "Civil", plannedDate: new Date("2025-06-10"), status: "DONE", sortOrder: 3 },
-          { name: "MMS Installation", category: "Civil", plannedDate: new Date("2025-09-15"), status: "IN_PROGRESS", sortOrder: 4 },
-          { name: "Module Mounting", category: "Civil", plannedDate: new Date("2025-11-01"), status: "IN_PROGRESS", sortOrder: 5 },
-          { name: "Inverter & IDT", category: "Electrical", plannedDate: new Date("2025-12-10"), status: "PENDING", sortOrder: 6 },
-          { name: "Commissioning", category: "Testing", plannedDate: new Date("2026-02-15"), status: "PENDING", sortOrder: 7 },
-          { name: "Plant Live", category: "Testing", plannedDate: new Date("2026-03-01"), status: "PENDING", sortOrder: 8 },
-        ],
-      },
+      milestones: { create: milestoneCreate },
       materials: { create: materialCreate },
       weatherLogs: {
         create: [

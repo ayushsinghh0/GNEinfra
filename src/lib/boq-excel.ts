@@ -14,9 +14,17 @@ type BoqRow = {
   specification: string | null;
   uom: string | null;
   quantity: number | null;
+  blockQty?: Record<string, number> | null;
   unitRate?: number | null;
   responsibility?: string | null;
 };
+
+// The set of block names present across the supply items (e.g. BLOCK-1..3).
+function blockNames(items: BoqRow[]): string[] {
+  const set = new Set<string>();
+  for (const it of items) if (it.blockQty) for (const k of Object.keys(it.blockQty)) set.add(k);
+  return [...set].sort();
+}
 
 const SHEETS: {
   cat: "SUPPLY" | "SERVICE" | "LINE_WORK";
@@ -59,8 +67,24 @@ export async function buildBoqWorkbook(opts: {
 
   for (const def of SHEETS) {
     const ws = wb.addWorksheet(def.name);
-    ws.columns = def.cols.map((c, i) => ({
-      width: i === 0 ? 7 : i === 1 ? 48 : c === "Specification" || c === "Specifications" ? 32 : 14,
+    const items = (opts.items ?? []).filter((i) => i.category === def.cat);
+
+    // For the Supply sheet, insert the per-block columns (BLOCK-1..3) just
+    // before the total Quantity column, to mirror the original workbook.
+    const blocks = def.cat === "SUPPLY" ? blockNames(items) : [];
+    const cols =
+      blocks.length > 0
+        ? [...def.cols.slice(0, -1), ...blocks, def.cols[def.cols.length - 1]]
+        : def.cols;
+    const rowFor = (it: BoqRow): (string | number | null)[] => {
+      const base = itemToRow(def.cat, it);
+      if (blocks.length === 0) return base;
+      const total = base[base.length - 1];
+      return [...base.slice(0, -1), ...blocks.map((b) => it.blockQty?.[b] ?? null), total];
+    };
+
+    ws.columns = cols.map((c, i) => ({
+      width: i === 0 ? 7 : i === 1 ? 48 : c === "Specification" || c === "Specifications" ? 32 : 13,
     }));
 
     ws.addRow([`BOQ — ${opts.gneId}`]).font = { bold: true, size: 13 };
@@ -68,7 +92,7 @@ export async function buildBoqWorkbook(opts: {
     ws.addRow(["Plant AC Capacity (MW)", opts.capacityAcMw ?? ""]);
     ws.addRow([]);
 
-    const header = ws.addRow(def.cols);
+    const header = ws.addRow(cols);
     header.font = { bold: true, color: { argb: "FFFFFFFF" } };
     header.eachCell((c) => {
       c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: BRAND } };
@@ -79,7 +103,7 @@ export async function buildBoqWorkbook(opts: {
       // Style the whole row WITHOUT merging — merged cells make every cell
       // return the master value, which would make the importer read the
       // section heading as an item. The other cells stay genuinely empty.
-      for (let c = 1; c <= def.cols.length; c++) {
+      for (let c = 1; c <= cols.length; c++) {
         const cell = r.getCell(c);
         cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFE2E8F0" } };
         if (c === 1) cell.font = { bold: true };
@@ -89,16 +113,15 @@ export async function buildBoqWorkbook(opts: {
     if (opts.template) {
       const eg = def.cat === "SUPPLY" ? BOQ_SECTIONS.SUPPLY[0] : def.cat === "SERVICE" ? BOQ_SECTIONS.SERVICE[0] : BOQ_SECTIONS.LINE_WORK[0];
       sectionRow(eg);
-      ws.addRow(itemToRow(def.cat, {
+      ws.addRow(rowFor({
         category: def.cat, section: eg, serialNo: "1",
         description: "Example — add your rows under the matching section heading",
         rating: null, specification: null, uom: "Nos", quantity: 1,
       }));
     } else {
-      const items = (opts.items ?? []).filter((i) => i.category === def.cat);
       for (const g of groupBySection(items)) {
         sectionRow(g.section);
-        for (const it of g.rows) ws.addRow(itemToRow(def.cat, it));
+        for (const it of g.rows) ws.addRow(rowFor(it));
       }
     }
   }
@@ -190,6 +213,10 @@ export async function parseBoqWorkbook(
     const cSec = find("section");
     const cResp = find("responsibility");
     if (!cDesc) continue;
+    // Per-block columns (BLOCK-1, BLOCK-2, ...) -> blockQty.
+    const blockCols = Object.keys(colMap)
+      .filter((k) => /^block/.test(k))
+      .map((k) => ({ name: k.toUpperCase(), col: colMap[k] }));
 
     let currentSection: string | null = null;
     for (let n = headerRowNum + 1; n <= ws.rowCount; n++) {
@@ -208,6 +235,12 @@ export async function parseBoqWorkbook(
       let category = (cCat && cellText(row.getCell(cCat).value)?.toUpperCase()) || sheetCat || "";
       if (!VALID_CAT.has(category)) category = categoryForSection(section);
 
+      const blockQty: Record<string, number> = {};
+      for (const bc of blockCols) {
+        const v = cellNum(row.getCell(bc.col).value);
+        if (v !== null) blockQty[bc.name] = v;
+      }
+
       rows.push({
         projectId,
         category,
@@ -218,6 +251,7 @@ export async function parseBoqWorkbook(
         specification: cSpec ? cellText(row.getCell(cSpec).value) : null,
         uom: cUom ? cellText(row.getCell(cUom).value) : null,
         quantity: cQty ? cellNum(row.getCell(cQty).value) : null,
+        blockQty: Object.keys(blockQty).length ? blockQty : null,
         unitRate: null,
         responsibility: cResp ? cellText(row.getCell(cResp).value) : null,
       });

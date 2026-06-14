@@ -31,6 +31,7 @@ export async function GET(
       specification: b.specification,
       uom: b.uom,
       quantity: b.quantity,
+      blockQty: (b.blockQty ?? null) as Record<string, number> | null,
       unitRate: b.unitRate,
       responsibility: b.responsibility,
     })),

@@ -7,7 +7,12 @@
 "rating": "590",
 "specification": "Monocrystalline -Monoperc- Bifacial",
 "uom": "Nos",
-"quantity": 32212
+"quantity": 32212,
+"blockQty": {
+"BLOCK-1": 10192,
+"BLOCK-2": 11032,
+"BLOCK-3": 10988
+}
 },
 {
 "category": "SUPPLY",
@@ -17,7 +22,12 @@
 "rating": "4.4 MW",
 "specification": "Central Inverter",
 "uom": "MW",
-"quantity": 0
+"quantity": 0,
+"blockQty": {
+"BLOCK-1": 0,
+"BLOCK-2": 0,
+"BLOCK-3": 0
+}
 },
 {
 "category": "SUPPLY",
@@ -27,7 +37,8 @@
 "rating": null,
 "specification": null,
 "uom": null,
-"quantity": null
+"quantity": null,
+"blockQty": null
 },
 {
 "category": "SUPPLY",
@@ -37,7 +48,12 @@
 "rating": null,
 "specification": null,
 "uom": "Nos",
-"quantity": 172
+"quantity": 172,
+"blockQty": {
+"BLOCK-1": 75,
+"BLOCK-2": 97,
+"BLOCK-3": 0
+}
 },
 {
 "category": "SUPPLY",
@@ -47,7 +63,12 @@
 "rating": null,
 "specification": null,
 "uom": "Nos",
-"quantity": 44
+"quantity": 44,
+"blockQty": {
+"BLOCK-1": 23,
+"BLOCK-2": 21,
+"BLOCK-3": 0
+}
 },
 {
 "category": "SUPPLY",
@@ -57,7 +78,12 @@
 "rating": null,
 "specification": null,
 "uom": "Nos",
-"quantity": 405
+"quantity": 405,
+"blockQty": {
+"BLOCK-1": 110,
+"BLOCK-2": 121,
+"BLOCK-3": 174
+}
 },
 {
 "category": "SUPPLY",
@@ -67,7 +93,12 @@
 "rating": null,
 "specification": null,
 "uom": "Nos",
-"quantity": 293
+"quantity": 293,
+"blockQty": {
+"BLOCK-1": 58,
+"BLOCK-2": 37,
+"BLOCK-3": 198
+}
 },
 {
 "category": "SUPPLY",
@@ -77,7 +108,12 @@
 "rating": "5000KVA (10% Additional Cap. for Dharni)",
 "specification": "11KV/0.660kV - 0.660kV, Ynd11-d11 , ONAN",
 "uom": "MW",
-"quantity": 3
+"quantity": 3,
+"blockQty": {
+"BLOCK-1": 1,
+"BLOCK-2": 1,
+"BLOCK-3": 1
+}
 },
 {
 "category": "SUPPLY",
@@ -87,7 +123,8 @@
 "rating": "4000KVA",
 "specification": "11KV/0.660kV, Ynd11, ONAN",
 "uom": "MW",
-"quantity": null
+"quantity": null,
+"blockQty": null
 },
 {
 "category": "SUPPLY",
@@ -97,7 +134,8 @@
 "rating": "4500KVA",
 "specification": "11KV/0.660kV, Ynd11, ONAN",
 "uom": "MW",
-"quantity": null
+"quantity": null,
+"blockQty": null
 },
 {
 "category": "SUPPLY",
@@ -107,7 +145,8 @@
 "rating": "3500KVA",
 "specification": "11KV/0.660kV, Ynd11, ONAN",
 "uom": "MW",
-"quantity": 1
+"quantity": 1,
+"blockQty": null
 },
 {
 "category": "SUPPLY",
@@ -117,7 +156,8 @@
 "rating": "5500KVA",
 "specification": "11KV/0.660kV, Ynd11, ONAN",
 "uom": "MW",
-"quantity": null
+"quantity": null,
+"blockQty": null
 },
 {
 "category": "SUPPLY",
@@ -127,7 +167,12 @@
 "rating": "12 In 1 Out ( with Y connectors)",
 "specification": "12 In 1 Out",
 "uom": "Nos",
-"quantity": 54
+"quantity": 54,
+"blockQty": {
+"BLOCK-1": 18,
+"BLOCK-2": 18,
+"BLOCK-3": 18
+}
 },
 {
 "category": "SUPPLY",
@@ -137,7 +182,8 @@
 "rating": "10 In 1 Out ( with Y connectors)",
 "specification": "10 In 1 Out",
 "uom": "Nos",
-"quantity": null
+"quantity": null,
+"blockQty": null
 },
 {
 "category": "SUPPLY",
@@ -147,7 +193,8 @@
 "rating": "9 In 1 Out ( with Y connectors)",
 "specification": "09 In 1 Out",
 "uom": "Nos",
-"quantity": null
+"quantity": null,
+"blockQty": null
 },
 {
 "category": "SUPPLY",
@@ -157,7 +204,12 @@
 "rating": null,
 "specification": null,
 "uom": "MW",
-"quantity": 0
+"quantity": 0,
+"blockQty": {
+"BLOCK-1": 0,
+"BLOCK-2": 0,
+"BLOCK-3": 0
+}
 },
 {
 "category": "SUPPLY",
@@ -167,7 +219,12 @@
 "rating": "11 KV, 630A, VCB",
 "specification": "11KV, 630A, VCB",
 "uom": "Nos",
-"quantity": 3
+"quantity": 3,
+"blockQty": {
+"BLOCK-1": 1,
+"BLOCK-2": 1,
+"BLOCK-3": 1
+}
 },
 {
 "category": "SUPPLY",
@@ -177,7 +234,12 @@
 "rating": "As per Discom Specifications(considering substation side)",
 "specification": "As per Discom Specifications*",
 "uom": "Nos",
-"quantity": 3
+"quantity": 3,
+"blockQty": {
+"BLOCK-1": 1,
+"BLOCK-2": 1,
+"BLOCK-3": 1
+}
 },
 {
 "category": "SUPPLY",
@@ -187,7 +249,12 @@
 "rating": "`",
 "specification": "As per Discom Specifications*",
 "uom": "Set",
-"quantity": 3
+"quantity": 3,
+"blockQty": {
+"BLOCK-1": 1,
+"BLOCK-2": 1,
+"BLOCK-3": 1
+}
 },
 {
 "category": "SUPPLY",
@@ -197,7 +264,12 @@
 "rating": "20KVA-1no for MCR,Rest- 15KVA for ICR",
 "specification": "630/415V",
 "uom": "Nos",
-"quantity": 3
+"quantity": 3,
+"blockQty": {
+"BLOCK-1": 1,
+"BLOCK-2": 1,
+"BLOCK-3": 1
+}
 },
 {
 "category": "SUPPLY",
@@ -207,7 +279,12 @@
 "rating": "Power Supply from nearby ICR",
 "specification": null,
 "uom": "Nos",
-"quantity": 1
+"quantity": 1,
+"blockQty": {
+"BLOCK-1": 1,
+"BLOCK-2": 1,
+"BLOCK-3": 1
+}
 },
 {
 "category": "SUPPLY",
@@ -217,7 +294,12 @@
 "rating": "For Back up Supply for ICR",
 "specification": "2KVA with 42AH -16 Nos",
 "uom": "Nos",
-"quantity": 3
+"quantity": 3,
+"blockQty": {
+"BLOCK-1": 1,
+"BLOCK-2": 1,
+"BLOCK-3": 1
+}
 },
 {
 "category": "SUPPLY",
@@ -227,7 +309,12 @@
 "rating": "For Back up Supply for MCR",
 "specification": "3KVA with 65 AH -16 Nos",
 "uom": "Nos",
-"quantity": 1
+"quantity": 1,
+"blockQty": {
+"BLOCK-1": 1,
+"BLOCK-2": 1,
+"BLOCK-3": 1
+}
 },
 {
 "category": "SUPPLY",
@@ -237,7 +324,12 @@
 "rating": "For Plant end",
 "specification": null,
 "uom": "Nos",
-"quantity": 4
+"quantity": 4,
+"blockQty": {
+"BLOCK-1": 1,
+"BLOCK-2": 1,
+"BLOCK-3": 1
+}
 },
 {
 "category": "SUPPLY",
@@ -247,7 +339,12 @@
 "rating": null,
 "specification": null,
 "uom": "Set",
-"quantity": 1
+"quantity": 1,
+"blockQty": {
+"BLOCK-1": 1,
+"BLOCK-2": 0,
+"BLOCK-3": 0
+}
 },
 {
 "category": "SUPPLY",
@@ -257,7 +354,12 @@
 "rating": "Security Cabin, Inside MCR",
 "specification": null,
 "uom": "Nos",
-"quantity": 4
+"quantity": 4,
+"blockQty": {
+"BLOCK-1": 2,
+"BLOCK-2": 1,
+"BLOCK-3": 1
+}
 },
 {
 "category": "SUPPLY",
@@ -267,7 +369,12 @@
 "rating": "Outside - Main Control Room,Main Gate,Outside \u2013 Security Cabin,Main Switchyard & Pooling Substation,Weather Station",
 "specification": null,
 "uom": "Nos",
-"quantity": 10
+"quantity": 10,
+"blockQty": {
+"BLOCK-1": 4,
+"BLOCK-2": 3,
+"BLOCK-3": 3
+}
 },
 {
 "category": "SUPPLY",
@@ -277,7 +384,12 @@
 "rating": "Watch Tower",
 "specification": null,
 "uom": "Nos",
-"quantity": 3
+"quantity": 3,
+"blockQty": {
+"BLOCK-1": 1,
+"BLOCK-2": 1,
+"BLOCK-3": 1
+}
 },
 {
 "category": "SUPPLY",
@@ -287,7 +399,12 @@
 "rating": null,
 "specification": null,
 "uom": "Nos",
-"quantity": 1
+"quantity": 1,
+"blockQty": {
+"BLOCK-1": 1,
+"BLOCK-2": 0,
+"BLOCK-3": 0
+}
 },
 {
 "category": "SUPPLY",
@@ -297,7 +414,12 @@
 "rating": "SET of 5 Multisensor type smoke detectors & alarm notifications appliances",
 "specification": "Intelligent microprocessor based main fire alarm panel of modular construction complete with central processing unit, input and output modules, power supply module, supervision control and isolator modules with 10% spare provisions.",
 "uom": "Set",
-"quantity": 1
+"quantity": 1,
+"blockQty": {
+"BLOCK-1": 1,
+"BLOCK-2": 0,
+"BLOCK-3": 0
+}
 },
 {
 "category": "SUPPLY",
@@ -307,7 +429,12 @@
 "rating": null,
 "specification": "Air temperature- 1 Nos, module temperature - 01 No, relative humidity- 01 Nos, wind speed- 01 Nos, wind direction- 01 Nos, rain accumulated- 1 Nos, barometric pressure- 1 Nos , Global Horizontal Irradiation- 01 Nos and Tilted Surface Irradiation 01 Nos,data Logger- 01 Nos with Tripod and accessories",
 "uom": "Set",
-"quantity": 1
+"quantity": 1,
+"blockQty": {
+"BLOCK-1": 1,
+"BLOCK-2": 0,
+"BLOCK-3": 0
+}
 },
 {
 "category": "SUPPLY",
@@ -317,7 +444,12 @@
 "rating": "As per Discom Specifications(considering in transmission line work scope)",
 "specification": null,
 "uom": "Set",
-"quantity": 3
+"quantity": 3,
+"blockQty": {
+"BLOCK-1": 1,
+"BLOCK-2": 1,
+"BLOCK-3": 1
+}
 },
 {
 "category": "SUPPLY",
@@ -327,7 +459,12 @@
 "rating": "HDGI",
 "specification": "11 IN 1 OUT",
 "uom": "Set",
-"quantity": 54
+"quantity": 54,
+"blockQty": {
+"BLOCK-1": 18,
+"BLOCK-2": 18,
+"BLOCK-3": 18
+}
 },
 {
 "category": "SUPPLY",
@@ -337,7 +474,12 @@
 "rating": null,
 "specification": "one (1) searchlight and one (1) floodlight along and one (1) siren",
 "uom": "Nos",
-"quantity": 3
+"quantity": 3,
+"blockQty": {
+"BLOCK-1": 1,
+"BLOCK-2": 1,
+"BLOCK-3": 1
+}
 },
 {
 "category": "SUPPLY",
@@ -347,7 +489,12 @@
 "rating": "For plant end Yard",
 "specification": "Local fabrication",
 "uom": "Nos",
-"quantity": 3
+"quantity": 3,
+"blockQty": {
+"BLOCK-1": 1,
+"BLOCK-2": 1,
+"BLOCK-3": 1
+}
 },
 {
 "category": "SUPPLY",
@@ -357,7 +504,12 @@
 "rating": "Plant Entry Gate",
 "specification": "Local fabrication",
 "uom": "Nos",
-"quantity": 4
+"quantity": 4,
+"blockQty": {
+"BLOCK-1": 2,
+"BLOCK-2": 1,
+"BLOCK-3": 1
+}
 },
 {
 "category": "SUPPLY",
@@ -367,7 +519,12 @@
 "rating": "Ladder Type",
 "specification": null,
 "uom": "Mtr",
-"quantity": 120
+"quantity": 120,
+"blockQty": {
+"BLOCK-1": 40,
+"BLOCK-2": 40,
+"BLOCK-3": 40
+}
 },
 {
 "category": "SUPPLY",
@@ -377,7 +534,12 @@
 "rating": "Red - 1.8 KV",
 "specification": null,
 "uom": "Mtr",
-"quantity": 30242
+"quantity": 30242,
+"blockQty": {
+"BLOCK-1": 9565,
+"BLOCK-2": 10745,
+"BLOCK-3": 9932
+}
 },
 {
 "category": "SUPPLY",
@@ -387,7 +549,12 @@
 "rating": "Black - 1.8 KV",
 "specification": null,
 "uom": "Mtr",
-"quantity": 30242
+"quantity": 30242,
+"blockQty": {
+"BLOCK-1": 9565,
+"BLOCK-2": 10745,
+"BLOCK-3": 9932
+}
 },
 {
 "category": "SUPPLY",
@@ -397,7 +564,12 @@
 "rating": "Red - 1.8 KV",
 "specification": null,
 "uom": "Mtr",
-"quantity": 10394
+"quantity": 10394,
+"blockQty": {
+"BLOCK-1": 2919,
+"BLOCK-2": 3560,
+"BLOCK-3": 3915
+}
 },
 {
 "category": "SUPPLY",
@@ -407,7 +579,12 @@
 "rating": "Black - 1.8 KV",
 "specification": null,
 "uom": "Mtr",
-"quantity": 10394
+"quantity": 10394,
+"blockQty": {
+"BLOCK-1": 2919,
+"BLOCK-2": 3560,
+"BLOCK-3": 3915
+}
 },
 {
 "category": "SUPPLY",
@@ -417,7 +594,12 @@
 "rating": "1.9/3.3 Kv",
 "specification": null,
 "uom": "Mtr",
-"quantity": 2160
+"quantity": 2160,
+"blockQty": {
+"BLOCK-1": 720,
+"BLOCK-2": 720,
+"BLOCK-3": 720
+}
 },
 {
 "category": "SUPPLY",
@@ -427,7 +609,12 @@
 "rating": "11 kV",
 "specification": null,
 "uom": "Mtr",
-"quantity": 255
+"quantity": 255,
+"blockQty": {
+"BLOCK-1": 85,
+"BLOCK-2": 85,
+"BLOCK-3": 85
+}
 },
 {
 "category": "SUPPLY",
@@ -437,7 +624,8 @@
 "rating": null,
 "specification": null,
 "uom": null,
-"quantity": null
+"quantity": null,
+"blockQty": null
 },
 {
 "category": "SUPPLY",
@@ -447,7 +635,8 @@
 "rating": null,
 "specification": null,
 "uom": null,
-"quantity": null
+"quantity": null,
+"blockQty": null
 },
 {
 "category": "SUPPLY",
@@ -457,7 +646,12 @@
 "rating": "AI signal from MB(IDT) to SCADA Panel",
 "specification": null,
 "uom": "Mtr",
-"quantity": 150
+"quantity": 150,
+"blockQty": {
+"BLOCK-1": 50,
+"BLOCK-2": 50,
+"BLOCK-3": 50
+}
 },
 {
 "category": "SUPPLY",
@@ -467,7 +661,12 @@
 "rating": "1.1 kV - Plant aux supply Purpose Aux.Trafo to LTDB",
 "specification": null,
 "uom": "Mtr",
-"quantity": 45
+"quantity": 45,
+"blockQty": {
+"BLOCK-1": 15,
+"BLOCK-2": 15,
+"BLOCK-3": 15
+}
 },
 {
 "category": "SUPPLY",
@@ -477,7 +676,12 @@
 "rating": "1.1 kV Control Cable for MCS System, UPS & MCR",
 "specification": null,
 "uom": "Mtr",
-"quantity": 255
+"quantity": 255,
+"blockQty": {
+"BLOCK-1": 85,
+"BLOCK-2": 85,
+"BLOCK-3": 85
+}
 },
 {
 "category": "SUPPLY",
@@ -487,7 +691,8 @@
 "rating": "Street Lights, Security Room.",
 "specification": null,
 "uom": "Mtr",
-"quantity": 5500
+"quantity": 5500,
+"blockQty": null
 },
 {
 "category": "SUPPLY",
@@ -497,7 +702,12 @@
 "rating": "Control Supply ( IDT to ICOG) & (ICOG to SCADA)",
 "specification": null,
 "uom": "Mtr",
-"quantity": 195
+"quantity": 195,
+"blockQty": {
+"BLOCK-1": 65,
+"BLOCK-2": 65,
+"BLOCK-3": 65
+}
 },
 {
 "category": "SUPPLY",
@@ -507,7 +717,8 @@
 "rating": "Power Supply to Lights",
 "specification": null,
 "uom": "Mtr",
-"quantity": 300
+"quantity": 300,
+"blockQty": null
 },
 {
 "category": "SUPPLY",
@@ -517,7 +728,8 @@
 "rating": "As per SCADa Design",
 "specification": null,
 "uom": "Mtr",
-"quantity": 2500
+"quantity": 2500,
+"blockQty": null
 },
 {
 "category": "SUPPLY",
@@ -527,7 +739,12 @@
 "rating": "Inverter to Inverter, Equipment to SCADA",
 "specification": null,
 "uom": "Mtr",
-"quantity": 600
+"quantity": 600,
+"blockQty": {
+"BLOCK-1": 200,
+"BLOCK-2": 200,
+"BLOCK-3": 200
+}
 },
 {
 "category": "SUPPLY",
@@ -537,7 +754,12 @@
 "rating": "1.1 Kv (IDT Earthing)",
 "specification": null,
 "uom": "Mtr",
-"quantity": 60
+"quantity": 60,
+"blockQty": {
+"BLOCK-1": 20,
+"BLOCK-2": 20,
+"BLOCK-3": 20
+}
 },
 {
 "category": "SUPPLY",
@@ -547,7 +769,12 @@
 "rating": "1.1 Kv (Inverter)",
 "specification": null,
 "uom": "Mtr",
-"quantity": 300
+"quantity": 300,
+"blockQty": {
+"BLOCK-1": 100,
+"BLOCK-2": 100,
+"BLOCK-3": 100
+}
 },
 {
 "category": "SUPPLY",
@@ -557,7 +784,12 @@
 "rating": "field equipment to SCADA panel",
 "specification": null,
 "uom": "Mtr",
-"quantity": 450
+"quantity": 450,
+"blockQty": {
+"BLOCK-1": 150,
+"BLOCK-2": 150,
+"BLOCK-3": 150
+}
 },
 {
 "category": "SUPPLY",
@@ -567,7 +799,12 @@
 "rating": "As per design & Site requirement)",
 "specification": null,
 "uom": "Mtr",
-"quantity": 8100
+"quantity": 8100,
+"blockQty": {
+"BLOCK-1": 2700,
+"BLOCK-2": 2700,
+"BLOCK-3": 2700
+}
 },
 {
 "category": "SUPPLY",
@@ -577,7 +814,8 @@
 "rating": "As per design & Site requirement)",
 "specification": null,
 "uom": "Mtr",
-"quantity": 2500
+"quantity": 2500,
+"blockQty": null
 },
 {
 "category": "SUPPLY",
@@ -587,7 +825,12 @@
 "rating": "As per design & Site requirement)",
 "specification": null,
 "uom": "Lot",
-"quantity": 1
+"quantity": 1,
+"blockQty": {
+"BLOCK-1": 1,
+"BLOCK-2": 1,
+"BLOCK-3": 1
+}
 },
 {
 "category": "SUPPLY",
@@ -597,7 +840,12 @@
 "rating": "As per design & Site requirement)",
 "specification": null,
 "uom": "Lot",
-"quantity": 1
+"quantity": 1,
+"blockQty": {
+"BLOCK-1": 1,
+"BLOCK-2": 1,
+"BLOCK-3": 1
+}
 },
 {
 "category": "SUPPLY",
@@ -607,7 +855,12 @@
 "rating": "(As per design & Site requirement)",
 "specification": null,
 "uom": "Lot",
-"quantity": 1
+"quantity": 1,
+"blockQty": {
+"BLOCK-1": 1,
+"BLOCK-2": 1,
+"BLOCK-3": 1
+}
 },
 {
 "category": "SUPPLY",
@@ -617,7 +870,12 @@
 "rating": "Male (As per design & Site requirement)",
 "specification": null,
 "uom": "Nos",
-"quantity": 2500
+"quantity": 2500,
+"blockQty": {
+"BLOCK-1": 900,
+"BLOCK-2": 900,
+"BLOCK-3": 900
+}
 },
 {
 "category": "SUPPLY",
@@ -627,7 +885,12 @@
 "rating": "Female (As per design & Site requirement)",
 "specification": null,
 "uom": "Nos",
-"quantity": 2500
+"quantity": 2500,
+"blockQty": {
+"BLOCK-1": 900,
+"BLOCK-2": 900,
+"BLOCK-3": 900
+}
 },
 {
 "category": "SUPPLY",
@@ -637,7 +900,12 @@
 "rating": null,
 "specification": null,
 "uom": "Nos",
-"quantity": 600
+"quantity": 600,
+"blockQty": {
+"BLOCK-1": 200,
+"BLOCK-2": 200,
+"BLOCK-3": 200
+}
 },
 {
 "category": "SUPPLY",
@@ -647,7 +915,12 @@
 "rating": null,
 "specification": null,
 "uom": "Nos",
-"quantity": 600
+"quantity": 600,
+"blockQty": {
+"BLOCK-1": 200,
+"BLOCK-2": 200,
+"BLOCK-3": 200
+}
 },
 {
 "category": "SUPPLY",
@@ -657,7 +930,12 @@
 "rating": "Auxilary INV O/P",
 "specification": null,
 "uom": "Nos",
-"quantity": 3
+"quantity": 3,
+"blockQty": {
+"BLOCK-1": 1,
+"BLOCK-2": 1,
+"BLOCK-3": 1
+}
 },
 {
 "category": "SUPPLY",
@@ -667,7 +945,12 @@
 "rating": "Auxilary Panel I/P",
 "specification": null,
 "uom": "Nos",
-"quantity": 3
+"quantity": 3,
+"blockQty": {
+"BLOCK-1": 1,
+"BLOCK-2": 1,
+"BLOCK-3": 1
+}
 },
 {
 "category": "SUPPLY",
@@ -677,7 +960,12 @@
 "rating": "SCB O/P",
 "specification": null,
 "uom": "Nos",
-"quantity": 108
+"quantity": 108,
+"blockQty": {
+"BLOCK-1": 36,
+"BLOCK-2": 36,
+"BLOCK-3": 36
+}
 },
 {
 "category": "SUPPLY",
@@ -687,7 +975,12 @@
 "rating": "INV I/P",
 "specification": null,
 "uom": "Nos",
-"quantity": 108
+"quantity": 108,
+"blockQty": {
+"BLOCK-1": 36,
+"BLOCK-2": 36,
+"BLOCK-3": 36
+}
 },
 {
 "category": "SUPPLY",
@@ -697,7 +990,12 @@
 "rating": "INV O/P",
 "specification": null,
 "uom": "Nos",
-"quantity": 108
+"quantity": 108,
+"blockQty": {
+"BLOCK-1": 36,
+"BLOCK-2": 36,
+"BLOCK-3": 36
+}
 },
 {
 "category": "SUPPLY",
@@ -707,7 +1005,12 @@
 "rating": "TRAFO I/P",
 "specification": null,
 "uom": "Nos",
-"quantity": 108
+"quantity": 108,
+"blockQty": {
+"BLOCK-1": 36,
+"BLOCK-2": 36,
+"BLOCK-3": 36
+}
 },
 {
 "category": "SUPPLY",
@@ -717,7 +1020,12 @@
 "rating": "TRAFO O/P , HT I/P & O/P",
 "specification": null,
 "uom": "Nos",
-"quantity": 9
+"quantity": 9,
+"blockQty": {
+"BLOCK-1": 3,
+"BLOCK-2": 3,
+"BLOCK-3": 3
+}
 },
 {
 "category": "SUPPLY",
@@ -727,7 +1035,12 @@
 "rating": "DP Pole Structure",
 "specification": null,
 "uom": "Nos",
-"quantity": 3
+"quantity": 3,
+"blockQty": {
+"BLOCK-1": 1,
+"BLOCK-2": 1,
+"BLOCK-3": 1
+}
 },
 {
 "category": "SUPPLY",
@@ -737,7 +1050,12 @@
 "rating": "INV I/P",
 "specification": null,
 "uom": "Nos",
-"quantity": 108
+"quantity": 108,
+"blockQty": {
+"BLOCK-1": 36,
+"BLOCK-2": 36,
+"BLOCK-3": 36
+}
 },
 {
 "category": "SUPPLY",
@@ -747,7 +1065,12 @@
 "rating": "INV O/P / TRAFO I/P",
 "specification": null,
 "uom": "Nos",
-"quantity": 216
+"quantity": 216,
+"blockQty": {
+"BLOCK-1": 72,
+"BLOCK-2": 72,
+"BLOCK-3": 72
+}
 },
 {
 "category": "SUPPLY",
@@ -757,7 +1080,12 @@
 "rating": "TRAFO O/P, HT PANEL I/P & O/P",
 "specification": null,
 "uom": "Nos",
-"quantity": 9
+"quantity": 9,
+"blockQty": {
+"BLOCK-1": 3,
+"BLOCK-2": 3,
+"BLOCK-3": 3
+}
 },
 {
 "category": "SUPPLY",
@@ -767,7 +1095,12 @@
 "rating": "Auxilary Panel I/P",
 "specification": null,
 "uom": "Nos",
-"quantity": 3
+"quantity": 3,
+"blockQty": {
+"BLOCK-1": 1,
+"BLOCK-2": 1,
+"BLOCK-3": 1
+}
 },
 {
 "category": "SUPPLY",
@@ -777,7 +1110,12 @@
 "rating": "(Hole Dia - 10 mm) (As per design & site requirement).",
 "specification": null,
 "uom": "Lot",
-"quantity": 12
+"quantity": 12,
+"blockQty": {
+"BLOCK-1": 4,
+"BLOCK-2": 4,
+"BLOCK-3": 4
+}
 },
 {
 "category": "SUPPLY",
@@ -787,7 +1125,12 @@
 "rating": null,
 "specification": null,
 "uom": "Lot",
-"quantity": 24
+"quantity": 24,
+"blockQty": {
+"BLOCK-1": 8,
+"BLOCK-2": 8,
+"BLOCK-3": 8
+}
 },
 {
 "category": "SUPPLY",
@@ -797,7 +1140,12 @@
 "rating": "(As per design & site requirement).",
 "specification": null,
 "uom": "Nos",
-"quantity": 0
+"quantity": 0,
+"blockQty": {
+"BLOCK-1": 0,
+"BLOCK-2": 0,
+"BLOCK-3": 0
+}
 },
 {
 "category": "SUPPLY",
@@ -807,7 +1155,12 @@
 "rating": null,
 "specification": null,
 "uom": "MWp",
-"quantity": 19.029
+"quantity": 19.029,
+"blockQty": {
+"BLOCK-1": 6.013,
+"BLOCK-2": 6.508,
+"BLOCK-3": 6.508
+}
 },
 {
 "category": "SUPPLY",
@@ -817,7 +1170,12 @@
 "rating": "12 Kv,50 Hz,ESE TYPE 107MTR RADIUS,Lightning Impulse withstand-75 Voltage (kVP),Power frequency withstand,28 Voltage (kV rms)",
 "specification": null,
 "uom": "Nos",
-"quantity": 14
+"quantity": 14,
+"blockQty": {
+"BLOCK-1": 4,
+"BLOCK-2": 5,
+"BLOCK-3": 5
+}
 },
 {
 "category": "SUPPLY",
@@ -827,7 +1185,12 @@
 "rating": "3Mtr Length x 17.5 mm Dia Cu Bonded Pipe (As per design & site requirement).",
 "specification": null,
 "uom": "Nos",
-"quantity": 132
+"quantity": 132,
+"blockQty": {
+"BLOCK-1": 44,
+"BLOCK-2": 44,
+"BLOCK-3": 44
+}
 },
 {
 "category": "SUPPLY",
@@ -837,7 +1200,12 @@
 "rating": "DC & AC Grid Earthing (As per design & site requirement).",
 "specification": null,
 "uom": "Mtr",
-"quantity": 11100
+"quantity": 11100,
+"blockQty": {
+"BLOCK-1": 3700,
+"BLOCK-2": 3700,
+"BLOCK-3": 3700
+}
 },
 {
 "category": "SUPPLY",
@@ -847,7 +1215,12 @@
 "rating": "Yard Grid Earthing (As per design & site requirement).",
 "specification": null,
 "uom": "Mtr",
-"quantity": 750
+"quantity": 750,
+"blockQty": {
+"BLOCK-1": 250,
+"BLOCK-2": 250,
+"BLOCK-3": 250
+}
 },
 {
 "category": "SUPPLY",
@@ -857,7 +1230,12 @@
 "rating": "(As per design & site requirement).",
 "specification": null,
 "uom": "Nos",
-"quantity": 132
+"quantity": 132,
+"blockQty": {
+"BLOCK-1": 44,
+"BLOCK-2": 44,
+"BLOCK-3": 44
+}
 },
 {
 "category": "SUPPLY",
@@ -867,7 +1245,12 @@
 "rating": "As per approved design & site requirement",
 "specification": null,
 "uom": "Set",
-"quantity": 24
+"quantity": 24,
+"blockQty": {
+"BLOCK-1": 8,
+"BLOCK-2": 8,
+"BLOCK-3": 8
+}
 },
 {
 "category": "SUPPLY",
@@ -877,7 +1260,8 @@
 "rating": "As per Drawing",
 "specification": null,
 "uom": "Lot",
-"quantity": 75
+"quantity": 75,
+"blockQty": null
 },
 {
 "category": "SUPPLY",
@@ -887,7 +1271,12 @@
 "rating": "Inside Yard (As per design)",
 "specification": "For each MCR 3, For each INV 2, for each T/F 3, for each Switchyard 3, for each security room 1.",
 "uom": "Set",
-"quantity": 36
+"quantity": 36,
+"blockQty": {
+"BLOCK-1": 12,
+"BLOCK-2": 12,
+"BLOCK-3": 12
+}
 },
 {
 "category": "SUPPLY",
@@ -897,7 +1286,12 @@
 "rating": "Inside Yard (As per design)",
 "specification": "For each MCR 3, For each INV 1, for each T/F 1, for each Switchyard 2, for each security room 1.",
 "uom": "Set",
-"quantity": 18
+"quantity": 18,
+"blockQty": {
+"BLOCK-1": 6,
+"BLOCK-2": 6,
+"BLOCK-3": 6
+}
 },
 {
 "category": "SUPPLY",
@@ -907,7 +1301,12 @@
 "rating": "Inside Yard (As per design)",
 "specification": "For each MCR 3.",
 "uom": "Set",
-"quantity": 3
+"quantity": 3,
+"blockQty": {
+"BLOCK-1": 1,
+"BLOCK-2": 1,
+"BLOCK-3": 1
+}
 },
 {
 "category": "SUPPLY",
@@ -917,7 +1316,12 @@
 "rating": "Inside Yard (As per design)",
 "specification": "For each MCR 3, For each INV 1, for each T/F 1, for each Switchyard 2.",
 "uom": "Nos",
-"quantity": 18
+"quantity": 18,
+"blockQty": {
+"BLOCK-1": 6,
+"BLOCK-2": 6,
+"BLOCK-3": 6
+}
 },
 {
 "category": "SUPPLY",
@@ -927,7 +1331,12 @@
 "rating": null,
 "specification": "For each MCR 3, for each security room 1.",
 "uom": "Nos",
-"quantity": 6
+"quantity": 6,
+"blockQty": {
+"BLOCK-1": 2,
+"BLOCK-2": 2,
+"BLOCK-3": 2
+}
 },
 {
 "category": "SUPPLY",
@@ -937,7 +1346,12 @@
 "rating": null,
 "specification": null,
 "uom": "MWp",
-"quantity": 19.029
+"quantity": 19.029,
+"blockQty": {
+"BLOCK-1": 6.013,
+"BLOCK-2": 6.508,
+"BLOCK-3": 6.508
+}
 },
 {
 "category": "SUPPLY",
@@ -947,7 +1361,12 @@
 "rating": null,
 "specification": null,
 "uom": "Nos",
-"quantity": 0
+"quantity": 0,
+"blockQty": {
+"BLOCK-1": 0,
+"BLOCK-2": 0,
+"BLOCK-3": 0
+}
 },
 {
 "category": "SUPPLY",
@@ -957,7 +1376,12 @@
 "rating": null,
 "specification": null,
 "uom": "MWp",
-"quantity": 19.029
+"quantity": 19.029,
+"blockQty": {
+"BLOCK-1": 6.013,
+"BLOCK-2": 6.508,
+"BLOCK-3": 6.508
+}
 },
 {
 "category": "SUPPLY",
@@ -967,7 +1391,12 @@
 "rating": null,
 "specification": null,
 "uom": "Nos",
-"quantity": 0
+"quantity": 0,
+"blockQty": {
+"BLOCK-1": 0,
+"BLOCK-2": 0,
+"BLOCK-3": 0
+}
 },
 {
 "category": "SUPPLY",
@@ -977,7 +1406,8 @@
 "rating": "11 KV",
 "specification": null,
 "uom": "KM",
-"quantity": null
+"quantity": null,
+"blockQty": null
 },
 {
 "category": "SUPPLY",
@@ -987,7 +1417,12 @@
 "rating": null,
 "specification": "As per Standard Spares - 10% Qty",
 "uom": "Lot",
-"quantity": 1
+"quantity": 1,
+"blockQty": {
+"BLOCK-1": 1,
+"BLOCK-2": 1,
+"BLOCK-3": 1
+}
 },
 {
 "category": "SUPPLY",
@@ -997,7 +1432,12 @@
 "rating": null,
 "specification": "As per Standard Spares - 10% Qty",
 "uom": "Lot",
-"quantity": 1
+"quantity": 1,
+"blockQty": {
+"BLOCK-1": 1,
+"BLOCK-2": 1,
+"BLOCK-3": 1
+}
 },
 {
 "category": "SUPPLY",
@@ -1007,7 +1447,12 @@
 "rating": null,
 "specification": "As per Standard Spares - 10% Qty",
 "uom": "Lot",
-"quantity": 1
+"quantity": 1,
+"blockQty": {
+"BLOCK-1": 1,
+"BLOCK-2": 1,
+"BLOCK-3": 1
+}
 },
 {
 "category": "SUPPLY",
@@ -1017,7 +1462,12 @@
 "rating": null,
 "specification": "As per Standard Spares - 10% Qty",
 "uom": "Lot",
-"quantity": 1
+"quantity": 1,
+"blockQty": {
+"BLOCK-1": 1,
+"BLOCK-2": 1,
+"BLOCK-3": 1
+}
 },
 {
 "category": "SUPPLY",
@@ -1027,7 +1477,12 @@
 "rating": null,
 "specification": "As per Standard Spares - 10% Qty",
 "uom": "Lot",
-"quantity": 1
+"quantity": 1,
+"blockQty": {
+"BLOCK-1": 1,
+"BLOCK-2": 1,
+"BLOCK-3": 1
+}
 },
 {
 "category": "SUPPLY",
@@ -1037,7 +1492,12 @@
 "rating": null,
 "specification": "As per Standard Spares - 10% Qty",
 "uom": "Lot",
-"quantity": 1
+"quantity": 1,
+"blockQty": {
+"BLOCK-1": 1,
+"BLOCK-2": 1,
+"BLOCK-3": 1
+}
 },
 {
 "category": "SUPPLY",
@@ -1047,7 +1507,12 @@
 "rating": null,
 "specification": "As per Standard Spares - 10% Qty",
 "uom": "Lot",
-"quantity": 1
+"quantity": 1,
+"blockQty": {
+"BLOCK-1": 1,
+"BLOCK-2": 1,
+"BLOCK-3": 1
+}
 },
 {
 "category": "SUPPLY",
@@ -1057,7 +1522,12 @@
 "rating": null,
 "specification": "As per Standard Spares - 10% Qty",
 "uom": "Lot",
-"quantity": 1
+"quantity": 1,
+"blockQty": {
+"BLOCK-1": 1,
+"BLOCK-2": 1,
+"BLOCK-3": 1
+}
 },
 {
 "category": "SUPPLY",
@@ -1067,7 +1537,12 @@
 "rating": null,
 "specification": "As per Standard Spares - 10% Qty",
 "uom": "Lot",
-"quantity": 1
+"quantity": 1,
+"blockQty": {
+"BLOCK-1": 1,
+"BLOCK-2": 1,
+"BLOCK-3": 1
+}
 },
 {
 "category": "SUPPLY",
@@ -1077,7 +1552,12 @@
 "rating": null,
 "specification": "As per Standard Spares - 10% Qty",
 "uom": "Lot",
-"quantity": 1
+"quantity": 1,
+"blockQty": {
+"BLOCK-1": 1,
+"BLOCK-2": 1,
+"BLOCK-3": 1
+}
 },
 {
 "category": "SUPPLY",
@@ -1087,7 +1567,12 @@
 "rating": null,
 "specification": "As per Study Requirements",
 "uom": "Lot",
-"quantity": 1
+"quantity": 1,
+"blockQty": {
+"BLOCK-1": 1,
+"BLOCK-2": 1,
+"BLOCK-3": 1
+}
 },
 {
 "category": "SERVICE",
@@ -1097,7 +1582,8 @@
 "rating": null,
 "specification": "5mX5m ,The formation level shall be at least 1.5m above the HFL",
 "uom": "MWp",
-"quantity": 19.5
+"quantity": 19.5,
+"blockQty": null
 },
 {
 "category": "SERVICE",
@@ -1107,7 +1593,8 @@
 "rating": null,
 "specification": "Minimum 1 bore holes/ 5 acres of land, load bearing capacity, ground water level, settlement, and sub soil condition, soil resistivity tests and CBR tests, water analysis test",
 "uom": "Lot",
-"quantity": 1
+"quantity": 1,
+"blockQty": null
 },
 {
 "category": "SERVICE",
@@ -1117,7 +1604,8 @@
 "rating": null,
 "specification": "The formation level shall be at least 1.5m above the HFL, soil filling in bidder scope along eith disposal of the cutting trees & debris",
 "uom": "Acres",
-"quantity": 68.25
+"quantity": 68.25,
+"blockQty": null
 },
 {
 "category": "SERVICE",
@@ -1127,7 +1615,8 @@
 "rating": null,
 "specification": null,
 "uom": "MWp",
-"quantity": 19.5
+"quantity": 19.5,
+"blockQty": null
 },
 {
 "category": "SERVICE",
@@ -1137,7 +1626,8 @@
 "rating": null,
 "specification": "Pull out Inclusive of lateral & Compressive Test",
 "uom": "Lot",
-"quantity": 1
+"quantity": 1,
+"blockQty": null
 },
 {
 "category": "SERVICE",
@@ -1147,7 +1637,8 @@
 "rating": null,
 "specification": null,
 "uom": "MWp",
-"quantity": 19.5
+"quantity": 19.5,
+"blockQty": null
 },
 {
 "category": "SERVICE",
@@ -1157,7 +1648,8 @@
 "rating": null,
 "specification": null,
 "uom": "LS",
-"quantity": 1
+"quantity": 1,
+"blockQty": null
 },
 {
 "category": "SERVICE",
@@ -1167,7 +1659,8 @@
 "rating": null,
 "specification": null,
 "uom": "LS",
-"quantity": 1
+"quantity": 1,
+"blockQty": null
 },
 {
 "category": "SERVICE",
@@ -1177,7 +1670,8 @@
 "rating": null,
 "specification": null,
 "uom": "LS",
-"quantity": 1
+"quantity": 1,
+"blockQty": null
 },
 {
 "category": "SERVICE",
@@ -1187,7 +1681,8 @@
 "rating": null,
 "specification": null,
 "uom": "Nos",
-"quantity": 2
+"quantity": 2,
+"blockQty": null
 },
 {
 "category": "SERVICE",
@@ -1197,7 +1692,8 @@
 "rating": null,
 "specification": null,
 "uom": "Nos",
-"quantity": 3
+"quantity": 3,
+"blockQty": null
 },
 {
 "category": "SERVICE",
@@ -1207,7 +1703,8 @@
 "rating": null,
 "specification": null,
 "uom": "Months",
-"quantity": 6
+"quantity": 6,
+"blockQty": null
 },
 {
 "category": "SERVICE",
@@ -1217,7 +1714,8 @@
 "rating": null,
 "specification": "As per approved GA Drawing",
 "uom": "Mtr",
-"quantity": 6702
+"quantity": 6702,
+"blockQty": null
 },
 {
 "category": "SERVICE",
@@ -1227,7 +1725,8 @@
 "rating": null,
 "specification": null,
 "uom": "Set",
-"quantity": 54
+"quantity": 54,
+"blockQty": null
 },
 {
 "category": "SERVICE",
@@ -1237,7 +1736,8 @@
 "rating": null,
 "specification": null,
 "uom": "Nos",
-"quantity": 3
+"quantity": 3,
+"blockQty": null
 },
 {
 "category": "SERVICE",
@@ -1247,7 +1747,8 @@
 "rating": null,
 "specification": null,
 "uom": "Nos",
-"quantity": 4
+"quantity": 4,
+"blockQty": null
 },
 {
 "category": "SERVICE",
@@ -1257,7 +1758,8 @@
 "rating": null,
 "specification": null,
 "uom": "Nos",
-"quantity": 7104
+"quantity": 7104,
+"blockQty": null
 },
 {
 "category": "SERVICE",
@@ -1267,7 +1769,8 @@
 "rating": null,
 "specification": null,
 "uom": "Nos",
-"quantity": 0
+"quantity": 0,
+"blockQty": null
 },
 {
 "category": "SERVICE",
@@ -1277,7 +1780,8 @@
 "rating": null,
 "specification": null,
 "uom": "Nos",
-"quantity": 0
+"quantity": 0,
+"blockQty": null
 },
 {
 "category": "SERVICE",
@@ -1287,7 +1791,8 @@
 "rating": null,
 "specification": null,
 "uom": "Nos",
-"quantity": 54
+"quantity": 54,
+"blockQty": null
 },
 {
 "category": "SERVICE",
@@ -1297,7 +1802,8 @@
 "rating": null,
 "specification": null,
 "uom": "Nos",
-"quantity": 6
+"quantity": 6,
+"blockQty": null
 },
 {
 "category": "SERVICE",
@@ -1307,7 +1813,8 @@
 "rating": null,
 "specification": null,
 "uom": "Nos",
-"quantity": null
+"quantity": null,
+"blockQty": null
 },
 {
 "category": "SERVICE",
@@ -1317,7 +1824,8 @@
 "rating": null,
 "specification": null,
 "uom": "Nos",
-"quantity": null
+"quantity": null,
+"blockQty": null
 },
 {
 "category": "SERVICE",
@@ -1327,7 +1835,8 @@
 "rating": null,
 "specification": null,
 "uom": "Nos",
-"quantity": null
+"quantity": null,
+"blockQty": null
 },
 {
 "category": "SERVICE",
@@ -1337,7 +1846,8 @@
 "rating": null,
 "specification": null,
 "uom": "Lot",
-"quantity": 0
+"quantity": 0,
+"blockQty": null
 },
 {
 "category": "SERVICE",
@@ -1347,7 +1857,8 @@
 "rating": null,
 "specification": null,
 "uom": "Nos",
-"quantity": 3
+"quantity": 3,
+"blockQty": null
 },
 {
 "category": "SERVICE",
@@ -1357,7 +1868,8 @@
 "rating": null,
 "specification": null,
 "uom": "Lot",
-"quantity": 14
+"quantity": 14,
+"blockQty": null
 },
 {
 "category": "SERVICE",
@@ -1367,7 +1879,8 @@
 "rating": null,
 "specification": null,
 "uom": "Nos",
-"quantity": 3
+"quantity": 3,
+"blockQty": null
 },
 {
 "category": "SERVICE",
@@ -1377,7 +1890,8 @@
 "rating": null,
 "specification": null,
 "uom": "Nos",
-"quantity": 0
+"quantity": 0,
+"blockQty": null
 },
 {
 "category": "SERVICE",
@@ -1387,7 +1901,8 @@
 "rating": null,
 "specification": "NOT CONSIDER IN SOLAR PLANT SITE",
 "uom": "Nos",
-"quantity": 0
+"quantity": 0,
+"blockQty": null
 },
 {
 "category": "SERVICE",
@@ -1397,7 +1912,8 @@
 "rating": null,
 "specification": "NOT CONSIDER IN SOLAR PLANT SITE",
 "uom": "Nos",
-"quantity": 0
+"quantity": 0,
+"blockQty": null
 },
 {
 "category": "SERVICE",
@@ -1407,7 +1923,8 @@
 "rating": null,
 "specification": null,
 "uom": "Nos",
-"quantity": 3
+"quantity": 3,
+"blockQty": null
 },
 {
 "category": "SERVICE",
@@ -1417,7 +1934,8 @@
 "rating": null,
 "specification": null,
 "uom": "Nos",
-"quantity": 0
+"quantity": 0,
+"blockQty": null
 },
 {
 "category": "SERVICE",
@@ -1427,7 +1945,8 @@
 "rating": null,
 "specification": null,
 "uom": "Nos",
-"quantity": 1
+"quantity": 1,
+"blockQty": null
 },
 {
 "category": "SERVICE",
@@ -1437,7 +1956,8 @@
 "rating": null,
 "specification": null,
 "uom": "Sft",
-"quantity": 0
+"quantity": 0,
+"blockQty": null
 },
 {
 "category": "SERVICE",
@@ -1447,7 +1967,8 @@
 "rating": null,
 "specification": "ICR+WMS",
 "uom": "Mtr",
-"quantity": 0
+"quantity": 0,
+"blockQty": null
 },
 {
 "category": "SERVICE",
@@ -1457,7 +1978,8 @@
 "rating": null,
 "specification": null,
 "uom": "LS",
-"quantity": 2
+"quantity": 2,
+"blockQty": null
 },
 {
 "category": "SERVICE",
@@ -1467,7 +1989,8 @@
 "rating": null,
 "specification": null,
 "uom": "LS",
-"quantity": 3
+"quantity": 3,
+"blockQty": null
 },
 {
 "category": "SERVICE",
@@ -1477,7 +2000,8 @@
 "rating": null,
 "specification": null,
 "uom": "Nos",
-"quantity": 1
+"quantity": 1,
+"blockQty": null
 },
 {
 "category": "SERVICE",
@@ -1487,7 +2011,8 @@
 "rating": null,
 "specification": null,
 "uom": "LS",
-"quantity": 1
+"quantity": 1,
+"blockQty": null
 },
 {
 "category": "SERVICE",
@@ -1497,7 +2022,8 @@
 "rating": null,
 "specification": null,
 "uom": "Months",
-"quantity": 6
+"quantity": 6,
+"blockQty": null
 },
 {
 "category": "SERVICE",
@@ -1507,7 +2033,8 @@
 "rating": null,
 "specification": "Minimum width as 450mm and minimum depth as 300mm. bed slope of the drains shall be milder than 1 in 1000. Three (3) hour storm value and/ or one hour rainfall intensity value. Concrete/Brick masonry drains shall be provided on one side of roads for proper drainage of rainwater",
 "uom": "Mtr",
-"quantity": null
+"quantity": null,
+"blockQty": null
 },
 {
 "category": "SERVICE",
@@ -1517,7 +2044,8 @@
 "rating": null,
 "specification": "3 Mtr Wide+ 0.5 Mtr shoulder - 200 mm thick murram layer, 150 thick rubble soiling, 150 mm thick WBM compacted in two layer Mtr 75mm thick Bitumin macadam binder course with 10 to 12 mm seal coat",
 "uom": "Mtr",
-"quantity": null
+"quantity": null,
+"blockQty": null
 },
 {
 "category": "SERVICE",
@@ -1527,7 +2055,8 @@
 "rating": null,
 "specification": "3 Mtr Wide + 300mm Murrum Layer (Compacted in 3 layers upto 95% MDD by roller)",
 "uom": "Mtr",
-"quantity": null
+"quantity": null,
+"blockQty": null
 },
 {
 "category": "SERVICE",
@@ -1537,7 +2066,8 @@
 "rating": null,
 "specification": "3 Mtr Wide+ 150 thick rubble soiling, 100 mm tick murram layer, 250 mm thick WBM compacted in two layer Mtr shoulder both sides- 80/100mm top coat Bitumin Grade",
 "uom": "Mtr",
-"quantity": null
+"quantity": null,
+"blockQty": null
 },
 {
 "category": "SERVICE",
@@ -1547,7 +2077,8 @@
 "rating": null,
 "specification": null,
 "uom": null,
-"quantity": null
+"quantity": null,
+"blockQty": null
 },
 {
 "category": "SERVICE",
@@ -1557,7 +2088,8 @@
 "rating": null,
 "specification": null,
 "uom": "MWp",
-"quantity": 19.5
+"quantity": 19.5,
+"blockQty": null
 },
 {
 "category": "SERVICE",
@@ -1567,7 +2099,8 @@
 "rating": null,
 "specification": null,
 "uom": null,
-"quantity": null
+"quantity": null,
+"blockQty": null
 },
 {
 "category": "SERVICE",
@@ -1577,7 +2110,8 @@
 "rating": null,
 "specification": null,
 "uom": "Sft",
-"quantity": 2400
+"quantity": 2400,
+"blockQty": null
 },
 {
 "category": "SERVICE",
@@ -1587,7 +2121,8 @@
 "rating": null,
 "specification": null,
 "uom": null,
-"quantity": null
+"quantity": null,
+"blockQty": null
 },
 {
 "category": "LINE_WORK",
@@ -1598,6 +2133,7 @@
 "specification": "Inculding Installation",
 "uom": "MTR",
 "quantity": 4500,
+"blockQty": null,
 "responsibility": "Supply:KP Install:KP"
 },
 {
@@ -1609,6 +2145,7 @@
 "specification": "Inculding Installation",
 "uom": "MTR",
 "quantity": 50,
+"blockQty": null,
 "responsibility": "Supply:KP Install:KP"
 },
 {
@@ -1620,6 +2157,7 @@
 "specification": "Inculding Installation",
 "uom": "Nos",
 "quantity": 9,
+"blockQty": null,
 "responsibility": "Supply:KP Install:KP"
 },
 {
@@ -1631,6 +2169,7 @@
 "specification": "Inculding Installation",
 "uom": "Nos",
 "quantity": 2,
+"blockQty": null,
 "responsibility": "Supply:KP Install:KP"
 },
 {
@@ -1642,6 +2181,7 @@
 "specification": "Inculding Installation",
 "uom": "Nos",
 "quantity": 2,
+"blockQty": null,
 "responsibility": "Supply:KP Install:KP"
 },
 {
@@ -1653,6 +2193,7 @@
 "specification": "Commom GSS End",
 "uom": "Nos",
 "quantity": 2,
+"blockQty": null,
 "responsibility": "Supply:KP Install:KP"
 },
 {
@@ -1664,6 +2205,7 @@
 "specification": "Substation",
 "uom": "Nos",
 "quantity": 1,
+"blockQty": null,
 "responsibility": "Supply:KP Install:KP"
 },
 {
@@ -1675,6 +2217,7 @@
 "specification": "SS End As per Getco Strandard",
 "uom": "Nos",
 "quantity": 1,
+"blockQty": null,
 "responsibility": "Supply:KP Install:KP"
 },
 {
@@ -1686,6 +2229,7 @@
 "specification": "SS End As per Getco Strandard",
 "uom": "Lot",
 "quantity": 1,
+"blockQty": null,
 "responsibility": "Supply:KP Install:KP"
 },
 {
@@ -1697,6 +2241,7 @@
 "specification": "As per GETCO / SLDC specification",
 "uom": "Lot",
 "quantity": 1,
+"blockQty": null,
 "responsibility": "Supply:KP Install:KP"
 },
 {
@@ -1708,6 +2253,7 @@
 "specification": "GETCO END VCB PANEL AS PER GETCO SPECIFICATIONS",
 "uom": "Nos",
 "quantity": 1,
+"blockQty": null,
 "responsibility": "Supply:KP Install:KP"
 },
 {
@@ -1719,6 +2265,7 @@
 "specification": "SS End As per Getco Strandard",
 "uom": "Nos",
 "quantity": 1,
+"blockQty": null,
 "responsibility": "Supply:KP Install:KP"
 }
 ]
