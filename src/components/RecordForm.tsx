@@ -17,6 +17,10 @@ export type FieldDef = {
   defaultValue?: string | number | boolean;
   /** grid span on >=sm screens (1 or 2). Default 1. */
   span?: 1 | 2;
+  /** Name of another field this field's options depend on (e.g. section depends on category). */
+  dependsOn?: string;
+  /** Options keyed by the controlling field's current value (used with dependsOn). */
+  optionsBy?: Record<string, { value: string; label: string }[]>;
 };
 
 // A generic, reusable create/edit modal. Renders a trigger button; on submit it
@@ -50,6 +54,21 @@ export default function RecordForm({
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Track the current values of fields that other fields depend on (e.g. the
+  // section options depend on the selected category).
+  const controllers = new Set(fields.filter((f) => f.dependsOn).map((f) => f.dependsOn!));
+  const [deps, setDeps] = useState<Record<string, string>>(() => {
+    const d: Record<string, string> = {};
+    for (const f of fields) {
+      if (controllers.has(f.name)) {
+        d[f.name] = String(f.defaultValue ?? f.options?.[0]?.value ?? "");
+      }
+    }
+    return d;
+  });
+  const optionsFor = (f: FieldDef) =>
+    f.dependsOn ? f.optionsBy?.[deps[f.dependsOn] ?? ""] ?? f.options ?? [] : f.options ?? [];
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -124,22 +143,32 @@ export default function RecordForm({
                           ) : f.type === "datalist" ? (
                             <>
                               <Input
+                                key={`${f.name}-${f.dependsOn ? deps[f.dependsOn] : ""}`}
                                 name={f.name}
-                                list={`dl-${f.name}`}
+                                list={`dl-${f.name}-${f.dependsOn ? deps[f.dependsOn] : ""}`}
                                 required={f.required}
                                 placeholder={f.placeholder}
                                 defaultValue={f.defaultValue as string | undefined}
                                 autoComplete="off"
                               />
-                              <datalist id={`dl-${f.name}`}>
-                                {f.options?.map((o) => (
+                              <datalist id={`dl-${f.name}-${f.dependsOn ? deps[f.dependsOn] : ""}`}>
+                                {optionsFor(f).map((o) => (
                                   <option key={o.value} value={o.value} />
                                 ))}
                               </datalist>
                             </>
                           ) : f.type === "select" ? (
-                            <Select name={f.name} defaultValue={f.defaultValue as string} required={f.required}>
-                              {f.options?.map((o) => (
+                            <Select
+                              name={f.name}
+                              defaultValue={f.defaultValue as string}
+                              required={f.required}
+                              onChange={
+                                controllers.has(f.name)
+                                  ? (e) => setDeps((d) => ({ ...d, [f.name]: e.target.value }))
+                                  : undefined
+                              }
+                            >
+                              {(f.options ?? []).map((o) => (
                                 <option key={o.value} value={o.value}>{o.label}</option>
                               ))}
                             </Select>

@@ -5,7 +5,7 @@ import { isAdminAuthed } from "@/lib/auth";
 import { fmtDate } from "@/lib/format";
 import RecordForm from "@/components/RecordForm";
 import ExcelImport from "@/components/ExcelImport";
-import { ALL_BOQ_SECTIONS } from "@/lib/boq-sections";
+import { BOQ_SECTIONS } from "@/lib/boq-sections";
 import {
   STAGE_LABELS,
   STAGE_TONE,
@@ -445,6 +445,7 @@ export default async function ProjectDetail({
                     name: "category",
                     label: "Category",
                     type: "select",
+                    defaultValue: "SUPPLY",
                     options: [
                       { value: "SUPPLY", label: "Supply" },
                       { value: "SERVICE", label: "Service" },
@@ -457,7 +458,12 @@ export default async function ProjectDetail({
                     type: "datalist",
                     placeholder: "e.g. Modules",
                     hint: "pick or type",
-                    options: ALL_BOQ_SECTIONS.map((s) => ({ value: s, label: s })),
+                    dependsOn: "category",
+                    optionsBy: {
+                      SUPPLY: BOQ_SECTIONS.SUPPLY.map((s) => ({ value: s, label: s })),
+                      SERVICE: BOQ_SECTIONS.SERVICE.map((s) => ({ value: s, label: s })),
+                      LINE_WORK: BOQ_SECTIONS.LINE_WORK.map((s) => ({ value: s, label: s })),
+                    },
                   },
                   {
                     name: "description",
