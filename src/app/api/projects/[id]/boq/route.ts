@@ -25,6 +25,22 @@ export async function POST(
     }
     const d = parsed.data;
 
+    // Read any per-block quantities from the raw body: keys like
+    // "block_Block-1" -> blockQty["Block-1"] = number (skip empty/non-numeric).
+    const blockQty: Record<string, number> = {};
+    if (body && typeof body === "object") {
+      for (const [key, value] of Object.entries(body as Record<string, unknown>)) {
+        if (!key.startsWith("block_")) continue;
+        const name = key.slice("block_".length);
+        if (!name) continue;
+        const n = Number(value);
+        if (typeof value !== "boolean" && value !== "" && value !== null && Number.isFinite(n)) {
+          blockQty[name] = n;
+        }
+      }
+    }
+    const blockQtyData = Object.keys(blockQty).length > 0 ? blockQty : undefined;
+
     const project = await prisma.project.findUnique({
       where: { id },
       select: { id: true },
@@ -45,6 +61,7 @@ export async function POST(
         uom: d.uom,
         quantity: d.quantity,
         responsibility: d.responsibility,
+        blockQty: blockQtyData,
       },
     });
 

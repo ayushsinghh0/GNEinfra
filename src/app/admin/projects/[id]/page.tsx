@@ -475,7 +475,12 @@ export default async function ProjectDetail({
                   { name: "rating", label: "Rating" },
                   { name: "specification", label: "Specification", span: 2 },
                   { name: "uom", label: "UOM" },
-                  { name: "quantity", label: "Quantity", type: "number" },
+                  { name: "quantity", label: "Quantity (total)", type: "number" },
+                  ...project.blocks.map((b) => ({
+                    name: `block_${b.name}`,
+                    label: `${b.name} qty`,
+                    type: "number" as const,
+                  })),
                 ]}
                 />
               </div>
@@ -709,7 +714,17 @@ export default async function ProjectDetail({
               <h3 className="text-base font-semibold text-slate-900">
                 Materials &amp; Procurement
               </h3>
-              <RecordForm
+              <div className="flex flex-wrap items-center gap-2">
+                <a href={`/api/projects/${project.id}/materials/export`} className={btn("secondary", "sm")}>
+                  <FileDown className="h-4 w-4" />
+                  Download Excel
+                </a>
+                <a href={`/api/projects/${project.id}/materials/template`} className={btn("ghost", "sm")}>
+                  <FileSpreadsheet className="h-4 w-4" />
+                  Template
+                </a>
+                <ExcelImport endpoint={`/api/projects/${project.id}/materials/import`} />
+                <RecordForm
                 title="Add material"
                 triggerLabel="Add material"
                 triggerIcon={<Plus className="h-4 w-4" />}
@@ -728,7 +743,8 @@ export default async function ProjectDetail({
                   { name: "qualitySignoff", label: "Quality signoff", type: "checkbox" },
                   { name: "remarks", label: "Remarks", type: "textarea" },
                 ]}
-              />
+                />
+              </div>
             </div>
             <Card className="overflow-hidden">
               {project.materials.length === 0 ? (
