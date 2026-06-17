@@ -29,6 +29,12 @@ export async function POST(req: NextRequest) {
     if (!isNaN(parsedDate.getTime())) startDate = parsedDate;
   }
 
+  const toD = (s?: string) => {
+    if (!s) return undefined;
+    const d = new Date(s);
+    return isNaN(d.getTime()) ? undefined : d;
+  };
+
   try {
     const project = await prisma.project.create({
       data: {
@@ -49,6 +55,10 @@ export async function POST(req: NextRequest) {
         clientAddress: d.clientAddress,
         stage: d.stage,
         startDate,
+        district: d.district,
+        liveDate: toD(d.liveDate),
+        completeDate: toD(d.completeDate),
+        handoverDate: toD(d.handoverDate),
       },
       select: { id: true },
     });
