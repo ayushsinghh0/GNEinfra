@@ -228,6 +228,10 @@ export default function Sidebar() {
       {/* ── Mobile: slide-in drawer ─────────────────────────────────────── */}
       <aside
         id="mobile-sidebar"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Navigation"
+        inert={!open || undefined}
         className={`md:hidden fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-slate-900 text-slate-300 transition-transform duration-300 ease-out ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
