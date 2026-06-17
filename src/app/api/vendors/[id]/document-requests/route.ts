@@ -43,13 +43,15 @@ export async function POST(
 
   try {
     // Only one live link per document.
-    await prisma.documentRequest.updateMany({
-      where: { documentId, status: "PENDING" },
-      data: { status: "REVOKED" },
-    });
-    await prisma.documentRequest.create({
-      data: { token, vendorId, documentId, docType: doc.docType, expiresAt },
-    });
+    await prisma.$transaction([
+      prisma.documentRequest.updateMany({
+        where: { documentId, status: "PENDING" },
+        data: { status: "REVOKED" },
+      }),
+      prisma.documentRequest.create({
+        data: { token, vendorId, documentId, docType: doc.docType, expiresAt },
+      }),
+    ]);
   } catch {
     return NextResponse.json({ error: "Could not create the request." }, { status: 500 });
   }

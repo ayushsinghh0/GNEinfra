@@ -249,7 +249,7 @@ export default function VendorInfoCards({
 
   const editControls = editing ? (
     <div className="flex items-center gap-2">
-      <Button type="button" variant="primary" size="sm" disabled={saving} onClick={save}>
+      <Button type="button" variant="primary" size="sm" disabled={saving || Object.keys(errors).length > 0} onClick={save}>
         <Check className="h-4 w-4" />
         {saving ? "Saving…" : "Save"}
       </Button>
