@@ -304,6 +304,12 @@ model BoqItem {
   @@index([vendorId])
 }
 
+enum DprKind {
+  VALUE // a numeric quantity done that day
+  COM   // activity completed on/after this day (non-additive)
+  NONE  // explicit no-work marker (non-additive)
+}
+
 // An execution activity (from the DPR). Daily progress is recorded as DprEntry.
 model ProjectActivity {
   id        String  @id @default(cuid())
@@ -319,6 +325,10 @@ model ProjectActivity {
   startDate   DateTime?
   endDate     DateTime? // target completion
 
+  activitySerial Int?    // "Activity Sl.no" grouping parent
+  sortOrder      Int     @default(0)
+  remarks        String?
+
   entries DprEntry[]
 
   @@index([projectId])
@@ -331,6 +341,7 @@ model DprEntry {
   activity   ProjectActivity @relation(fields: [activityId], references: [id], onDelete: Cascade)
   date       DateTime
   qtyDone    Float
+  kind    DprKind @default(VALUE)
   note       String?
 
   createdAt DateTime @default(now())
