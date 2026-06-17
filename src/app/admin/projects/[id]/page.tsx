@@ -7,6 +7,7 @@ import { fmtDate } from "@/lib/format";
 import RecordForm from "@/components/RecordForm";
 import ExcelImport from "@/components/ExcelImport";
 import VendorAssign from "@/components/VendorAssign";
+import DeleteButton from "@/components/DeleteButton";
 import { BOQ_SECTIONS } from "@/lib/boq-sections";
 import {
   STAGE_LABELS,
@@ -44,6 +45,7 @@ import {
   ClipboardCheck,
   CloudRain,
   Layers,
+  LayoutGrid,
   ListChecks,
   MapPin,
   Package,
@@ -184,6 +186,11 @@ function StatusPill({ value }: { value?: string | null }) {
 
 function fmtNum(n?: number | null) {
   return n == null ? "—" : n.toLocaleString("en-IN");
+}
+
+// A Date stored at UTC midnight → "YYYY-MM-DD" for a native date input's value.
+function dateInput(d?: Date | null) {
+  return d ? d.toISOString().slice(0, 10) : "";
 }
 
 /* ── Page ────────────────────────────────────────────────────────────────── */
@@ -640,6 +647,10 @@ export default async function ProjectDetail({
                 Execution Progress
               </h3>
               <div className="flex flex-wrap items-center gap-2">
+                <Link href={`/admin/projects/${project.id}/dpr`} className={btn("primary", "sm")}>
+                  <LayoutGrid className="h-4 w-4" />
+                  DPR grid
+                </Link>
                 <a href={`/api/projects/${project.id}/activities/export`} className={btn("secondary", "sm")}>
                   <FileDown className="h-4 w-4" />
                   Download Excel
@@ -730,6 +741,33 @@ export default async function ProjectDetail({
                               },
                               { name: "note", label: "Note", type: "textarea" },
                             ]}
+                          />
+                          <RecordForm
+                            title="Edit activity"
+                            triggerLabel="Edit"
+                            triggerVariant="ghost"
+                            triggerSize="sm"
+                            triggerIcon={<Pencil className="h-3.5 w-3.5" />}
+                            method="PATCH"
+                            submitLabel="Save changes"
+                            endpoint={`/api/projects/${project.id}/activities/${a.id}`}
+                            fields={[
+                              { name: "activity", label: "Activity", required: true, span: 2, defaultValue: a.activity },
+                              { name: "subActivity", label: "Sub-activity", span: 2, defaultValue: a.subActivity ?? "" },
+                              { name: "uom", label: "UOM", defaultValue: a.uom ?? "" },
+                              { name: "totalQty", label: "Total qty", type: "number", defaultValue: a.totalQty ?? "" },
+                              { name: "startDate", label: "Start date", type: "date", defaultValue: dateInput(a.startDate) },
+                              { name: "endDate", label: "End date", type: "date", defaultValue: dateInput(a.endDate) },
+                              { name: "activitySerial", label: "Activity serial", type: "number", defaultValue: a.activitySerial ?? "" },
+                              { name: "sortOrder", label: "Sort order", type: "number", defaultValue: a.sortOrder },
+                              { name: "remarks", label: "Remarks", type: "textarea", defaultValue: a.remarks ?? "" },
+                            ]}
+                          />
+                          <DeleteButton
+                            endpoint={`/api/projects/${project.id}/activities/${a.id}`}
+                            confirm={`Delete activity “${a.activity}” and all its daily entries? This cannot be undone.`}
+                            iconOnly
+                            label={`Delete ${a.activity}`}
                           />
                         </div>
                       </div>
