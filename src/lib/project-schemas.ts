@@ -86,10 +86,15 @@ export const materialSchema = z.object({
   approvedQty: num,
   receivedQty: num,
   receivedDate: str,
+  deliveryDate: str,
+  mdcc: str,
+  signoffBel: str,
+  mahagenco: str,
   drawingApproved: bool,
   poReleased: bool,
   qualitySignoff: bool,
   mrcStatus: str,
+  paymentStatus: str,
   remarks: str,
 });
 

@@ -386,6 +386,10 @@ model ProcurementItem {
   poReleased      Boolean @default(false)
   receivedQty     Float?
   receivedDate    DateTime?
+  deliveryDate DateTime?
+  mdcc         String? // MDCC gate (NO/WIP/Done text)
+  signoffBel   String? // BEL sign-off (NO/WIP/Done)
+  mahagenco    String? // Mahagenco approval (NO/WIP/Done)
   qualitySignoff  Boolean @default(false)
   mrcStatus       String? // MRC done / WIP
   paymentStatus   String?
