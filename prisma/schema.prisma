@@ -81,6 +81,7 @@ model Vendor {
   projects       VendorProject[]
   documents      VendorDocument[]
   invite         VendorInvite?
+  documentRequests DocumentRequest[]
   epcProjects    Project[] @relation("VendorEpcProjects") // GNE projects where this vendor is the sub-partner
   boqAssignments BoqItem[] @relation("BoqItemVendor") // BOQ scope items assigned to this vendor
 
@@ -157,6 +158,37 @@ model VendorInvite {
   usedAt    DateTime?
 
   @@index([email])
+  @@index([status])
+}
+
+// A request asking a vendor to re-upload one specific document (e.g. the original
+// was corrupt). Carries an unguessable single-use token; the vendor opens
+// /reupload/<token> to upload the replacement. Mirrors VendorInvite's security model.
+enum DocumentRequestStatus {
+  PENDING
+  USED
+  EXPIRED
+  REVOKED
+}
+
+model DocumentRequest {
+  id       String @id @default(cuid())
+  token    String @unique
+
+  vendorId String
+  vendor   Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  // The corrupt document being replaced. Nullable: the file may already be purged
+  // by the time the vendor responds, but the request still names a docType.
+  documentId String?
+  docType    String // e.g. GST_CERTIFICATE — what the vendor must re-upload
+
+  status      DocumentRequestStatus @default(PENDING)
+  expiresAt   DateTime?
+  createdAt   DateTime              @default(now())
+  fulfilledAt DateTime?
+
+  @@index([vendorId])
   @@index([status])
 }
 
