@@ -4,3 +4,8 @@ import { randomBytes } from "crypto";
 export function newInviteToken() {
   return randomBytes(24).toString("base64url");
 }
+
+// URL-safe random token for single-use document re-upload links.
+export function newDocumentRequestToken() {
+  return randomBytes(24).toString("base64url");
+}

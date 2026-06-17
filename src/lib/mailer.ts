@@ -77,6 +77,25 @@ export function inviteEmail(link: string, company?: string) {
   };
 }
 
+export function documentReuploadEmail(link: string, company: string, docLabel: string) {
+  return {
+    subject: `Action needed: re-upload your ${docLabel}`,
+    html: wrap(
+      "Document Re-upload Request",
+      `<p>Dear ${esc(company)} team,</p>
+       <p>We were unable to use the <b>${esc(docLabel)}</b> on file for your GNE vendor
+       registration (it may be unreadable or incomplete). Please upload a fresh copy
+       using the secure link below:</p>
+       <p style="text-align:center;margin:28px 0">
+         <a href="${link}" style="background:${BRAND};color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:bold">Upload ${esc(docLabel)}</a>
+       </p>
+       <p style="font-size:13px;color:#475569">Or paste this link into your browser:<br><span style="word-break:break-all">${link}</span></p>
+       <p style="font-size:13px;color:#94a3b8">This link is valid for 30 days and can be used once.</p>`
+    ),
+    text: `Dear ${company} team, please re-upload your ${docLabel} for your GNE vendor registration: ${link} (valid 30 days, single use).`,
+  };
+}
+
 export function vendorConfirmationEmail(company: string) {
   return {
     subject: "We've received your GNE vendor registration",

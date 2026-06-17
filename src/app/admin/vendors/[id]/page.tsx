@@ -25,6 +25,7 @@ import {
   BadgeCheck,
   AlertTriangle,
 } from "lucide-react";
+import { DOC_LABELS } from "@/lib/doc-labels";
 
 export const dynamic = "force-dynamic";
 
@@ -48,13 +49,6 @@ function savedPct(original?: number | null, stored?: number | null) {
   if (!original || !stored) return "0%";
   return `${Math.round((1 - stored / original) * 100)}%`;
 }
-
-const DOC_LABELS: Record<string, string> = {
-  CANCELLED_CHEQUE: "Cancelled Cheque",
-  GST_CERTIFICATE: "GST Certificate",
-  PAN_CARD: "PAN Card",
-  OTHER: "Other",
-};
 
 export default async function VendorDetail({
   params,
