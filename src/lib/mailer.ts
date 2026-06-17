@@ -70,9 +70,10 @@ export function inviteEmail(link: string, company?: string) {
          <a href="${link}" style="background:${BRAND};color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:bold">Open Registration Form</a>
        </p>
        <p style="font-size:13px;color:#475569">Or paste this link into your browser:<br><span style="word-break:break-all">${link}</span></p>
-       <p>Please keep your GST and PAN details and a cancelled cheque copy ready.</p>`
+       <p>Please keep your GST and PAN details, your contact mobile number, and a cancelled cheque copy ready.</p>
+       <p style="font-size:13px;color:#94a3b8">This link is valid for 30 days and can be used once — it stops working after you submit the form.</p>`
     ),
-    text: `You have been invited to register as a GNE vendor. Open this link to complete the form: ${link}`,
+    text: `You have been invited to register as a GNE vendor. Open this link to complete the form: ${link} (valid 30 days, single use).`,
   };
 }
 

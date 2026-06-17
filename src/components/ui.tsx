@@ -92,8 +92,10 @@ export function CardBody({
 }
 
 /* ── Form controls ──────────────────────────────────────────────────────── */
+// text-base on mobile (16px) prevents iOS Safari from auto-zooming on focus;
+// drops to text-sm (14px) from the sm breakpoint up for desktop density.
 export const inputCls =
-  "w-full h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all focus:border-brand focus:ring-4 focus:ring-brand/10 disabled:bg-slate-50";
+  "w-full h-10 rounded-lg border border-slate-300 bg-white px-3 text-base sm:text-sm text-slate-900 placeholder:text-slate-400 outline-none transition-all focus:border-brand focus:ring-4 focus:ring-brand/10 disabled:bg-slate-50";
 
 export function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
   return <input {...props} className={cn(inputCls, props.className)} />;
@@ -119,6 +121,7 @@ export function Field({
   required,
   hint,
   error,
+  errorId,
   htmlFor,
   className,
   children,
@@ -127,6 +130,7 @@ export function Field({
   required?: boolean;
   hint?: React.ReactNode;
   error?: React.ReactNode;
+  errorId?: string;
   htmlFor?: string;
   className?: string;
   children: React.ReactNode;
@@ -139,7 +143,11 @@ export function Field({
         {hint && <span className="font-normal text-slate-400">— {hint}</span>}
       </span>
       {children}
-      {error && <span className="mt-1 block text-xs text-rose-600">{error}</span>}
+      {error && (
+        <span id={errorId} className="mt-1 block text-xs text-rose-600">
+          {error}
+        </span>
+      )}
     </label>
   );
 }

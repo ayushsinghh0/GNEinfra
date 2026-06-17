@@ -47,7 +47,9 @@ export async function POST(req: NextRequest) {
   try {
     await sendMail({ to: email, subject: tpl.subject, html: tpl.html, text: tpl.text });
   } catch (err) {
-    // Keep the invite but report the email failure so admin can resend / copy link.
+    // Log the raw SMTP error server-side; return only a generic message so we
+    // don't leak transport/infrastructure details to the client.
+    console.error("[invites] email send failed", err);
     return NextResponse.json(
       {
         ok: true,
@@ -55,7 +57,6 @@ export async function POST(req: NextRequest) {
         link,
         warning:
           "Invite created but the email could not be sent. Share the link manually.",
-        detail: err instanceof Error ? err.message : String(err),
         invite: { id: invite.id, email: invite.email },
       },
       { status: 200 }

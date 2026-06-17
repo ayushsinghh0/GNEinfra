@@ -56,7 +56,13 @@ export async function compressImage(file: File): Promise<File> {
 export async function compressFormImages(form: HTMLFormElement, fd: FormData) {
   const inputs = form.querySelectorAll<HTMLInputElement>('input[type="file"]');
   for (const input of Array.from(inputs)) {
-    if (!input.name || !input.files || input.files.length === 0) continue;
+    if (!input.name) continue;
+    // An untouched file input still contributes a zero-byte File entry to the
+    // FormData — drop it so the server never receives empty document rows.
+    if (!input.files || input.files.length === 0) {
+      fd.delete(input.name);
+      continue;
+    }
     const compressed = await Promise.all(
       Array.from(input.files).map((f) => compressImage(f))
     );

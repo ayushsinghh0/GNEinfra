@@ -1,10 +1,14 @@
 import { z } from "zod";
+import {
+  GST_RE,
+  PAN_RE,
+  IFSC_RE,
+  isValidIndianMobile,
+  normalizeIndianMobile,
+} from "@/lib/vendor-validation";
 
-// Indian statutory formats. Kept reasonably strict but case-insensitive on
-// input; we uppercase before validating.
-const GST_RE = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
-const PAN_RE = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
-const IFSC_RE = /^[A-Z]{4}0[A-Z0-9]{6}$/;
+// Indian statutory + mobile formats are defined once in vendor-validation.ts so
+// the client wizard and this server schema validate identically.
 
 const optionalStr = z
   .string()
@@ -31,8 +35,14 @@ export const projectSchema = z.object({
 export const registrationSchema = z.object({
   // Company
   companyName: z.string().trim().min(2, "Company name is required").max(200),
-  contactPerson: optionalStr,
-  mobileNumber: optionalStr,
+  contactPerson: z.string().trim().min(1, "Contact person is required").max(200),
+  mobileNumber: z
+    .string()
+    .trim()
+    .min(1, "Mobile number is required")
+    .refine(isValidIndianMobile, "Enter a valid 10-digit Indian mobile number")
+    // Store the normalised 10-digit national number.
+    .transform((v) => normalizeIndianMobile(v)),
   email: z.string().trim().email("A valid email address is required").max(200),
   address: optionalStr,
   state: optionalStr,
@@ -79,9 +89,14 @@ export const registrationSchema = z.object({
 
 export type RegistrationInput = z.infer<typeof registrationSchema>;
 
-// Admin sending an invitation.
+// Admin sending an invitation. Email is lower-cased so the "one live token per
+// address" dedup (and any later correlation) is case-insensitive.
 export const inviteSchema = z.object({
-  email: z.string().trim().email("A valid email address is required"),
+  email: z
+    .string()
+    .trim()
+    .email("A valid email address is required")
+    .transform((v) => v.toLowerCase()),
   companyHint: optionalStr,
 });
 export type InviteInput = z.infer<typeof inviteSchema>;
@@ -90,6 +105,13 @@ export type InviteInput = z.infer<typeof inviteSchema>;
 export const testEmailSchema = z.object({
   to: z.string().trim().email("A valid recipient email is required"),
 });
+
+// Admin changing a vendor's review status. INVITED is intentionally excluded —
+// it is not a state a submitted vendor can be moved into.
+export const vendorStatusSchema = z.object({
+  status: z.enum(["SUBMITTED", "UNDER_REVIEW", "APPROVED", "REJECTED"]),
+});
+export type VendorStatusInput = z.infer<typeof vendorStatusSchema>;
 
 // Creating a project (Phase 2).
 const optNum = z

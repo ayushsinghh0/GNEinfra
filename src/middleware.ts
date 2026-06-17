@@ -19,7 +19,13 @@ const RULES: { prefix: string; limit: number; windowMs: number }[] = [
 
 function clientIp(req: NextRequest): string {
   const fwd = req.headers.get("x-forwarded-for");
-  if (fwd) return fwd.split(",")[0].trim();
+  if (fwd) {
+    // The reverse proxy (Caddy) APPENDS the real client IP, so the RIGHTMOST
+    // entry is trustworthy. The leftmost is client-supplied and spoofable — using
+    // it would let an attacker rotate it to defeat the rate limiter entirely.
+    const parts = fwd.split(",").map((s) => s.trim()).filter(Boolean);
+    if (parts.length) return parts[parts.length - 1];
+  }
   return req.headers.get("x-real-ip") || "unknown";
 }
 

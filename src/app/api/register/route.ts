@@ -16,9 +16,24 @@ const DOC_FIELDS: Record<string, string> = {
   otherDocs: "OTHER",
 };
 
+// Thrown inside the registration transaction when another request already
+// consumed this invite (the conditional PENDING->USED update matched 0 rows).
+class InviteAlreadyUsedError extends Error {}
+
+// Abuse caps for this public endpoint.
+const MAX_REQUEST_BYTES = 60 * 1024 * 1024; // reject obviously huge bodies up front
+const MAX_DOC_FILES = 12; // total document files per submission
+const MAX_DOC_BYTES_TOTAL = 50 * 1024 * 1024; // aggregate document bytes
+const MAX_PROJECTS_JSON = 64 * 1024; // raw `projects` JSON string length
+
 // POST /api/register  (public, requires a valid invite token)
 // Accepts multipart/form-data: text fields + `projects` JSON + document files.
 export async function POST(req: NextRequest) {
+  const declaredLength = Number(req.headers.get("content-length") || 0);
+  if (declaredLength > MAX_REQUEST_BYTES) {
+    return NextResponse.json({ error: "Upload too large." }, { status: 413 });
+  }
+
   let form: FormData;
   try {
     form = await req.formData();
@@ -60,6 +75,9 @@ export async function POST(req: NextRequest) {
   let projects: unknown = [];
   const projectsRaw = form.get("projects");
   if (typeof projectsRaw === "string" && projectsRaw.trim()) {
+    if (projectsRaw.length > MAX_PROJECTS_JSON) {
+      return NextResponse.json({ error: "Too much project data." }, { status: 413 });
+    }
     try {
       projects = JSON.parse(projectsRaw);
     } catch {
@@ -70,10 +88,17 @@ export async function POST(req: NextRequest) {
 
   const parsed = registrationSchema.safeParse(raw);
   if (!parsed.success) {
+    // Return every issue (field + message) so the client can route each error
+    // to the right wizard step. The client validates first, so this is a backstop.
+    const issues = parsed.error.issues.map((i) => ({
+      field: i.path.join("."),
+      message: i.message,
+    }));
     return NextResponse.json(
       {
-        error: parsed.error.issues[0]?.message ?? "Invalid input",
-        field: parsed.error.issues[0]?.path?.join("."),
+        error: issues[0]?.message ?? "Invalid input",
+        field: issues[0]?.field,
+        issues,
       },
       { status: 400 }
     );
@@ -87,73 +112,102 @@ export async function POST(req: NextRequest) {
 
   const doi = d.dateOfIncorporation ? new Date(d.dateOfIncorporation) : null;
 
-  // Atomically consume the invite first — prevents a double-submit or a race
-  // between two concurrent requests from creating two vendors for one invite.
-  // Only the request that flips PENDING -> USED proceeds.
-  const consumed = await prisma.vendorInvite.updateMany({
-    where: { id: invite.id, status: "PENDING" },
-    data: { status: "USED", usedAt: new Date() },
-  });
-  if (consumed.count === 0) {
+  // Cap document count + aggregate size BEFORE consuming the invite or doing any
+  // CPU-heavy compression, so a single valid token can't be used to DoS the server.
+  let docCount = 0;
+  let docBytes = 0;
+  for (const field of Object.keys(DOC_FIELDS)) {
+    for (const f of form.getAll(field)) {
+      if (f instanceof File && f.size > 0) {
+        docCount++;
+        docBytes += f.size;
+      }
+    }
+  }
+  if (docCount > MAX_DOC_FILES || docBytes > MAX_DOC_BYTES_TOTAL) {
     return NextResponse.json(
-      { error: "This registration link has already been used." },
-      { status: 409 }
+      { error: "Too many or too large documents. Please reduce the files and try again." },
+      { status: 413 }
     );
   }
 
-  // Create the vendor + its projects atomically (Prisma nested create).
-  const vendor = await prisma.vendor.create({
-    data: {
-      status: "SUBMITTED",
-      companyName: d.companyName,
-      contactPerson: d.contactPerson,
-      mobileNumber: d.mobileNumber,
-      email: d.email,
-      address: d.address,
-      state: d.state,
-      website: d.website,
-      dateOfIncorporation: doi && !isNaN(doi.getTime()) ? doi : null,
-      yearsOfService: d.yearsOfService,
-      annualTurnover: d.annualTurnover,
-      gstNo: d.gstNo,
-      panNo: d.panNo,
-      exciseNo: d.exciseNo,
-      tinNo: d.tinNo,
-      vatLstNo: d.vatLstNo,
-      cstNo: d.cstNo,
-      serviceTaxNo: d.serviceTaxNo,
-      msmeNo: d.msmeNo,
-      bankName: d.bankName,
-      bankBranchAddress: d.bankBranchAddress,
-      bankAccountNo: d.bankAccountNo,
-      bankBranchCode: d.bankBranchCode,
-      ifscCode: d.ifscCode,
-      swiftCode: d.swiftCode,
-      ibanCode: d.ibanCode,
-      projects: {
-        create: cleanProjects.map((p) => ({
-          serialNo: p.serialNo,
-          clientName: p.clientName,
-          capacity: p.capacity,
-          projectType: p.projectType,
-          contractType: p.contractType,
-          location: p.location,
-          yearOfCompletion: p.yearOfCompletion,
-          scopeOfWork: p.scopeOfWork,
-          percentCompleted: p.percentCompleted,
-          remarks: p.remarks,
-        })),
-      },
-    },
-  }).catch(() => null);
+  // Create the vendor and consume the invite in ONE transaction so the outcome
+  // is all-or-nothing: either a vendor exists and the invite is USED + linked to
+  // it, or neither happened. This closes two holes a two-step approach has —
+  //  (a) a crash between consuming and creating that would burn the link with no
+  //      vendor saved, and
+  //  (b) an orphaned invite whose vendorId link failed to set.
+  // The conditional `status: PENDING` update also blocks the concurrent
+  // double-submit race: only the request that flips PENDING->USED commits; any
+  // loser matches 0 rows, throws, and the whole transaction (vendor included)
+  // rolls back.
+  let vendor: { id: string } | null = null;
+  try {
+    vendor = await prisma.$transaction(async (tx) => {
+      const created = await tx.vendor.create({
+        data: {
+          status: "SUBMITTED",
+          companyName: d.companyName,
+          contactPerson: d.contactPerson,
+          mobileNumber: d.mobileNumber,
+          email: d.email,
+          address: d.address,
+          state: d.state,
+          website: d.website,
+          dateOfIncorporation: doi && !isNaN(doi.getTime()) ? doi : null,
+          yearsOfService: d.yearsOfService,
+          annualTurnover: d.annualTurnover,
+          gstNo: d.gstNo,
+          panNo: d.panNo,
+          exciseNo: d.exciseNo,
+          tinNo: d.tinNo,
+          vatLstNo: d.vatLstNo,
+          cstNo: d.cstNo,
+          serviceTaxNo: d.serviceTaxNo,
+          msmeNo: d.msmeNo,
+          bankName: d.bankName,
+          bankBranchAddress: d.bankBranchAddress,
+          bankAccountNo: d.bankAccountNo,
+          bankBranchCode: d.bankBranchCode,
+          ifscCode: d.ifscCode,
+          swiftCode: d.swiftCode,
+          ibanCode: d.ibanCode,
+          projects: {
+            create: cleanProjects.map((p) => ({
+              serialNo: p.serialNo,
+              clientName: p.clientName,
+              capacity: p.capacity,
+              projectType: p.projectType,
+              contractType: p.contractType,
+              location: p.location,
+              yearOfCompletion: p.yearOfCompletion,
+              scopeOfWork: p.scopeOfWork,
+              percentCompleted: p.percentCompleted,
+              remarks: p.remarks,
+            })),
+          },
+        },
+      });
+      const consumed = await tx.vendorInvite.updateMany({
+        where: { id: invite.id, status: "PENDING" },
+        data: { status: "USED", usedAt: new Date(), vendorId: created.id },
+      });
+      if (consumed.count === 0) throw new InviteAlreadyUsedError();
+      return created;
+    });
+  } catch (e) {
+    if (e instanceof InviteAlreadyUsedError) {
+      return NextResponse.json(
+        { error: "This registration link has already been used." },
+        { status: 409 }
+      );
+    }
+    return NextResponse.json(
+      { error: "Could not save your registration. Please try again." },
+      { status: 500 }
+    );
+  }
   if (!vendor) {
-    // Roll the invite back so the vendor can retry with the same link.
-    await prisma.vendorInvite
-      .updateMany({
-        where: { id: invite.id, status: "USED", vendorId: null },
-        data: { status: "PENDING", usedAt: null },
-      })
-      .catch(() => {});
     return NextResponse.json(
       { error: "Could not save your registration. Please try again." },
       { status: 500 }
@@ -184,11 +238,6 @@ export async function POST(req: NextRequest) {
       }
     }
   }
-
-  // Link the (already consumed) invite to the created vendor.
-  await prisma.vendorInvite
-    .update({ where: { id: invite.id }, data: { vendorId: vendor.id } })
-    .catch(() => {});
 
   // Fire off notification emails (failures shouldn't fail the registration).
   const base = process.env.APP_BASE_URL || "http://localhost:3000";

@@ -1,6 +1,11 @@
-import { gzipSync, gunzipSync } from "zlib";
+import { gzip, gunzip } from "zlib";
+import { promisify } from "util";
 import { randomBytes } from "crypto";
 import { storage } from "@/lib/storage";
+
+// Async (non-blocking) compression so a large upload never freezes the event loop.
+const gzipAsync = promisify(gzip);
+const gunzipAsync = promisify(gunzip);
 
 // Upload constraints.
 const MAX_BYTES = 10 * 1024 * 1024; // 10 MB per file
@@ -39,7 +44,7 @@ export async function saveDocument(
   }
 
   const original = Buffer.from(await file.arrayBuffer());
-  const gz = gzipSync(original, { level: 9 });
+  const gz = await gzipAsync(original, { level: 9 });
   const compressed = gz.length < original.length;
   const body = compressed ? gz : original;
 
@@ -53,8 +58,13 @@ export async function saveDocument(
     compressed ? "application/gzip" : file.type || "application/octet-stream"
   );
 
+  // Strip control characters / quotes from the display name so it can never break
+  // a Content-Disposition header on download; keep it readable and bounded.
+  const cleanName =
+    file.name.replace(/[\r\n\t\0"\\]/g, " ").trim().slice(0, 200) || "document";
+
   return {
-    originalName: file.name,
+    originalName: cleanName,
     storageKey: key,
     mimeType: file.type || "application/octet-stream",
     originalSize: original.length,
@@ -69,7 +79,7 @@ export async function readDocument(doc: {
   compressed: boolean;
 }): Promise<Buffer> {
   const raw = await storage.get(doc.storageKey);
-  return doc.compressed ? gunzipSync(raw) : raw;
+  return doc.compressed ? await gunzipAsync(raw) : raw;
 }
 
 export async function deleteDocument(storageKey: string) {

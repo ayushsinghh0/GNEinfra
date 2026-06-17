@@ -4,8 +4,11 @@ import { isAdminAuthed } from "@/lib/auth";
 import { readDocument } from "@/lib/documents";
 
 // Days after the FIRST download before the file is purged from storage.
+// Validated so a misconfigured (non-numeric / <=0) env value can't silently
+// disable purging or stamp an Invalid Date.
 function purgeDays() {
-  return Number(process.env.DOC_PURGE_DAYS || 7);
+  const n = Number(process.env.DOC_PURGE_DAYS);
+  return Number.isFinite(n) && n > 0 ? n : 7;
 }
 
 // GET /api/documents/<id>            → view the file inline (no side effects)
@@ -29,7 +32,8 @@ export async function GET(
   if (doc.purgedAt) {
     return NextResponse.json(
       {
-        error: `This file was automatically deleted ${purgeDays()} days after it was first downloaded, to save storage cost.`,
+        error:
+          "This file was automatically deleted after its retention window to save storage cost.",
       },
       { status: 410 }
     );
@@ -52,17 +56,18 @@ export async function GET(
   if (isDownload) {
     const now = new Date();
     try {
+      // Counter increment is unconditionally atomic.
       await prisma.vendorDocument.update({
         where: { id: doc.id },
+        data: { downloadCount: { increment: 1 } },
+      });
+      // Stamp first-download fields exactly once, at the DB level (race-safe):
+      // updateMany only matches while firstDownloadedAt is still null.
+      await prisma.vendorDocument.updateMany({
+        where: { id: doc.id, firstDownloadedAt: null },
         data: {
-          downloadCount: { increment: 1 },
-          // Conditionally stamp the first-download fields only once.
-          ...(doc.firstDownloadedAt
-            ? {}
-            : {
-                firstDownloadedAt: now,
-                purgeAfter: new Date(now.getTime() + purgeDays() * 86400_000),
-              }),
+          firstDownloadedAt: now,
+          purgeAfter: new Date(now.getTime() + purgeDays() * 86400_000),
         },
       });
     } catch (e) {
@@ -70,11 +75,18 @@ export async function GET(
     }
   }
 
+  // Build a Content-Disposition that can never break the header: an ASCII-only
+  // quoted filename (control chars / quotes / non-ASCII removed) plus an RFC 6266
+  // filename* with the full UTF-8 name percent-encoded.
+  const baseName = (doc.originalName || "document").replace(/[\r\n"\\]/g, "");
+  const asciiName = baseName.replace(/[^\x20-\x7e]/g, "_").slice(0, 200) || "document";
   const disposition = isDownload ? "attachment" : "inline";
   return new NextResponse(new Uint8Array(data), {
     headers: {
       "Content-Type": doc.mimeType || "application/octet-stream",
-      "Content-Disposition": `${disposition}; filename="${doc.originalName.replace(/"/g, "")}"`,
+      "Content-Disposition": `${disposition}; filename="${asciiName}"; filename*=UTF-8''${encodeURIComponent(
+        baseName
+      )}`,
     },
   });
 }

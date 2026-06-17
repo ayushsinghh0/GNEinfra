@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { isAdminAuthed } from "@/lib/auth";
 import { fmtDate, fmtDateOnly } from "@/lib/format";
 import Badge from "@/components/Badge";
+import VendorStatusActions from "@/components/VendorStatusActions";
 import {
   Card,
   CardHeader,
@@ -23,6 +24,8 @@ import {
   Download,
   FileDown,
   CalendarDays,
+  BadgeCheck,
+  AlertTriangle,
 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -79,9 +82,14 @@ export default async function VendorDetail({
     include: {
       projects: { orderBy: { serialNo: "asc" } },
       documents: { orderBy: { uploadedAt: "asc" } },
+      invite: { select: { email: true } },
     },
   });
   if (!v) notFound();
+
+  const invitedEmail = v.invite?.email ?? null;
+  const emailMismatch =
+    !!invitedEmail && invitedEmail.toLowerCase() !== v.email.toLowerCase();
 
   return (
     <>
@@ -102,11 +110,68 @@ export default async function VendorDetail({
             {v.companyName}
           </h1>
           <Badge value={v.status} />
+          {v.vendorCode && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-semibold text-brand-700 ring-1 ring-inset ring-brand-600/20">
+              <BadgeCheck className="h-3.5 w-3.5" />
+              {v.vendorCode}
+            </span>
+          )}
           <span className="ml-auto inline-flex items-center gap-1.5 text-sm text-slate-400">
             <CalendarDays className="h-4 w-4" />
             Registered {fmtDate(v.createdAt)}
           </span>
         </div>
+
+        {/* Review & status */}
+        <Card>
+          <CardHeader
+            title={
+              <span className="inline-flex items-center gap-2">
+                <BadgeCheck className="h-[18px] w-[18px] text-brand" />
+                Review &amp; Status
+              </span>
+            }
+            subtitle="Move this vendor through review. Approving assigns a permanent GNE vendor code."
+          />
+          <CardBody>
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+              <dl className="flex flex-wrap gap-x-10 gap-y-3">
+                <div>
+                  <dt className="text-xs text-slate-400">Current status</dt>
+                  <dd className="mt-1">
+                    <Badge value={v.status} />
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-slate-400">Vendor code</dt>
+                  <dd className="mt-1 text-sm font-semibold tabular-nums text-slate-900">
+                    {v.vendorCode || (
+                      <span className="font-normal text-slate-400">Assigned on approval</span>
+                    )}
+                  </dd>
+                </div>
+                {invitedEmail && (
+                  <div>
+                    <dt className="text-xs text-slate-400">Invited address</dt>
+                    <dd className="mt-1 text-sm font-medium text-slate-700">{invitedEmail}</dd>
+                  </div>
+                )}
+              </dl>
+              <div className="lg:pl-6">
+                <VendorStatusActions vendorId={v.id} status={v.status} vendorCode={v.vendorCode} />
+              </div>
+            </div>
+            {emailMismatch && (
+              <div className="mt-4 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>
+                  The registered email (<b>{v.email}</b>) differs from the invited address (
+                  <b>{invitedEmail}</b>). Confirm the vendor&apos;s identity before approving.
+                </span>
+              </div>
+            )}
+          </CardBody>
+        </Card>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <Card>
