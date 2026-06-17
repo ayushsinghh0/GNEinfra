@@ -27,6 +27,20 @@ export const dprEntrySchema = z.object({
   note: str,
 });
 
+export const dprGridSchema = z.object({
+  cells: z
+    .array(
+      z.object({
+        activityId: z.string().min(1),
+        date: z.string().min(1),
+        kind: z.enum(["VALUE", "COM", "NONE"]).default("VALUE"),
+        qtyDone: z.coerce.number().refine((n) => Number.isFinite(n), "Quantity required").optional(),
+      })
+    )
+    .min(1, "No cells to save")
+    .max(2000, "Too many cells in one save"),
+});
+
 export const activitySchema = z.object({
   activity: z.string().trim().min(1, "Activity name is required").max(200),
   subActivity: str,
@@ -34,6 +48,9 @@ export const activitySchema = z.object({
   totalQty: num,
   startDate: str,
   endDate: str,
+  activitySerial: num,
+  sortOrder: num,
+  remarks: str,
 });
 
 export const boqSchema = z.object({
