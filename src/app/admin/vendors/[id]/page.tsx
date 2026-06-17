@@ -6,6 +6,7 @@ import { fmtDate } from "@/lib/format";
 import Badge from "@/components/Badge";
 import VendorStatusActions from "@/components/VendorStatusActions";
 import VendorInfoCards, { type VendorFields } from "@/components/VendorInfoCards";
+import DocumentRequestButton from "@/components/DocumentRequestButton";
 import {
   Card,
   CardHeader,
@@ -221,6 +222,7 @@ export default async function VendorDetail({
                           </span>
                         ) : (
                           <div className="flex shrink-0 items-center gap-2">
+                            <DocumentRequestButton vendorId={v.id} documentId={d.id} />
                             <a
                               href={`/api/documents/${d.id}`}
                               target="_blank"
