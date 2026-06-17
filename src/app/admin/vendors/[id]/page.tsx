@@ -2,9 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { isAdminAuthed } from "@/lib/auth";
-import { fmtDate, fmtDateOnly } from "@/lib/format";
+import { fmtDate } from "@/lib/format";
 import Badge from "@/components/Badge";
 import VendorStatusActions from "@/components/VendorStatusActions";
+import VendorInfoCards, { type VendorFields } from "@/components/VendorInfoCards";
 import {
   Card,
   CardHeader,
@@ -16,9 +17,6 @@ import {
 } from "@/components/ui";
 import {
   ArrowLeft,
-  Building,
-  ShieldCheck,
-  Banknote,
   FileText,
   Eye,
   Download,
@@ -29,17 +27,6 @@ import {
 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
-
-function Row({ label, value }: { label: string; value?: string | null }) {
-  return (
-    <div className="flex gap-4 py-2 border-b border-slate-100 last:border-0">
-      <dt className="w-44 shrink-0 text-sm text-slate-500">{label}</dt>
-      <dd className="text-sm font-medium text-slate-900">
-        {value || <span className="font-normal text-slate-300">—</span>}
-      </dd>
-    </div>
-  );
-}
 
 function PRow({ label, value }: { label: string; value?: string | null }) {
   return (
@@ -90,6 +77,36 @@ export default async function VendorDetail({
   const invitedEmail = v.invite?.email ?? null;
   const emailMismatch =
     !!invitedEmail && invitedEmail.toLowerCase() !== v.email.toLowerCase();
+
+  const vendorFields: VendorFields = {
+    companyName: v.companyName ?? "",
+    contactPerson: v.contactPerson ?? "",
+    mobileNumber: v.mobileNumber ?? "",
+    email: v.email ?? "",
+    address: v.address ?? "",
+    state: v.state ?? "",
+    website: v.website ?? "",
+    dateOfIncorporation: v.dateOfIncorporation
+      ? v.dateOfIncorporation.toISOString().slice(0, 10)
+      : "",
+    yearsOfService: v.yearsOfService ?? "",
+    annualTurnover: v.annualTurnover ?? "",
+    gstNo: v.gstNo ?? "",
+    panNo: v.panNo ?? "",
+    exciseNo: v.exciseNo ?? "",
+    tinNo: v.tinNo ?? "",
+    vatLstNo: v.vatLstNo ?? "",
+    cstNo: v.cstNo ?? "",
+    serviceTaxNo: v.serviceTaxNo ?? "",
+    msmeNo: v.msmeNo ?? "",
+    bankName: v.bankName ?? "",
+    bankBranchAddress: v.bankBranchAddress ?? "",
+    bankAccountNo: v.bankAccountNo ?? "",
+    bankBranchCode: v.bankBranchCode ?? "",
+    ifscCode: v.ifscCode ?? "",
+    swiftCode: v.swiftCode ?? "",
+    ibanCode: v.ibanCode ?? "",
+  };
 
   return (
     <>
@@ -174,74 +191,7 @@ export default async function VendorDetail({
         </Card>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <Card>
-            <CardHeader
-              title={
-                <span className="inline-flex items-center gap-2">
-                  <Building className="h-[18px] w-[18px] text-brand" />
-                  Company Information
-                </span>
-              }
-            />
-            <CardBody>
-              <dl>
-                <Row label="Contact Person" value={v.contactPerson} />
-                <Row label="Mobile" value={v.mobileNumber} />
-                <Row label="Email" value={v.email} />
-                <Row label="Address" value={v.address} />
-                <Row label="State" value={v.state} />
-                <Row label="Website" value={v.website} />
-                <Row label="Date of Incorporation" value={fmtDateOnly(v.dateOfIncorporation)} />
-                <Row label="Years of Service" value={v.yearsOfService} />
-                <Row label="Annual Turnover" value={v.annualTurnover} />
-              </dl>
-            </CardBody>
-          </Card>
-
-          <Card>
-            <CardHeader
-              title={
-                <span className="inline-flex items-center gap-2">
-                  <ShieldCheck className="h-[18px] w-[18px] text-brand" />
-                  Statutory &amp; Tax
-                </span>
-              }
-            />
-            <CardBody>
-              <dl>
-                <Row label="GST No" value={v.gstNo} />
-                <Row label="PAN No" value={v.panNo} />
-                <Row label="Excise No" value={v.exciseNo} />
-                <Row label="TIN No" value={v.tinNo} />
-                <Row label="VAT / LST No" value={v.vatLstNo} />
-                <Row label="CST No" value={v.cstNo} />
-                <Row label="Service Tax No" value={v.serviceTaxNo} />
-                <Row label="MSME No" value={v.msmeNo} />
-              </dl>
-            </CardBody>
-          </Card>
-
-          <Card>
-            <CardHeader
-              title={
-                <span className="inline-flex items-center gap-2">
-                  <Banknote className="h-[18px] w-[18px] text-brand" />
-                  Bank Details
-                </span>
-              }
-            />
-            <CardBody>
-              <dl>
-                <Row label="Bank Name" value={v.bankName} />
-                <Row label="Branch Address" value={v.bankBranchAddress} />
-                <Row label="Account No" value={v.bankAccountNo} />
-                <Row label="Branch Code" value={v.bankBranchCode} />
-                <Row label="IFSC Code" value={v.ifscCode} />
-                <Row label="SWIFT Code" value={v.swiftCode} />
-                <Row label="IBAN Code" value={v.ibanCode} />
-              </dl>
-            </CardBody>
-          </Card>
+          <VendorInfoCards vendorId={v.id} initial={vendorFields} />
 
           <Card>
             <CardHeader
