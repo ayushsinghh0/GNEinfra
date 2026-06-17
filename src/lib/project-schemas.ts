@@ -23,6 +23,7 @@ export const dprEntrySchema = z.object({
     .number()
     .refine((n) => Number.isFinite(n), "Quantity is required")
     .refine((n) => n >= 0, "Quantity cannot be negative"),
+  kind: z.enum(["VALUE", "COM", "NONE"]).default("VALUE"),
   note: str,
 });
 

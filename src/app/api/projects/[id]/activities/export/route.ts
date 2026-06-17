@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { isAdminAuthed } from "@/lib/auth";
 import { buildActivitiesWorkbook } from "@/lib/activities-excel";
+import { valueDone } from "@/lib/projects";
 
 // GET /api/projects/[id]/activities/export — download the project's execution
 // activities as .xlsx (with cumulative done + completion %).
@@ -31,7 +32,7 @@ export async function GET(
       subActivity: a.subActivity,
       uom: a.uom,
       totalQty: a.totalQty,
-      cumulative: a.entries.reduce((s, e) => s + e.qtyDone, 0),
+      cumulative: valueDone(a.entries),
     })),
   });
 

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowLeft, TrendingUp } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { isAdminAuthed } from "@/lib/auth";
-import { activityPct } from "@/lib/projects";
+import { activityPct, valueDone, isCompleted } from "@/lib/projects";
 import {
   PageHeader,
   Card,
@@ -36,7 +36,7 @@ export default async function ProjectsSummaryPage() {
     orderBy: { createdAt: "asc" },
     include: {
       activities: {
-        include: { entries: { select: { qtyDone: true } } },
+        include: { entries: { select: { qtyDone: true, kind: true } } },
       },
     },
   });
@@ -59,8 +59,9 @@ export default async function ProjectsSummaryPage() {
           subActivity: a.subActivity || "",
         });
       }
-      const done = a.entries.reduce((sum, e) => sum + e.qtyDone, 0);
-      map.set(key, activityPct(done, a.totalQty));
+      const done = valueDone(a.entries);
+      const pct = isCompleted(a.entries) ? 100 : activityPct(done, a.totalQty);
+      map.set(key, pct);
     }
     pctByProject[p.id] = map;
   }

@@ -12,6 +12,8 @@ import {
   STAGE_LABELS,
   STAGE_TONE,
   activityPct,
+  valueDone,
+  isCompleted,
   milestonePct,
   fmtCapacity,
   fmtCr,
@@ -673,8 +675,10 @@ export default async function ProjectDetail({
               </Card>
             ) : (
               project.activities.map((a) => {
-                const done = a.entries.reduce((s, e) => s + e.qtyDone, 0);
-                const pct = activityPct(done, a.totalQty);
+                const done = valueDone(a.entries);
+                const pct = isCompleted(a.entries)
+                  ? 100
+                  : activityPct(done, a.totalQty);
                 const remaining =
                   a.totalQty != null && a.totalQty > 0
                     ? Math.max(0, a.totalQty - done)

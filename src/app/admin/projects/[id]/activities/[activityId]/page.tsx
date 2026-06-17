@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { isAdminAuthed } from "@/lib/auth";
-import { activityPct } from "@/lib/projects";
+import { activityPct, valueDone, isCompleted } from "@/lib/projects";
 import { fmtDateOnly } from "@/lib/format";
 import RecordForm from "@/components/RecordForm";
 import {
@@ -63,18 +63,22 @@ export default async function ActivityDetail({
   });
   if (!activity || activity.projectId !== id) notFound();
 
-  const done = activity.entries.reduce((s, e) => s + e.qtyDone, 0);
-  const pct = activityPct(done, activity.totalQty);
+  const done = valueDone(activity.entries);
+  const pct = isCompleted(activity.entries)
+    ? 100
+    : activityPct(done, activity.totalQty);
   const remaining =
     activity.totalQty != null && activity.totalQty > 0
       ? Math.max(0, activity.totalQty - done)
       : null;
 
   // Running cumulative total over the entries (already ordered by date asc).
+  // Only VALUE entries are additive; COM/NONE markers do not move the total.
   const rows = activity.entries.reduce<
     { entry: (typeof activity.entries)[number]; cumulative: number }[]
   >((acc, e) => {
-    const cumulative = (acc[acc.length - 1]?.cumulative ?? 0) + e.qtyDone;
+    const prev = acc[acc.length - 1]?.cumulative ?? 0;
+    const cumulative = prev + (e.kind === "VALUE" ? e.qtyDone : 0);
     acc.push({ entry: e, cumulative });
     return acc;
   }, []);

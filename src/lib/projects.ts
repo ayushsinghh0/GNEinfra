@@ -42,6 +42,15 @@ export function activityPct(doneQty: number, totalQty?: number | null): number {
   return Math.min(100, Math.round((doneQty / totalQty) * 100));
 }
 
+// Cumulative done counts only VALUE entries; COM/NONE are non-additive markers.
+export function valueDone(entries: { qtyDone: number; kind: string }[]): number {
+  return entries.reduce((s, e) => s + (e.kind === "VALUE" ? e.qtyDone : 0), 0);
+}
+// An activity is complete if any day is marked COM.
+export function isCompleted(entries: { kind: string }[]): boolean {
+  return entries.some((e) => e.kind === "COM");
+}
+
 export function milestonePct(milestones: { status: string }[]): number {
   if (!milestones.length) return 0;
   const done = milestones.filter((m) => m.status === "DONE").length;
