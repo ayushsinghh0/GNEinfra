@@ -23,6 +23,7 @@ const EMPTY = {
   clientName: "",
   tenderId: "",
   state: "",
+  district: "",
   cluster: "",
   plantName: "",
   capacityAcMw: "",
@@ -34,13 +35,26 @@ const EMPTY = {
   vendorId: "",
   stage: "PLANNING",
   startDate: "",
+  liveDate: "",
+  completeDate: "",
+  handoverDate: "",
   plantAddress: "",
   clientAddress: "",
 };
 
-export default function ProjectForm({ vendors }: { vendors: Vendor[] }) {
+export default function ProjectForm({
+  vendors,
+  mode = "create",
+  initial,
+  projectId,
+}: {
+  vendors: Vendor[];
+  mode?: "create" | "edit";
+  initial?: Partial<typeof EMPTY>;
+  projectId?: string;
+}) {
   const router = useRouter();
-  const [form, setForm] = useState({ ...EMPTY });
+  const [form, setForm] = useState({ ...EMPTY, ...(initial ?? {}) });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
@@ -57,13 +71,24 @@ export default function ProjectForm({ vendors }: { vendors: Vendor[] }) {
     setError(null);
     setStatus(null);
     try {
-      const res = await fetch("/api/projects", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
+      const res = await fetch(
+        mode === "edit" ? `/api/projects/${projectId}` : "/api/projects",
+        {
+          method: mode === "edit" ? "PATCH" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(form),
+        }
+      );
       const d = await res.json().catch(() => ({}));
-      if (!res.ok || !d.ok) throw new Error(d.error || "Failed to create project");
+      if (!res.ok || !d.ok)
+        throw new Error(
+          d.error || (mode === "edit" ? "Failed to save project" : "Failed to create project")
+        );
+
+      if (mode === "edit") {
+        router.push(`/admin/projects/${projectId}`);
+        return;
+      }
 
       const bom = bomInputRef.current?.files?.[0];
       if (bom) {
@@ -90,7 +115,13 @@ export default function ProjectForm({ vendors }: { vendors: Vendor[] }) {
 
       router.push(`/admin/projects/${d.id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create project");
+      setError(
+        err instanceof Error
+          ? err.message
+          : mode === "edit"
+            ? "Failed to save project"
+            : "Failed to create project"
+      );
       setStatus(null);
       setLoading(false);
     }
@@ -99,8 +130,12 @@ export default function ProjectForm({ vendors }: { vendors: Vendor[] }) {
   return (
     <Card>
       <CardHeader
-        title="New project"
-        subtitle="Register a project to start tracking its stage, BOQ, activities and milestones."
+        title={mode === "edit" ? "Edit project" : "New project"}
+        subtitle={
+          mode === "edit"
+            ? "Update this project's details, lifecycle dates and assignments."
+            : "Register a project to start tracking its stage, BOQ, activities and milestones."
+        }
       />
       <CardBody className="space-y-8">
         <form onSubmit={onSubmit} className="space-y-8">
@@ -149,6 +184,14 @@ export default function ProjectForm({ vendors }: { vendors: Vendor[] }) {
                   value={form.state}
                   onChange={(e) => set("state", e.target.value)}
                   placeholder="e.g. Rajasthan"
+                />
+              </Field>
+              <Field label="District" htmlFor="district">
+                <Input
+                  id="district"
+                  value={form.district}
+                  onChange={(e) => set("district", e.target.value)}
+                  placeholder="e.g. CH SN"
                 />
               </Field>
               <Field label="Cluster" htmlFor="cluster">
@@ -269,6 +312,30 @@ export default function ProjectForm({ vendors }: { vendors: Vendor[] }) {
                   onChange={(e) => set("startDate", e.target.value)}
                 />
               </Field>
+              <Field label="Live date" htmlFor="liveDate">
+                <Input
+                  id="liveDate"
+                  type="date"
+                  value={form.liveDate}
+                  onChange={(e) => set("liveDate", e.target.value)}
+                />
+              </Field>
+              <Field label="Complete date" htmlFor="completeDate">
+                <Input
+                  id="completeDate"
+                  type="date"
+                  value={form.completeDate}
+                  onChange={(e) => set("completeDate", e.target.value)}
+                />
+              </Field>
+              <Field label="Handover date" htmlFor="handoverDate">
+                <Input
+                  id="handoverDate"
+                  type="date"
+                  value={form.handoverDate}
+                  onChange={(e) => set("handoverDate", e.target.value)}
+                />
+              </Field>
             </div>
           </section>
 
@@ -300,6 +367,7 @@ export default function ProjectForm({ vendors }: { vendors: Vendor[] }) {
           </section>
 
           {/* ── Bill of materials ────────────────────────────────────── */}
+          {mode === "create" && (
           <section>
             <h3 className="mb-4 text-[13px] font-semibold uppercase tracking-wider text-slate-400">
               Bill of materials
@@ -326,6 +394,7 @@ export default function ProjectForm({ vendors }: { vendors: Vendor[] }) {
               </Field>
             </div>
           </section>
+          )}
 
           {error && (
             <div
@@ -345,11 +414,11 @@ export default function ProjectForm({ vendors }: { vendors: Vendor[] }) {
             )}
             <Button type="submit" variant="primary" disabled={loading}>
               {loading ? (
-                status ?? "Creating…"
+                status ?? (mode === "edit" ? "Saving…" : "Creating…")
               ) : (
                 <>
                   <FolderPlus className="h-4 w-4" />
-                  Create project
+                  {mode === "edit" ? "Save changes" : "Create project"}
                 </>
               )}
             </Button>

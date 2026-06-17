@@ -45,6 +45,7 @@ import {
   ListChecks,
   MapPin,
   Package,
+  Pencil,
   Plus,
   ShieldCheck,
   Target,
@@ -238,10 +239,16 @@ export default async function ProjectDetail({
             {project.gneId}
           </span>
         </div>
-        <Link href="/admin/projects" className={btn("secondary", "sm")}>
-          <ArrowLeft className="h-4 w-4" />
-          Projects
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link href={`/admin/projects/${project.id}/edit`} className={btn("secondary", "sm")}>
+            <Pencil className="h-4 w-4" />
+            Edit
+          </Link>
+          <Link href="/admin/projects" className={btn("secondary", "sm")}>
+            <ArrowLeft className="h-4 w-4" />
+            Projects
+          </Link>
+        </div>
       </header>
 
       <div className="p-8 space-y-6">
