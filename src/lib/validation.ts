@@ -161,5 +161,14 @@ export const projectSchemaCreate = z.object({
     .optional()
     .default("PLANNING"),
   startDate: optionalStr,
+  district: optionalStr,
+  liveDate: optionalStr,
+  completeDate: optionalStr,
+  handoverDate: optionalStr,
 });
 export type ProjectCreateInput = z.infer<typeof projectSchemaCreate>;
+
+// Editing an existing project — same fields as create (gneId stays editable but
+// @unique; a collision is surfaced as 409 by the route).
+export const projectEditSchema = projectSchemaCreate;
+export type ProjectEditInput = z.infer<typeof projectEditSchema>;

@@ -218,6 +218,7 @@ model Project {
   clientName    String? // BEL
   tenderId      String? // 569
   state         String? // MH
+  district      String? // PO & MRC "District" (e.g. "CH SN")
   cluster       String? // Shambhajinagar
   plantName     String? // Shivoor
   capacityAcMw  Float? // 13
