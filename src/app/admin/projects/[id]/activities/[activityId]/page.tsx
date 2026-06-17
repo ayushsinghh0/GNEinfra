@@ -65,6 +65,10 @@ export default async function ActivityDetail({
 
   const done = activity.entries.reduce((s, e) => s + e.qtyDone, 0);
   const pct = activityPct(done, activity.totalQty);
+  const remaining =
+    activity.totalQty != null && activity.totalQty > 0
+      ? Math.max(0, activity.totalQty - done)
+      : null;
 
   // Running cumulative total over the entries (already ordered by date asc).
   const rows = activity.entries.reduce<
@@ -151,6 +155,10 @@ export default async function ActivityDetail({
                     label: "Quantity done",
                     type: "number",
                     required: true,
+                    hint:
+                      remaining != null
+                        ? `Up to ${Number(remaining.toFixed(2)).toLocaleString("en-IN")}${activity.uom ? " " + activity.uom : ""} remaining`
+                        : undefined,
                   },
                   { name: "note", label: "Note" },
                 ]}

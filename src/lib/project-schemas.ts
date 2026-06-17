@@ -19,7 +19,10 @@ const bool = z
 export const dprEntrySchema = z.object({
   activityId: z.string().min(1, "Pick an activity"),
   date: z.string().min(1, "Date is required"),
-  qtyDone: z.coerce.number().refine((n) => Number.isFinite(n), "Quantity is required"),
+  qtyDone: z.coerce
+    .number()
+    .refine((n) => Number.isFinite(n), "Quantity is required")
+    .refine((n) => n >= 0, "Quantity cannot be negative"),
   note: str,
 });
 

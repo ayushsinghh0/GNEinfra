@@ -56,7 +56,17 @@ export async function POST(
           totalQty: r.totalQty,
           entries:
             r.cumulative && r.cumulative > 0
-              ? { create: [{ date: new Date(), qtyDone: r.cumulative }] }
+              ? {
+                  create: [
+                    {
+                      date: new Date(),
+                      qtyDone:
+                        r.totalQty != null && r.totalQty > 0
+                          ? Math.min(r.cumulative, r.totalQty)
+                          : r.cumulative,
+                    },
+                  ],
+                }
               : undefined,
         },
       });

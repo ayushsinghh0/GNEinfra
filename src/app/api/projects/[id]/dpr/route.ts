@@ -33,12 +33,38 @@ export async function POST(
     // The activity must belong to this project.
     const activity = await prisma.projectActivity.findUnique({
       where: { id: d.activityId },
-      select: { projectId: true },
+      select: { projectId: true, totalQty: true, uom: true },
     });
     if (!activity || activity.projectId !== id) {
       return NextResponse.json(
         { error: "Activity not found for this project" },
         { status: 404 }
+      );
+    }
+
+    // Cap cumulative progress at the planned total. The upsert REPLACES any
+    // existing entry on this date, so exclude that date from the existing sum
+    // (otherwise editing an existing day would double-count it).
+    const agg = await prisma.dprEntry.aggregate({
+      where: { activityId: d.activityId, date: { not: date } },
+      _sum: { qtyDone: true },
+    });
+    const others = agg._sum.qtyDone ?? 0;
+    const projected = others + d.qtyDone;
+
+    const planned = activity.totalQty;
+    if (planned != null && planned > 0 && projected > planned + 1e-6) {
+      const remaining = Math.max(0, planned - others);
+      const uom = activity.uom ? ` ${activity.uom}` : "";
+      const fmt = (n: number) => Number(n.toFixed(2)).toLocaleString("en-IN");
+      return NextResponse.json(
+        {
+          error:
+            remaining <= 1e-6
+              ? `This activity is already at its planned total of ${fmt(planned)}${uom}. No more can be logged.`
+              : `Logging ${fmt(d.qtyDone)}${uom} would bring the total to ${fmt(projected)}${uom}, above the planned ${fmt(planned)}${uom}. You can log at most ${fmt(remaining)}${uom} more for this date.`,
+        },
+        { status: 400 }
       );
     }
 

@@ -668,6 +668,10 @@ export default async function ProjectDetail({
               project.activities.map((a) => {
                 const done = a.entries.reduce((s, e) => s + e.qtyDone, 0);
                 const pct = activityPct(done, a.totalQty);
+                const remaining =
+                  a.totalQty != null && a.totalQty > 0
+                    ? Math.max(0, a.totalQty - done)
+                    : null;
                 const lastDpr = a.entries.reduce<Date | null>((latest, e) => {
                   return !latest || e.date > latest ? e.date : latest;
                 }, null);
@@ -708,6 +712,10 @@ export default async function ProjectDetail({
                                 label: "Qty done",
                                 type: "number",
                                 required: true,
+                                hint:
+                                  remaining != null
+                                    ? `Up to ${Number(remaining.toFixed(2)).toLocaleString("en-IN")}${a.uom ? " " + a.uom : ""} remaining`
+                                    : undefined,
                               },
                               { name: "note", label: "Note", type: "textarea" },
                             ]}
