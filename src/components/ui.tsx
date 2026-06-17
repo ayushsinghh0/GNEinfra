@@ -254,7 +254,7 @@ export function PageHeader({
   children?: React.ReactNode;
 }) {
   return (
-    <header className="sticky top-0 z-20 flex h-16 items-center justify-between gap-4 border-b border-slate-200/80 bg-white/80 px-8 backdrop-blur-md">
+    <header className="sticky top-14 md:top-0 z-20 flex h-16 items-center justify-between gap-4 border-b border-slate-200/80 bg-white/80 px-8 backdrop-blur-md">
       <div className="flex items-baseline gap-3 min-w-0">
         <h1 className="text-lg font-semibold tracking-tight text-slate-900 truncate">{title}</h1>
         {subtitle && <span className="text-sm text-slate-400 truncate">{subtitle}</span>}
