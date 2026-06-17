@@ -89,6 +89,13 @@ export const registrationSchema = z.object({
 
 export type RegistrationInput = z.infer<typeof registrationSchema>;
 
+// Admin correcting a submitted vendor's own fields. Identical rules to
+// registration (GST/PAN upper-cased, mobile normalised, IFSC checked) so the
+// edit form and the wizard can never validate differently — minus `projects`,
+// which the admin edit screen does not touch.
+export const vendorEditSchema = registrationSchema.omit({ projects: true });
+export type VendorEditInput = z.infer<typeof vendorEditSchema>;
+
 // Admin sending an invitation. Email is lower-cased so the "one live token per
 // address" dedup (and any later correlation) is case-insensitive.
 export const inviteSchema = z.object({
