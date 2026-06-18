@@ -249,6 +249,13 @@ export default async function ProjectDetail({
           </span>
         </div>
         <div className="flex items-center gap-2">
+          <a
+            href={`/api/projects/${project.id}/workbook`}
+            className={btn("secondary", "sm")}
+          >
+            <FileDown className="h-4 w-4" />
+            Download full workbook
+          </a>
           <Link href={`/admin/projects/${project.id}/edit`} className={btn("secondary", "sm")}>
             <Pencil className="h-4 w-4" />
             Edit

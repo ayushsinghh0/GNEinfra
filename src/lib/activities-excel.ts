@@ -44,14 +44,13 @@ function actToRow(it: ActRow): (string | number | null)[] {
 
 const BRAND = "FF0F766E";
 
-export async function buildActivitiesWorkbook(opts: {
-  gneId: string;
-  items?: ActRow[];
-  template?: boolean;
-}): Promise<ExcelJS.Buffer> {
-  const wb = new ExcelJS.Workbook();
-  wb.creator = "GNE ERP";
-
+// Add the "Activities" sheet to an existing workbook and return it. Shared by
+// buildActivitiesWorkbook (single export) and the full-project workbook so both
+// render the same header + completion mapping.
+export function addActivitiesSheet(
+  wb: ExcelJS.Workbook,
+  opts: { gneId: string; items?: ActRow[]; template?: boolean }
+): ExcelJS.Worksheet {
   const ws = wb.addWorksheet("Activities");
 
   ws.columns = COLS.map((c) => ({
@@ -84,6 +83,17 @@ export async function buildActivitiesWorkbook(opts: {
     }
   }
 
+  return ws;
+}
+
+export async function buildActivitiesWorkbook(opts: {
+  gneId: string;
+  items?: ActRow[];
+  template?: boolean;
+}): Promise<ExcelJS.Buffer> {
+  const wb = new ExcelJS.Workbook();
+  wb.creator = "GNE ERP";
+  addActivitiesSheet(wb, opts);
   return wb.xlsx.writeBuffer();
 }
 

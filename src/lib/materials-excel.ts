@@ -92,14 +92,13 @@ function matToRow(it: MatRow): (string | number | Date | null)[] {
 
 const BRAND = "FF0F766E";
 
-export async function buildMaterialsWorkbook(opts: {
-  gneId: string;
-  items?: MatRow[];
-  template?: boolean;
-}): Promise<ExcelJS.Buffer> {
-  const wb = new ExcelJS.Workbook();
-  wb.creator = "GNE ERP";
-
+// Add the "Materials" (PO & MRC) sheet to an existing workbook and return it.
+// Shared by buildMaterialsWorkbook (single-sheet export) and the full-project
+// workbook so both render the exact same header + row mapping.
+export function addMaterialsSheet(
+  wb: ExcelJS.Workbook,
+  opts: { gneId: string; items?: MatRow[]; template?: boolean }
+): ExcelJS.Worksheet {
   const ws = wb.addWorksheet("Materials");
 
   ws.columns = COLS.map((c) => ({
@@ -155,6 +154,17 @@ export async function buildMaterialsWorkbook(opts: {
     }
   }
 
+  return ws;
+}
+
+export async function buildMaterialsWorkbook(opts: {
+  gneId: string;
+  items?: MatRow[];
+  template?: boolean;
+}): Promise<ExcelJS.Buffer> {
+  const wb = new ExcelJS.Workbook();
+  wb.creator = "GNE ERP";
+  addMaterialsSheet(wb, opts);
   return wb.xlsx.writeBuffer();
 }
 

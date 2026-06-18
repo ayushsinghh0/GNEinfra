@@ -55,16 +55,19 @@ function groupBySection(items: BoqRow[]): { section: string; rows: BoqRow[] }[] 
 
 const BRAND = "FF0F766E";
 
-export async function buildBoqWorkbook(opts: {
-  gneId: string;
-  capacityAcMw?: number | null;
-  capacityDcMw?: number | null;
-  items?: BoqRow[];
-  template?: boolean;
-}): Promise<ExcelJS.Buffer> {
-  const wb = new ExcelJS.Workbook();
-  wb.creator = "GNE ERP";
-
+// Add the BOQ sheets (BOM-Supply / BOM-Service / Line work) to an existing
+// workbook. Shared by buildBoqWorkbook (single export) and the full-project
+// workbook so both render identical headers + grouping.
+export function addBoqSheets(
+  wb: ExcelJS.Workbook,
+  opts: {
+    gneId: string;
+    capacityAcMw?: number | null;
+    capacityDcMw?: number | null;
+    items?: BoqRow[];
+    template?: boolean;
+  }
+): void {
   for (const def of SHEETS) {
     const ws = wb.addWorksheet(def.name);
     const items = (opts.items ?? []).filter((i) => i.category === def.cat);
@@ -125,7 +128,18 @@ export async function buildBoqWorkbook(opts: {
       }
     }
   }
+}
 
+export async function buildBoqWorkbook(opts: {
+  gneId: string;
+  capacityAcMw?: number | null;
+  capacityDcMw?: number | null;
+  items?: BoqRow[];
+  template?: boolean;
+}): Promise<ExcelJS.Buffer> {
+  const wb = new ExcelJS.Workbook();
+  wb.creator = "GNE ERP";
+  addBoqSheets(wb, opts);
   return wb.xlsx.writeBuffer();
 }
 

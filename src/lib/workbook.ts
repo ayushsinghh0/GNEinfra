@@ -1,5 +1,8 @@
 import ExcelJS from "exceljs";
 import { activityPct, valueDone, isCompleted } from "@/lib/projects";
+import { addBoqSheets } from "@/lib/boq-excel";
+import { addMaterialsSheet } from "@/lib/materials-excel";
+import { addActivitiesSheet } from "@/lib/activities-excel";
 
 // Round-trip I/O foundation. Builds the two "source-shaped" sheets that mirror the
 // original GNE master workbook layout exactly (header text + column order taken
@@ -109,12 +112,13 @@ function projectToRow(
 // Source date columns (16..19) carry yyyy-mm-dd dates.
 const PD_DATE_COLS = [16, 17, 18, 19];
 
-export async function buildProjectDetailsWorkbook(
+// Add the "Project Details" sheet to an existing workbook and return it. Shared
+// by buildProjectDetailsWorkbook (single export) and buildFullProjectWorkbook so
+// both reproduce the exact source header + row mapping.
+export function addProjectDetailsSheet(
+  wb: ExcelJS.Workbook,
   projects: ProjectRow[]
-): Promise<ExcelJS.Buffer> {
-  const wb = new ExcelJS.Workbook();
-  wb.creator = "GNE ERP";
-
+): ExcelJS.Worksheet {
   const ws = wb.addWorksheet("Project Details");
 
   ws.columns = PROJECT_DETAILS_COLS.map((c) => ({
@@ -144,6 +148,15 @@ export async function buildProjectDetailsWorkbook(
     }
   });
 
+  return ws;
+}
+
+export async function buildProjectDetailsWorkbook(
+  projects: ProjectRow[]
+): Promise<ExcelJS.Buffer> {
+  const wb = new ExcelJS.Workbook();
+  wb.creator = "GNE ERP";
+  addProjectDetailsSheet(wb, projects);
   return wb.xlsx.writeBuffer();
 }
 
@@ -207,12 +220,13 @@ function unionDates(project: DprProject): string[] {
   return [...set].sort();
 }
 
-export async function buildDprWorkbook(
+// Add the "Activity DPR" sheet to an existing workbook and return it. Shared by
+// buildDprWorkbook (single export) and buildFullProjectWorkbook so both reproduce
+// the source banner + dynamic day-columns + derived completion identically.
+export function addDprSheet(
+  wb: ExcelJS.Workbook,
   project: DprProject
-): Promise<ExcelJS.Buffer> {
-  const wb = new ExcelJS.Workbook();
-  wb.creator = "GNE ERP";
-
+): ExcelJS.Worksheet {
   const ws = wb.addWorksheet("Activity DPR");
 
   const dates = unionDates(project);
@@ -279,6 +293,98 @@ export async function buildDprWorkbook(
     r.getCell(14).numFmt = "0%"; // Completion
     if (r.getCell(9).value instanceof Date) r.getCell(9).numFmt = "yyyy-mm-dd"; // Start
     if (r.getCell(10).value instanceof Date) r.getCell(10).numFmt = "yyyy-mm-dd"; // End
+  });
+
+  return ws;
+}
+
+export async function buildDprWorkbook(
+  project: DprProject
+): Promise<ExcelJS.Buffer> {
+  const wb = new ExcelJS.Workbook();
+  wb.creator = "GNE ERP";
+  addDprSheet(wb, project);
+  return wb.xlsx.writeBuffer();
+}
+
+// ── Full-project workbook ───────────────────────────────────────────────────
+
+// One workbook bundling every available P0 sheet for a single project, in the
+// source master-workbook order: Project Details → Activity DPR → BOQ → PO & MRC
+// (Materials) → Activities. Each sheet emits its header row even when its data is
+// empty, and reuses the exact same builders/mappers as the single-sheet exports
+// (addProjectDetailsSheet / addDprSheet / addBoqSheets / addMaterialsSheet /
+// addActivitiesSheet) so derived cells stay computed values.
+
+type FullMaterial = {
+  partner?: string | null;
+  type?: string | null;
+  description: string;
+  uom?: string | null;
+  approvedQty?: number | null;
+  receivedQty?: number | null;
+  receivedDate?: Date | null;
+  deliveryDate?: Date | null;
+  mdcc?: string | null;
+  signoffBel?: string | null;
+  mahagenco?: string | null;
+  drawingApproved?: boolean;
+  poReleased?: boolean;
+  qualitySignoff?: boolean;
+  mrcStatus?: string | null;
+  paymentStatus?: string | null;
+  remarks?: string | null;
+};
+
+type FullBoqItem = {
+  category: string;
+  section: string | null;
+  serialNo: string | null;
+  description: string;
+  rating: string | null;
+  specification: string | null;
+  uom: string | null;
+  quantity: number | null;
+  blockQty?: Record<string, number> | null;
+  unitRate?: number | null;
+  responsibility?: string | null;
+};
+
+type FullActivity = DprActivity & { cumulative?: number | null };
+
+type FullProject = ProjectRow &
+  DprProject & {
+    activities: FullActivity[];
+    boqItems?: FullBoqItem[];
+    materials?: FullMaterial[];
+  };
+
+export async function buildFullProjectWorkbook(
+  project: FullProject
+): Promise<ExcelJS.Buffer> {
+  const wb = new ExcelJS.Workbook();
+  wb.creator = "GNE ERP";
+
+  // Source order: Project Details → Activity DPR → BOQ → PO & MRC → Activities.
+  addProjectDetailsSheet(wb, [project]);
+  addDprSheet(wb, project);
+  addBoqSheets(wb, {
+    gneId: project.gneId,
+    capacityAcMw: project.capacityAcMw,
+    capacityDcMw: project.capacityDcMw,
+    items: project.boqItems ?? [],
+  });
+  addMaterialsSheet(wb, { gneId: project.gneId, items: project.materials ?? [] });
+  addActivitiesSheet(wb, {
+    gneId: project.gneId,
+    items: project.activities.map((a) => ({
+      activity: a.activity,
+      subActivity: a.subActivity,
+      uom: a.uom,
+      totalQty: a.totalQty,
+      // Cumulative done = the same value the DPR/Activities exports compute.
+      cumulative: valueDone(a.entries),
+    })),
   });
 
   return wb.xlsx.writeBuffer();
