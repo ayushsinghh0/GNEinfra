@@ -12,6 +12,10 @@ type MatRow = {
   approvedQty?: number | null;
   receivedQty?: number | null;
   receivedDate?: Date | null;
+  deliveryDate?: Date | null;
+  mdcc?: string | null;
+  signoffBel?: string | null;
+  mahagenco?: string | null;
   drawingApproved?: boolean;
   poReleased?: boolean;
   qualitySignoff?: boolean;
@@ -30,6 +34,10 @@ type ProcurementCreate = {
   approvedQty: number | null;
   receivedQty: number | null;
   receivedDate: Date | null;
+  deliveryDate: Date | null;
+  mdcc: string | null;
+  signoffBel: string | null;
+  mahagenco: string | null;
   drawingApproved: boolean;
   poReleased: boolean;
   qualitySignoff: boolean;
@@ -46,7 +54,11 @@ const COLS = [
   "Approved Qty",
   "Received Qty",
   "Received Date",
+  "Delivery date",
   "MRC Status",
+  "MDCC",
+  "BEL sign-off",
+  "Mahagenco",
   "Drawing Approved",
   "PO Released",
   "Quality Signoff",
@@ -65,7 +77,11 @@ function matToRow(it: MatRow): (string | number | Date | null)[] {
     it.approvedQty ?? null,
     it.receivedQty ?? null,
     it.receivedDate ?? null,
+    it.deliveryDate ?? null,
     it.mrcStatus ?? null,
+    it.mdcc ?? null,
+    it.signoffBel ?? null,
+    it.mahagenco ?? null,
     yesNo(it.drawingApproved),
     yesNo(it.poReleased),
     yesNo(it.qualitySignoff),
@@ -87,7 +103,14 @@ export async function buildMaterialsWorkbook(opts: {
   const ws = wb.addWorksheet("Materials");
 
   ws.columns = COLS.map((c) => ({
-    width: c === "Description" ? 46 : c === "Remarks" ? 28 : c === "Received Date" ? 14 : 13,
+    width:
+      c === "Description"
+        ? 46
+        : c === "Remarks"
+          ? 28
+          : c === "Received Date" || c === "Delivery date"
+            ? 14
+            : 13,
   }));
 
   ws.addRow([`Materials (PO & MRC) — ${opts.gneId}`]).font = { bold: true, size: 13 };
@@ -110,6 +133,10 @@ export async function buildMaterialsWorkbook(opts: {
         approvedQty: 1000,
         receivedQty: 600,
         receivedDate: new Date(),
+        deliveryDate: new Date(),
+        mdcc: "WIP",
+        signoffBel: "NO",
+        mahagenco: "NO",
         drawingApproved: true,
         poReleased: true,
         qualitySignoff: false,
@@ -119,10 +146,12 @@ export async function buildMaterialsWorkbook(opts: {
       })
     );
     row.getCell(7).numFmt = "yyyy-mm-dd";
+    row.getCell(8).numFmt = "yyyy-mm-dd";
   } else {
     for (const it of items) {
       const row = ws.addRow(matToRow(it));
       if (it.receivedDate) row.getCell(7).numFmt = "yyyy-mm-dd";
+      if (it.deliveryDate) row.getCell(8).numFmt = "yyyy-mm-dd";
     }
   }
 
@@ -209,7 +238,11 @@ export async function parseMaterialsWorkbook(
     const cApproved = find("approved qty", "approved");
     const cReceived = find("received qty", "received");
     const cReceivedDate = find("received date");
+    const cDeliveryDate = find("delivery date", "delivery");
     const cMrc = find("mrc status", "mrc");
+    const cMdcc = find("mdcc");
+    const cSignoffBel = find("bel sign-off", "bel sign", "bel");
+    const cMahagenco = find("mahagenco");
     const cDrawing = find("drawing approved", "drawing");
     const cPo = find("po released", "po");
     const cQuality = find("quality signoff", "quality");
@@ -235,10 +268,14 @@ export async function parseMaterialsWorkbook(
         approvedQty: cApproved ? cellNum(row.getCell(cApproved).value) : null,
         receivedQty: cReceived ? cellNum(row.getCell(cReceived).value) : null,
         receivedDate: cReceivedDate ? cellDate(row.getCell(cReceivedDate).value) : null,
+        deliveryDate: cDeliveryDate ? cellDate(row.getCell(cDeliveryDate).value) : null,
         drawingApproved: cDrawing ? cellBool(row.getCell(cDrawing).value) : false,
         poReleased: cPo ? cellBool(row.getCell(cPo).value) : false,
         qualitySignoff: cQuality ? cellBool(row.getCell(cQuality).value) : false,
         mrcStatus: cMrc ? cellText(row.getCell(cMrc).value) : null,
+        mdcc: cMdcc ? cellText(row.getCell(cMdcc).value) : null,
+        signoffBel: cSignoffBel ? cellText(row.getCell(cSignoffBel).value) : null,
+        mahagenco: cMahagenco ? cellText(row.getCell(cMahagenco).value) : null,
         paymentStatus: cPayment ? cellText(row.getCell(cPayment).value) : null,
         remarks: cRemarks ? cellText(row.getCell(cRemarks).value) : null,
       });

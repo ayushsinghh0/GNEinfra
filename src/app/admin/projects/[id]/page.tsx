@@ -825,7 +825,12 @@ export default async function ProjectDetail({
                   { name: "approvedQty", label: "Approved qty", type: "number" },
                   { name: "receivedQty", label: "Received qty", type: "number" },
                   { name: "receivedDate", label: "Received date", type: "date" },
+                  { name: "deliveryDate", label: "Delivery date", type: "date" },
                   { name: "mrcStatus", label: "MRC status" },
+                  { name: "mdcc", label: "MDCC" },
+                  { name: "signoffBel", label: "BEL sign-off" },
+                  { name: "mahagenco", label: "Mahagenco" },
+                  { name: "paymentStatus", label: "Payment" },
                   { name: "drawingApproved", label: "Drawing approved", type: "checkbox" },
                   { name: "poReleased", label: "PO released", type: "checkbox" },
                   { name: "qualitySignoff", label: "Quality signoff", type: "checkbox" },
@@ -842,17 +847,8 @@ export default async function ProjectDetail({
                 description="No procurement / material items have been added yet."
               />
             ) : (
-              <table className="w-full table-fixed text-sm">
-                <colgroup>
-                  <col className="w-[26%]" />
-                  <col className="w-[12%]" />
-                  <col className="w-[14%]" />
-                  <col className="w-[7%]" />
-                  <col className="w-[10%]" />
-                  <col className="w-[10%]" />
-                  <col className="w-[10%]" />
-                  <col className="w-[11%]" />
-                </colgroup>
+              <div className="overflow-x-auto">
+              <table className="w-full min-w-[1280px] text-sm">
                 <thead>
                   <tr className={theadRowCls}>
                     <th className={thCls}>Description</th>
@@ -862,24 +858,28 @@ export default async function ProjectDetail({
                     <th className={cn(thCls, "text-right")}>Approved</th>
                     <th className={cn(thCls, "text-right")}>Received</th>
                     <th className={thCls}>MRC</th>
+                    <th className={thCls}>Payment</th>
+                    <th className={thCls}>Received date</th>
+                    <th className={thCls}>Delivery date</th>
+                    <th className={thCls}>MDCC</th>
+                    <th className={thCls}>BEL sign-off</th>
+                    <th className={thCls}>Mahagenco</th>
                     <th className={thCls}>Flags</th>
+                    <th className={thCls}>Remarks</th>
+                    <th className={cn(thCls, "text-right")}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {project.materials.map((m) => (
                     <tr key={m.id} className={trCls}>
-                      <td className={cn(tdCls, "font-medium text-slate-900")}>
+                      <td className={cn(tdCls, "max-w-[22rem] font-medium text-slate-900")}>
                         <div className="truncate" title={m.description}>
                           {m.description}
                         </div>
                       </td>
-                      <td className={tdCls}>
-                        <div className="truncate">{m.type || "—"}</div>
-                      </td>
-                      <td className={tdCls}>
-                        <div className="truncate">{m.partner || "—"}</div>
-                      </td>
-                      <td className={tdCls}>{m.uom || "—"}</td>
+                      <td className={cn(tdCls, "whitespace-nowrap")}>{m.type || "—"}</td>
+                      <td className={cn(tdCls, "whitespace-nowrap")}>{m.partner || "—"}</td>
+                      <td className={cn(tdCls, "whitespace-nowrap")}>{m.uom || "—"}</td>
                       <td className={cn(tdCls, "text-right tabular-nums")}>
                         {fmtNum(m.approvedQty)}
                       </td>
@@ -890,16 +890,75 @@ export default async function ProjectDetail({
                         <StatusPill value={m.mrcStatus} />
                       </td>
                       <td className={tdCls}>
+                        <StatusPill value={m.paymentStatus} />
+                      </td>
+                      <td className={cn(tdCls, "whitespace-nowrap")}>{fmtDate(m.receivedDate) || "—"}</td>
+                      <td className={cn(tdCls, "whitespace-nowrap")}>{fmtDate(m.deliveryDate) || "—"}</td>
+                      <td className={tdCls}>
+                        <StatusPill value={m.mdcc} />
+                      </td>
+                      <td className={tdCls}>
+                        <StatusPill value={m.signoffBel} />
+                      </td>
+                      <td className={tdCls}>
+                        <StatusPill value={m.mahagenco} />
+                      </td>
+                      <td className={tdCls}>
                         <div className="flex flex-wrap gap-1">
                           <CheckChip ok={m.drawingApproved} label="DWG" />
                           <CheckChip ok={m.poReleased} label="PO" />
                           <CheckChip ok={m.qualitySignoff} label="QA" />
                         </div>
                       </td>
+                      <td className={cn(tdCls, "max-w-[18rem]")}>
+                        <div className="truncate" title={m.remarks ?? undefined}>
+                          {m.remarks || "—"}
+                        </div>
+                      </td>
+                      <td className={tdCls}>
+                        <div className="flex items-center justify-end gap-1">
+                          <RecordForm
+                            title="Edit material"
+                            triggerLabel="Edit"
+                            triggerVariant="ghost"
+                            triggerSize="sm"
+                            triggerIcon={<Pencil className="h-3.5 w-3.5" />}
+                            method="PATCH"
+                            submitLabel="Save changes"
+                            endpoint={`/api/projects/${project.id}/materials/${m.id}`}
+                            fields={[
+                              { name: "description", label: "Description", required: true, span: 2, defaultValue: m.description },
+                              { name: "type", label: "Type", defaultValue: m.type ?? "" },
+                              { name: "partner", label: "Partner", defaultValue: m.partner ?? "" },
+                              { name: "uom", label: "UOM", defaultValue: m.uom ?? "" },
+                              { name: "approvedQty", label: "Approved qty", type: "number", defaultValue: m.approvedQty ?? "" },
+                              { name: "receivedQty", label: "Received qty", type: "number", defaultValue: m.receivedQty ?? "" },
+                              { name: "receivedDate", label: "Received date", type: "date", defaultValue: dateInput(m.receivedDate) },
+                              { name: "deliveryDate", label: "Delivery date", type: "date", defaultValue: dateInput(m.deliveryDate) },
+                              { name: "mrcStatus", label: "MRC status", defaultValue: m.mrcStatus ?? "" },
+                              { name: "mdcc", label: "MDCC", defaultValue: m.mdcc ?? "" },
+                              { name: "signoffBel", label: "BEL sign-off", defaultValue: m.signoffBel ?? "" },
+                              { name: "mahagenco", label: "Mahagenco", defaultValue: m.mahagenco ?? "" },
+                              { name: "paymentStatus", label: "Payment", defaultValue: m.paymentStatus ?? "" },
+                              { name: "drawingApproved", label: "Drawing approved", type: "checkbox", defaultValue: m.drawingApproved },
+                              { name: "poReleased", label: "PO released", type: "checkbox", defaultValue: m.poReleased },
+                              { name: "qualitySignoff", label: "Quality signoff", type: "checkbox", defaultValue: m.qualitySignoff },
+                              { name: "remarks", label: "Remarks", type: "textarea", defaultValue: m.remarks ?? "" },
+                            ]}
+                          />
+                          <DeleteButton
+                            endpoint={`/api/projects/${project.id}/materials/${m.id}`}
+                            confirm={`Delete material “${m.description}”? This cannot be undone.`}
+                            iconOnly
+                            label={`Delete ${m.description}`}
+                          />
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+              </div>
               )}
             </Card>
           </div>
