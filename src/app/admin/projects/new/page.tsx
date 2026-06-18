@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { isAdminAuthed } from "@/lib/auth";
 import { PageHeader, btn } from "@/components/ui";
 import ProjectForm from "@/components/ProjectForm";
+import WorkbookUpload from "@/components/WorkbookUpload";
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +36,7 @@ export default async function NewProjectPage() {
       </PageHeader>
 
       <div className="p-8 space-y-6">
+        <WorkbookUpload />
         <ProjectForm vendors={vendors} />
       </div>
     </>
