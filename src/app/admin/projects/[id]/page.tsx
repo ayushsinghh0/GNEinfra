@@ -357,6 +357,15 @@ export default async function ProjectDetail({
                     Project Info
                   </span>
                 }
+                action={
+                  <a
+                    href={`/api/projects/${project.id}/project-details/export`}
+                    className={btn("secondary", "sm")}
+                  >
+                    <FileDown className="h-4 w-4" />
+                    Download Excel
+                  </a>
+                }
               />
               <CardBody>
                 <dl>
@@ -651,6 +660,10 @@ export default async function ProjectDetail({
                   <LayoutGrid className="h-4 w-4" />
                   DPR grid
                 </Link>
+                <a href={`/api/projects/${project.id}/dpr/export`} className={btn("secondary", "sm")}>
+                  <FileDown className="h-4 w-4" />
+                  DPR Excel
+                </a>
                 <a href={`/api/projects/${project.id}/activities/export`} className={btn("secondary", "sm")}>
                   <FileDown className="h-4 w-4" />
                   Download Excel
