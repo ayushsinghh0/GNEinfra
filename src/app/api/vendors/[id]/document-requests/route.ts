@@ -60,10 +60,11 @@ export async function POST(
   const link = `${base}/reupload/${token}`;
   const tpl = documentReuploadEmail(link, vendor.companyName, docLabel(doc.docType));
 
+  // Always return the link so the admin can copy + share it (e.g. on WhatsApp),
+  // regardless of whether the email went through.
   try {
     await sendMail({ to: vendor.email, subject: tpl.subject, html: tpl.html, text: tpl.text });
   } catch (err) {
-    // Mirror the invites route: the request is saved; let the admin share the link.
     console.error("[document-requests] email send failed", err);
     return NextResponse.json({
       ok: true,
@@ -73,5 +74,5 @@ export async function POST(
     });
   }
 
-  return NextResponse.json({ ok: true, emailed: true });
+  return NextResponse.json({ ok: true, emailed: true, link });
 }
