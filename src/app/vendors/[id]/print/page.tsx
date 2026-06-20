@@ -45,7 +45,7 @@ export default async function VendorPrintPage({
   const v = await prisma.vendor.findUnique({
     where: { id },
     include: {
-      projects: { orderBy: { serialNo: "asc" } },
+      services: { orderBy: { id: "asc" } },
       documents: { orderBy: { uploadedAt: "asc" } },
     },
   });
@@ -87,6 +87,8 @@ export default async function VendorPrintPage({
           <Row label="Email Address" value={v.email} />
           <Row label="Address" value={v.address} />
           <Row label="State" value={v.state} />
+          <Row label="Country" value={v.country} />
+          <Row label="PIN Code" value={v.pinCode} />
           <Row label="Website" value={v.website} />
           <Row label="Date of Incorporation" value={fmtDateOnly(v.dateOfIncorporation)} />
           <Row label="Years of Service" value={v.yearsOfService} />
@@ -114,34 +116,24 @@ export default async function VendorPrintPage({
           <Row label="IBAN Code" value={v.ibanCode} />
         </Section>
 
-        <Section title={`Past Projects (${v.projects.length})`}>
-          {v.projects.length === 0 ? (
+        <Section title={`Services (${v.services.length})`}>
+          {v.services.length === 0 ? (
             <p className="text-[13px] text-slate-500">None listed.</p>
           ) : (
             <table className="w-full border-collapse text-[12px]">
               <thead>
                 <tr className="border-b border-slate-300 text-left text-slate-500">
                   <th className="py-1 pr-2 font-semibold">#</th>
-                  <th className="py-1 pr-2 font-semibold">Client</th>
-                  <th className="py-1 pr-2 font-semibold">Capacity</th>
-                  <th className="py-1 pr-2 font-semibold">Type</th>
-                  <th className="py-1 pr-2 font-semibold">Contract</th>
-                  <th className="py-1 pr-2 font-semibold">Location</th>
-                  <th className="py-1 pr-2 font-semibold">Year</th>
-                  <th className="py-1 pr-2 font-semibold">% Done</th>
+                  <th className="py-1 pr-2 font-semibold">Service Category</th>
+                  <th className="py-1 pr-2 font-semibold">Item / Details</th>
                 </tr>
               </thead>
               <tbody>
-                {v.projects.map((p) => (
-                  <tr key={p.id} className="border-b border-slate-100 align-top text-slate-800">
-                    <td className="py-1 pr-2">{p.serialNo}</td>
-                    <td className="py-1 pr-2">{p.clientName}</td>
-                    <td className="py-1 pr-2">{p.capacity}</td>
-                    <td className="py-1 pr-2">{p.projectType}</td>
-                    <td className="py-1 pr-2">{p.contractType}</td>
-                    <td className="py-1 pr-2">{p.location}</td>
-                    <td className="py-1 pr-2">{p.yearOfCompletion}</td>
-                    <td className="py-1 pr-2">{p.percentCompleted}</td>
+                {v.services.map((s, i) => (
+                  <tr key={s.id} className="border-b border-slate-100 align-top text-slate-800">
+                    <td className="py-1 pr-2">{i + 1}</td>
+                    <td className="py-1 pr-2">{s.category}</td>
+                    <td className="py-1 pr-2">{s.item || "—"}</td>
                   </tr>
                 ))}
               </tbody>

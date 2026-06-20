@@ -39,6 +39,8 @@ export type VendorFields = {
   email: string;
   address: string;
   state: string;
+  country: string;
+  pinCode: string;
   website: string;
   dateOfIncorporation: string; // YYYY-MM-DD or ""
   yearsOfService: string;
@@ -69,6 +71,8 @@ const LABELS: Record<FieldKey, string> = {
   email: "Email",
   address: "Address",
   state: "State",
+  country: "Country",
+  pinCode: "PIN Code",
   website: "Website",
   dateOfIncorporation: "Date of Incorporation",
   yearsOfService: "Years of Service",
@@ -105,8 +109,6 @@ const REQUIRED = new Set<FieldKey>([
   "contactPerson",
   "mobileNumber",
   "email",
-  "gstNo",
-  "panNo",
 ]);
 
 const COMPANY: FieldKey[] = [
@@ -116,6 +118,8 @@ const COMPANY: FieldKey[] = [
   "email",
   "address",
   "state",
+  "country",
+  "pinCode",
   "website",
   "dateOfIncorporation",
   "yearsOfService",

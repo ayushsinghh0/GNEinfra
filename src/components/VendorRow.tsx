@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Briefcase, FileText, ChevronRight } from "lucide-react";
+import { Wrench, FileText, ChevronRight } from "lucide-react";
 import Badge from "@/components/Badge";
 import { tdCls, trCls, cn } from "@/components/ui";
 
@@ -13,7 +13,7 @@ export type VendorRowData = {
   gstNo: string;
   panNo: string;
   state: string | null;
-  projects: number;
+  services: number;
   documents: number;
   status: string;
   submitted: string | null;
@@ -57,9 +57,9 @@ export default function VendorRow({ v }: { v: VendorRowData }) {
       </td>
       <td className={tdCls}>
         <div className="flex items-center gap-3 text-xs text-slate-500">
-          <span className="inline-flex items-center gap-1" title="Projects">
-            <Briefcase className="h-3.5 w-3.5 text-slate-400" />
-            {v.projects}
+          <span className="inline-flex items-center gap-1" title="Services">
+            <Wrench className="h-3.5 w-3.5 text-slate-400" />
+            {v.services}
           </span>
           <span className="inline-flex items-center gap-1" title="Documents">
             <FileText className="h-3.5 w-3.5 text-slate-400" />

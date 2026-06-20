@@ -24,10 +24,10 @@ class InviteAlreadyUsedError extends Error {}
 const MAX_REQUEST_BYTES = 60 * 1024 * 1024; // reject obviously huge bodies up front
 const MAX_DOC_FILES = 12; // total document files per submission
 const MAX_DOC_BYTES_TOTAL = 50 * 1024 * 1024; // aggregate document bytes
-const MAX_PROJECTS_JSON = 64 * 1024; // raw `projects` JSON string length
+const MAX_SERVICES_JSON = 64 * 1024; // raw `services` JSON string length
 
 // POST /api/register  (public, requires a valid invite token)
-// Accepts multipart/form-data: text fields + `projects` JSON + document files.
+// Accepts multipart/form-data: text fields + `services` JSON + document files.
 export async function POST(req: NextRequest) {
   const declaredLength = Number(req.headers.get("content-length") || 0);
   if (declaredLength > MAX_REQUEST_BYTES) {
@@ -66,25 +66,25 @@ export async function POST(req: NextRequest) {
   // Collect scalar fields.
   const raw: Record<string, unknown> = {};
   for (const [key, value] of form.entries()) {
-    if (typeof value === "string" && key !== "projects" && key !== "token") {
+    if (typeof value === "string" && key !== "services" && key !== "token") {
       raw[key] = value;
     }
   }
 
-  // Projects arrive as a JSON string.
-  let projects: unknown = [];
-  const projectsRaw = form.get("projects");
-  if (typeof projectsRaw === "string" && projectsRaw.trim()) {
-    if (projectsRaw.length > MAX_PROJECTS_JSON) {
-      return NextResponse.json({ error: "Too much project data." }, { status: 413 });
+  // Services arrive as a JSON string.
+  let services: unknown = [];
+  const servicesRaw = form.get("services");
+  if (typeof servicesRaw === "string" && servicesRaw.trim()) {
+    if (servicesRaw.length > MAX_SERVICES_JSON) {
+      return NextResponse.json({ error: "Too much service data." }, { status: 413 });
     }
     try {
-      projects = JSON.parse(projectsRaw);
+      services = JSON.parse(servicesRaw);
     } catch {
-      return NextResponse.json({ error: "Malformed projects data" }, { status: 400 });
+      return NextResponse.json({ error: "Malformed services data" }, { status: 400 });
     }
   }
-  raw.projects = projects;
+  raw.services = services;
 
   const parsed = registrationSchema.safeParse(raw);
   if (!parsed.success) {
@@ -105,10 +105,8 @@ export async function POST(req: NextRequest) {
   }
   const d = parsed.data;
 
-  // Drop fully-empty project rows.
-  const cleanProjects = (d.projects ?? []).filter((p) =>
-    Object.entries(p).some(([k, v]) => k !== "serialNo" && v)
-  );
+  // Drop service rows that have no category.
+  const cleanServices = (d.services ?? []).filter((s) => s.category && s.category.trim());
 
   const doi = d.dateOfIncorporation ? new Date(d.dateOfIncorporation) : null;
 
@@ -153,6 +151,8 @@ export async function POST(req: NextRequest) {
           email: d.email,
           address: d.address,
           state: d.state,
+          country: d.country,
+          pinCode: d.pinCode,
           website: d.website,
           dateOfIncorporation: doi && !isNaN(doi.getTime()) ? doi : null,
           yearsOfService: d.yearsOfService,
@@ -172,18 +172,10 @@ export async function POST(req: NextRequest) {
           ifscCode: d.ifscCode,
           swiftCode: d.swiftCode,
           ibanCode: d.ibanCode,
-          projects: {
-            create: cleanProjects.map((p) => ({
-              serialNo: p.serialNo,
-              clientName: p.clientName,
-              capacity: p.capacity,
-              projectType: p.projectType,
-              contractType: p.contractType,
-              location: p.location,
-              yearOfCompletion: p.yearOfCompletion,
-              scopeOfWork: p.scopeOfWork,
-              percentCompleted: p.percentCompleted,
-              remarks: p.remarks,
+          services: {
+            create: cleanServices.map((s) => ({
+              category: s.category.trim(),
+              item: s.item,
             })),
           },
         },
@@ -252,8 +244,8 @@ export async function POST(req: NextRequest) {
       const tpl = adminNotificationEmail({
         company: d.companyName,
         email: d.email,
-        gstNo: d.gstNo,
-        panNo: d.panNo,
+        gstNo: d.gstNo ?? "—",
+        panNo: d.panNo ?? "—",
         adminLink: `${base}/admin/vendors/${vendor.id}`,
       });
       await sendMail({

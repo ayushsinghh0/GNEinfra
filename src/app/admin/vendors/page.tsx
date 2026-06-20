@@ -39,7 +39,7 @@ export default async function VendorsPage({
   const vendors = await prisma.vendor.findMany({
     where,
     orderBy: { createdAt: "desc" },
-    include: { _count: { select: { projects: true, documents: true } } },
+    include: { _count: { select: { services: true, documents: true } } },
   });
 
   return (
@@ -93,10 +93,10 @@ export default async function VendorsPage({
                       companyName: v.companyName,
                       contactPerson: v.contactPerson,
                       email: v.email,
-                      gstNo: v.gstNo,
-                      panNo: v.panNo,
+                      gstNo: v.gstNo ?? "",
+                      panNo: v.panNo ?? "",
                       state: v.state,
-                      projects: v._count.projects,
+                      services: v._count.services,
                       documents: v._count.documents,
                       status: v.status,
                       submitted: fmtDate(v.createdAt),

@@ -17,19 +17,12 @@ const optionalStr = z
   .optional()
   .transform((v) => (v === "" ? undefined : v));
 
-// One row of the "Projects Details" table. Fully optional — vendors add as
-// many rows as they like, blank rows are dropped server-side.
-export const projectSchema = z.object({
-  serialNo: z.coerce.number().int().optional(),
-  clientName: optionalStr,
-  capacity: optionalStr,
-  projectType: optionalStr, // Solar / Wind
-  contractType: optionalStr, // EPC / I&C / BOS
-  location: optionalStr,
-  yearOfCompletion: optionalStr,
-  scopeOfWork: optionalStr,
-  percentCompleted: optionalStr,
-  remarks: optionalStr,
+// One service offering: a category (from the form's fixed list) plus optional
+// free-text item details. Vendors add as many rows as they like; rows without a
+// category are dropped server-side.
+export const serviceSchema = z.object({
+  category: z.string().trim().min(1, "Service category is required").max(200),
+  item: optionalStr,
 });
 
 export const registrationSchema = z.object({
@@ -46,22 +39,33 @@ export const registrationSchema = z.object({
   email: z.string().trim().email("A valid email address is required").max(200),
   address: optionalStr,
   state: optionalStr,
+  country: optionalStr,
+  pinCode: z
+    .string()
+    .trim()
+    .max(20)
+    .optional()
+    .transform((v) => (v === "" ? undefined : v))
+    .refine((v) => !v || /^[1-9][0-9]{5}$/.test(v), "Enter a valid 6-digit PIN code"),
   website: optionalStr,
   dateOfIncorporation: optionalStr, // ISO date string from <input type=date>
   yearsOfService: optionalStr,
   annualTurnover: optionalStr,
 
-  // Statutory (GST + PAN mandatory)
+  // Statutory (GST + PAN both optional — gated by the form's toggles; format is
+  // checked only when a value is provided).
   gstNo: z
     .string()
     .trim()
-    .transform((v) => v.toUpperCase())
-    .refine((v) => GST_RE.test(v), "Enter a valid 15-character GST number"),
+    .optional()
+    .transform((v) => (v ? v.toUpperCase() : undefined))
+    .refine((v) => !v || GST_RE.test(v), "Enter a valid 15-character GST number"),
   panNo: z
     .string()
     .trim()
-    .transform((v) => v.toUpperCase())
-    .refine((v) => PAN_RE.test(v), "Enter a valid 10-character PAN (e.g. ABCDE1234F)"),
+    .optional()
+    .transform((v) => (v ? v.toUpperCase() : undefined))
+    .refine((v) => !v || PAN_RE.test(v), "Enter a valid 10-character PAN (e.g. ABCDE1234F)"),
   exciseNo: optionalStr,
   tinNo: optionalStr,
   vatLstNo: optionalStr,
@@ -84,16 +88,16 @@ export const registrationSchema = z.object({
   swiftCode: optionalStr,
   ibanCode: optionalStr,
 
-  projects: z.array(projectSchema).max(50, "Too many project rows").optional().default([]),
+  services: z.array(serviceSchema).max(50, "Too many service rows").optional().default([]),
 });
 
 export type RegistrationInput = z.infer<typeof registrationSchema>;
 
 // Admin correcting a submitted vendor's own fields. Identical rules to
 // registration (GST/PAN upper-cased, mobile normalised, IFSC checked) so the
-// edit form and the wizard can never validate differently — minus `projects`,
+// edit form and the wizard can never validate differently — minus `services`,
 // which the admin edit screen does not touch.
-export const vendorEditSchema = registrationSchema.omit({ projects: true });
+export const vendorEditSchema = registrationSchema.omit({ services: true });
 export type VendorEditInput = z.infer<typeof vendorEditSchema>;
 
 // Admin sending an invitation. Email is lower-cased so the "one live token per

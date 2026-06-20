@@ -47,14 +47,16 @@ model Vendor {
   email             String
   address           String?
   state             String?
+  country           String?
+  pinCode           String?
   website           String?
   dateOfIncorporation DateTime?
   yearsOfService    String?
   annualTurnover    String?
 
   // ── Statutory / tax registration ──
-  gstNo         String // mandatory
-  panNo         String // mandatory
+  gstNo         String? // optional — vendor toggles whether they have GST
+  panNo         String? // optional — vendor toggles whether they have PAN
   exciseNo      String?
   tinNo         String?
   vatLstNo      String?
@@ -78,7 +80,7 @@ model Vendor {
   vendorPostingGroup    String?
 
   // ── Relations ──
-  projects       VendorProject[]
+  services       VendorService[]
   documents      VendorDocument[]
   invite         VendorInvite?
   documentRequests DocumentRequest[]
@@ -91,22 +93,16 @@ model Vendor {
   @@index([gstNo])
 }
 
-// Past projects the vendor has executed (the "Projects Details" sheet).
-model VendorProject {
+// A service / supply category the vendor offers, with optional item details.
+// One row per selected category (vendors can pick several). Replaces the old
+// past-projects list.
+model VendorService {
   id       String @id @default(cuid())
   vendorId String
   vendor   Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
 
-  serialNo           Int?
-  clientName         String?
-  capacity           String?
-  projectType        String? // Solar / Wind
-  contractType       String? // EPC / I&C / BOS
-  location           String?
-  yearOfCompletion   String?
-  scopeOfWork        String?
-  percentCompleted   String?
-  remarks            String?
+  category String  // e.g. EPC, Module, Cables, Others (see RegistrationForm)
+  item     String? // free-text item / material details for this category
 
   @@index([vendorId])
 }

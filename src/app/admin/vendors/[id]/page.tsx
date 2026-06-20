@@ -30,15 +30,6 @@ import { DOC_LABELS } from "@/lib/doc-labels";
 
 export const dynamic = "force-dynamic";
 
-function PRow({ label, value }: { label: string; value?: string | null }) {
-  return (
-    <div>
-      <dt className="text-xs text-slate-400">{label}</dt>
-      <dd className="text-slate-700">{value || <span className="text-slate-300">—</span>}</dd>
-    </div>
-  );
-}
-
 function fmtBytes(n?: number | null) {
   if (!n && n !== 0) return "—";
   if (n < 1024) return `${n} B`;
@@ -62,7 +53,7 @@ export default async function VendorDetail({
   const v = await prisma.vendor.findUnique({
     where: { id },
     include: {
-      projects: { orderBy: { serialNo: "asc" } },
+      services: { orderBy: { id: "asc" } },
       documents: { orderBy: { uploadedAt: "asc" } },
       invite: { select: { email: true } },
     },
@@ -80,6 +71,8 @@ export default async function VendorDetail({
     email: v.email ?? "",
     address: v.address ?? "",
     state: v.state ?? "",
+    country: v.country ?? "",
+    pinCode: v.pinCode ?? "",
     website: v.website ?? "",
     dateOfIncorporation: v.dateOfIncorporation
       ? v.dateOfIncorporation.toISOString().slice(0, 10)
@@ -264,40 +257,22 @@ export default async function VendorDetail({
         </div>
 
         <Card>
-          <CardHeader title={`Past Projects (${v.projects.length})`} />
+          <CardHeader title={`Services (${v.services.length})`} />
           <CardBody>
-            {v.projects.length === 0 ? (
+            {v.services.length === 0 ? (
               <EmptyState
                 icon={<FileText className="h-6 w-6" />}
-                title="No projects listed"
-                description="This vendor has not submitted any past projects yet."
+                title="No services listed"
+                description="This vendor has not selected any service categories yet."
               />
             ) : (
               <div className="space-y-3">
-                {v.projects.map((p) => (
-                  <div key={p.id} className="rounded-xl border border-slate-200 p-4">
-                    <div className="mb-2.5 flex flex-wrap items-center gap-2">
-                      <span className="grid h-6 w-6 place-items-center rounded-md bg-slate-100 text-xs font-bold text-slate-600 tabular-nums">
-                        {p.serialNo ?? "—"}
-                      </span>
-                      <span className="font-medium text-slate-900">
-                        {p.clientName || "Project"}
-                      </span>
-                      {p.projectType && <Chip>{p.projectType}</Chip>}
-                      {p.contractType && <Chip>{p.contractType}</Chip>}
-                      {p.percentCompleted && <Chip>{p.percentCompleted}% done</Chip>}
+                {v.services.map((s) => (
+                  <div key={s.id} className="rounded-xl border border-slate-200 p-4">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Chip>{s.category}</Chip>
+                      {s.item && <span className="text-sm text-slate-700">{s.item}</span>}
                     </div>
-                    <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3 lg:grid-cols-4">
-                      <PRow label="Capacity" value={p.capacity} />
-                      <PRow label="Location" value={p.location} />
-                      <PRow label="Year" value={p.yearOfCompletion} />
-                      <PRow label="Scope" value={p.scopeOfWork} />
-                      {p.remarks && (
-                        <div className="col-span-full">
-                          <PRow label="Remarks" value={p.remarks} />
-                        </div>
-                      )}
-                    </dl>
                   </div>
                 ))}
               </div>

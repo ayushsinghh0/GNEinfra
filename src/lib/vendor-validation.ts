@@ -9,6 +9,8 @@
 export const GST_RE = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
 export const PAN_RE = /^[A-Z]{5}[0-9]{4}[A-Z]$/;
 export const IFSC_RE = /^[A-Z]{4}0[A-Z0-9]{6}$/;
+// Indian PIN code: 6 digits, not starting with 0.
+export const PIN_RE = /^[1-9][0-9]{5}$/;
 
 // 10-digit Indian mobile: starts 6–9, then 9 more digits.
 const MOBILE_10_RE = /^[6-9]\d{9}$/;
@@ -66,9 +68,11 @@ export function validateMobile(value: string): FieldError {
     : "Enter a valid 10-digit Indian mobile number (starts 6–9)";
 }
 
+// Optional — only validated when the vendor has typed something (the form's
+// "Has GST" / "Has PAN" toggles control whether the field is shown at all).
 export function validateGst(value: string): FieldError {
   const v = value.trim();
-  if (!v) return "GST number is required";
+  if (!v) return null;
   return GST_RE.test(v.toUpperCase())
     ? null
     : "Enter a valid 15-character GST number (e.g. 22AAAAA0000A1Z5)";
@@ -76,7 +80,7 @@ export function validateGst(value: string): FieldError {
 
 export function validatePan(value: string): FieldError {
   const v = value.trim();
-  if (!v) return "PAN number is required";
+  if (!v) return null;
   return PAN_RE.test(v.toUpperCase())
     ? null
     : "Enter a valid 10-character PAN (e.g. ABCDE1234F)";
@@ -89,4 +93,10 @@ export function validateIfsc(value: string): FieldError {
   return IFSC_RE.test(v.toUpperCase())
     ? null
     : "Enter a valid IFSC code (e.g. HDFC0001234)";
+}
+
+export function validatePin(value: string): FieldError {
+  const v = value.trim();
+  if (!v) return null;
+  return PIN_RE.test(v) ? null : "Enter a valid 6-digit PIN code";
 }

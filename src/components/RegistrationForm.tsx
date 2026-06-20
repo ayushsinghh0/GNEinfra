@@ -23,6 +23,7 @@ import {
   validateGst,
   validatePan,
   validateIfsc,
+  validatePin,
   MAX_LEN,
   type FieldError,
 } from "@/lib/vendor-validation";
@@ -47,29 +48,40 @@ import {
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-type ProjectRow = {
-  clientName: string;
-  capacity: string;
-  projectType: string;
-  contractType: string;
-  location: string;
-  yearOfCompletion: string;
-  scopeOfWork: string;
-  percentCompleted: string;
-  remarks: string;
+// The fixed list of service / supply categories a vendor can offer.
+const SERVICE_CATEGORIES = [
+  "I & C",
+  "EPC",
+  "Product",
+  "Module",
+  "Inverter",
+  "IDT",
+  "MMS",
+  "Major BOS",
+  "Other Structures",
+  "Cables",
+  "Conduit Pipe",
+  "Electrical Termination Items",
+  "Lighting & Lightning Material",
+  "Safety Material",
+  "MCS",
+  "Pre-commissioning & Commissioning Charges",
+  "Bay Construction at SS",
+  "Overhead Transmission Line",
+  "Spares Considered for O&M",
+  "Reactive Power Required for the Plant",
+  "Infrastructure Development",
+  "Piling Works",
+  "Road & Drainage Cost",
+  "Others",
+] as const;
+
+type ServiceRow = {
+  category: string;
+  item: string;
 };
 
-const emptyRow = (): ProjectRow => ({
-  clientName: "",
-  capacity: "",
-  projectType: "",
-  contractType: "",
-  location: "",
-  yearOfCompletion: "",
-  scopeOfWork: "",
-  percentCompleted: "",
-  remarks: "",
-});
+const emptyService = (): ServiceRow => ({ category: "", item: "" });
 
 // Every scalar text/date field on the form. File inputs stay native (see below).
 type FormState = {
@@ -79,6 +91,8 @@ type FormState = {
   email: string;
   address: string;
   state: string;
+  country: string;
+  pinCode: string;
   website: string;
   dateOfIncorporation: string;
   yearsOfService: string;
@@ -109,6 +123,8 @@ const EMPTY_FORM: FormState = {
   email: "",
   address: "",
   state: "",
+  country: "India",
+  pinCode: "",
   website: "",
   dateOfIncorporation: "",
   yearsOfService: "",
@@ -138,6 +154,8 @@ const LABELS: Record<FieldName, string> = {
   email: "Email Address",
   address: "Address",
   state: "State",
+  country: "Country",
+  pinCode: "PIN Code",
   website: "Website",
   dateOfIncorporation: "Date of Incorporation",
   yearsOfService: "Years of Service",
@@ -165,6 +183,7 @@ const VALIDATORS: Partial<Record<FieldName, (v: string) => FieldError>> = {
   contactPerson: (v) => validateRequired(v, "Contact person"),
   mobileNumber: validateMobile,
   email: validateEmail,
+  pinCode: validatePin,
   gstNo: validateGst,
   panNo: validatePan,
   ifscCode: validateIfsc,
@@ -193,6 +212,8 @@ const STEPS: StepDef[] = [
       "email",
       "address",
       "state",
+      "country",
+      "pinCode",
       "website",
       "dateOfIncorporation",
       "yearsOfService",
@@ -216,10 +237,10 @@ const STEPS: StepDef[] = [
     fields: ["bankName", "bankBranchAddress", "bankAccountNo", "bankBranchCode", "ifscCode", "swiftCode", "ibanCode"],
   },
   {
-    id: "projects",
-    title: "Past Projects",
-    description: "List solar/wind projects you have executed. Add as many rows as needed.",
-    short: "Your track record",
+    id: "services",
+    title: "Services",
+    description: "Select the categories you supply or execute, and describe the items for each.",
+    short: "What you offer",
     icon: <Briefcase className="h-4 w-4" />,
     fields: [],
   },
@@ -287,7 +308,9 @@ export default function RegistrationForm({
     email: defaultEmail ?? "",
     companyName: defaultCompany ?? "",
   }));
-  const [projects, setProjects] = useState<ProjectRow[]>([emptyRow()]);
+  const [services, setServices] = useState<ServiceRow[]>([emptyService()]);
+  const [hasGst, setHasGst] = useState(false);
+  const [hasPan, setHasPan] = useState(false);
   const [fileNames, setFileNames] = useState<Record<string, string[]>>({});
   const [fileErrors, setFileErrors] = useState<Record<string, string>>({});
 
@@ -320,7 +343,9 @@ export default function RegistrationForm({
   // and the first client render identical (no hydration mismatch) and removes the
   // window where a user could type before the draft is restored.
   useEffect(() => {
-    let draft: { form?: Partial<FormState>; projects?: ProjectRow[] } | null = null;
+    let draft:
+      | { form?: Partial<FormState>; services?: ServiceRow[]; hasGst?: boolean; hasPan?: boolean }
+      | null = null;
     try {
       const raw = localStorage.getItem(storageKey);
       if (raw) draft = JSON.parse(raw);
@@ -329,7 +354,10 @@ export default function RegistrationForm({
     }
     /* eslint-disable react-hooks/set-state-in-effect -- one-time client hydration + reveal */
     if (draft?.form) setForm((f) => ({ ...f, ...draft!.form }));
-    if (Array.isArray(draft?.projects) && draft.projects.length) setProjects(draft.projects);
+    if (Array.isArray(draft?.services) && draft.services.length) setServices(draft.services);
+    // Restore toggles; fall back to "on" if a value was already saved for that field.
+    setHasGst(draft?.hasGst ?? Boolean(draft?.form?.gstNo));
+    setHasPan(draft?.hasPan ?? Boolean(draft?.form?.panNo));
     setReady(true);
     /* eslint-enable react-hooks/set-state-in-effect */
   }, [storageKey]);
@@ -342,11 +370,11 @@ export default function RegistrationForm({
     }
     if (done) return;
     try {
-      localStorage.setItem(storageKey, JSON.stringify({ form, projects }));
+      localStorage.setItem(storageKey, JSON.stringify({ form, services, hasGst, hasPan }));
     } catch {
       /* storage full / unavailable — non-fatal */
     }
-  }, [form, projects, done, storageKey]);
+  }, [form, services, hasGst, hasPan, done, storageKey]);
 
   // After a step becomes visible, move focus to the pending field (if any).
   useEffect(() => {
@@ -537,8 +565,10 @@ export default function RegistrationForm({
     try {
       const fd = new FormData(formEl);
       fd.set("token", token);
-      const filled = projects.filter((p) => Object.values(p).some((v) => v.trim() !== ""));
-      fd.set("projects", JSON.stringify(filled.map((p, i) => ({ ...p, serialNo: i + 1 }))));
+      const filledServices = services
+        .filter((s) => s.category.trim() !== "")
+        .map((s) => ({ category: s.category.trim(), item: s.item.trim() || undefined }));
+      fd.set("services", JSON.stringify(filledServices));
       await compressFormImages(formEl, fd);
 
       const res = await fetch("/api/register", { method: "POST", body: fd });
@@ -627,8 +657,8 @@ export default function RegistrationForm({
     );
   }
 
-  function updateRow(i: number, key: keyof ProjectRow, value: string) {
-    setProjects((rows) => rows.map((r, idx) => (idx === i ? { ...r, [key]: value } : r)));
+  function updateService(i: number, key: keyof ServiceRow, value: string) {
+    setServices((rows) => rows.map((r, idx) => (idx === i ? { ...r, [key]: value } : r)));
   }
 
   // ── Content per state ──────────────────────────────────────────────────────
@@ -724,6 +754,8 @@ export default function RegistrationForm({
                   />
                 </UIField>
                 {tf("state")}
+                {tf("country")}
+                {tf("pinCode", { hint: "6 digits", inputMode: "tel", placeholder: "400001" })}
                 {tf("website", { type: "url", inputMode: "url", placeholder: "https://" })}
                 {tf("dateOfIncorporation", { type: "date" })}
                 {tf("yearsOfService")}
@@ -735,9 +767,28 @@ export default function RegistrationForm({
           {/* Step 1 — Statutory & Tax */}
           <div className={step === 1 ? "block animate-step-in" : "hidden"}>
             <Section title="Statutory & Tax Registration" description={STEPS[1].description} icon={STEPS[1].icon}>
+              <div className="mb-5 flex flex-wrap items-center gap-x-8 gap-y-3 rounded-xl border border-slate-200 bg-slate-50/60 px-4 py-3">
+                <span className="text-sm font-medium text-slate-600">Do you have:</span>
+                <Toggle
+                  label="GST registration"
+                  checked={hasGst}
+                  onChange={(v) => {
+                    setHasGst(v);
+                    if (!v) setField("gstNo", "");
+                  }}
+                />
+                <Toggle
+                  label="PAN"
+                  checked={hasPan}
+                  onChange={(v) => {
+                    setHasPan(v);
+                    if (!v) setField("panNo", "");
+                  }}
+                />
+              </div>
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                {tf("gstNo", { required: true, hint: "15 characters", placeholder: "22AAAAA0000A1Z5" })}
-                {tf("panNo", { required: true, hint: "10 characters", placeholder: "ABCDE1234F" })}
+                {hasGst && tf("gstNo", { hint: "15 characters", placeholder: "22AAAAA0000A1Z5" })}
+                {hasPan && tf("panNo", { hint: "10 characters", placeholder: "ABCDE1234F" })}
                 {tf("exciseNo", { hint: "if applicable" })}
                 {tf("tinNo", { hint: "if applicable" })}
                 {tf("vatLstNo", { hint: "if applicable" })}
@@ -763,67 +814,49 @@ export default function RegistrationForm({
             </Section>
           </div>
 
-          {/* Step 3 — Past Projects */}
+          {/* Step 3 — Services */}
           <div className={step === 3 ? "block animate-step-in" : "hidden"}>
-            <Section title="Past Projects" description={STEPS[3].description} icon={STEPS[3].icon}>
+            <Section title="Services" description={STEPS[3].description} icon={STEPS[3].icon}>
               <div className="space-y-4">
-                {projects.map((row, i) => (
+                {services.map((row, i) => (
                   <div key={i} className="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
                     <div className="mb-3 flex items-center justify-between">
                       <span className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700">
                         <span className="grid h-6 w-6 place-items-center rounded-md bg-brand-50 text-xs font-bold text-brand-700 tabular-nums">
                           {i + 1}
                         </span>
-                        Project {i + 1}
+                        Service {i + 1}
                       </span>
-                      {projects.length > 1 && (
+                      {services.length > 1 && (
                         <button
                           type="button"
-                          onClick={() => setProjects((r) => r.filter((_, idx) => idx !== i))}
+                          onClick={() => setServices((r) => r.filter((_, idx) => idx !== i))}
                           className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-600"
-                          aria-label="Remove project"
+                          aria-label="Remove service"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                           Remove
                         </button>
                       )}
                     </div>
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                      <UIField label="Client">
-                        <Input value={row.clientName} maxLength={MAX_LEN.text} onChange={(e) => updateRow(i, "clientName", e.target.value)} />
-                      </UIField>
-                      <UIField label="Capacity">
-                        <Input value={row.capacity} maxLength={MAX_LEN.text} onChange={(e) => updateRow(i, "capacity", e.target.value)} placeholder="e.g. 50 MW" />
-                      </UIField>
-                      <UIField label="Type">
-                        <Select value={row.projectType} onChange={(e) => updateRow(i, "projectType", e.target.value)}>
-                          <option value="">—</option>
-                          <option>Solar</option>
-                          <option>Wind</option>
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <UIField label="Service Category">
+                        <Select value={row.category} onChange={(e) => updateService(i, "category", e.target.value)}>
+                          <option value="">Select a category…</option>
+                          {SERVICE_CATEGORIES.map((c) => (
+                            <option key={c} value={c}>
+                              {c}
+                            </option>
+                          ))}
                         </Select>
                       </UIField>
-                      <UIField label="EPC / I&C / BOS">
-                        <Select value={row.contractType} onChange={(e) => updateRow(i, "contractType", e.target.value)}>
-                          <option value="">—</option>
-                          <option>EPC</option>
-                          <option>I&C</option>
-                          <option>BOS</option>
-                        </Select>
-                      </UIField>
-                      <UIField label="Location">
-                        <Input value={row.location} maxLength={MAX_LEN.text} onChange={(e) => updateRow(i, "location", e.target.value)} />
-                      </UIField>
-                      <UIField label="Year of Completion">
-                        <Input value={row.yearOfCompletion} maxLength={MAX_LEN.text} onChange={(e) => updateRow(i, "yearOfCompletion", e.target.value)} placeholder="e.g. 2023" />
-                      </UIField>
-                      <UIField label="% Completed">
-                        <Input value={row.percentCompleted} maxLength={MAX_LEN.text} onChange={(e) => updateRow(i, "percentCompleted", e.target.value)} placeholder="e.g. 100" />
-                      </UIField>
-                      <UIField label="Scope of Work" className="sm:col-span-2 lg:col-span-2">
-                        <Input value={row.scopeOfWork} maxLength={MAX_LEN.text} onChange={(e) => updateRow(i, "scopeOfWork", e.target.value)} />
-                      </UIField>
-                      <UIField label="Remarks" className="sm:col-span-2 lg:col-span-3">
-                        <Input value={row.remarks} maxLength={MAX_LEN.text} onChange={(e) => updateRow(i, "remarks", e.target.value)} />
+                      <UIField label="Item / Details">
+                        <Input
+                          value={row.item}
+                          maxLength={MAX_LEN.text}
+                          onChange={(e) => updateService(i, "item", e.target.value)}
+                          placeholder="Specify the items for this category"
+                        />
                       </UIField>
                     </div>
                   </div>
@@ -831,11 +864,11 @@ export default function RegistrationForm({
               </div>
               <button
                 type="button"
-                onClick={() => setProjects((r) => [...r, emptyRow()])}
+                onClick={() => setServices((r) => [...r, emptyService()])}
                 className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-dashed border-slate-300 px-4 py-2 text-sm font-medium text-brand-700 transition-colors hover:border-brand hover:bg-brand-50/40"
               >
                 <Plus className="h-4 w-4" />
-                Add another project
+                Add another service
               </button>
             </Section>
           </div>
@@ -917,7 +950,7 @@ export default function RegistrationForm({
       {showReview && (
         <ReviewModal
           form={form}
-          projects={projects}
+          services={services}
           fileNames={fileNames}
           submitting={submitting}
           submitError={submitError}
@@ -1106,6 +1139,46 @@ function FileField({
   );
 }
 
+// ── Toggle switch ─────────────────────────────────────────────────────────────
+
+function Toggle({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className={cn(
+        "flex items-center gap-2.5 text-sm font-medium transition-colors",
+        checked ? "text-slate-800" : "text-slate-500"
+      )}
+    >
+      <span
+        className={cn(
+          "relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
+          checked ? "bg-brand" : "bg-slate-300"
+        )}
+      >
+        <span
+          className={cn(
+            "inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform",
+            checked ? "translate-x-4" : "translate-x-0.5"
+          )}
+        />
+      </span>
+      {label}
+    </button>
+  );
+}
+
 // ── Section card ──────────────────────────────────────────────────────────────
 
 function Section({
@@ -1139,7 +1212,7 @@ function Section({
 
 function ReviewModal({
   form,
-  projects,
+  services,
   fileNames,
   submitting,
   submitError,
@@ -1148,7 +1221,7 @@ function ReviewModal({
   onConfirm,
 }: {
   form: FormState;
-  projects: ProjectRow[];
+  services: ServiceRow[];
   fileNames: Record<string, string[]>;
   submitting: boolean;
   submitError: string | null;
@@ -1211,7 +1284,7 @@ function ReviewModal({
     { title: "Bank Details", step: 2, rows: rowsFrom(STEPS[2].fields) },
   ];
 
-  const filledProjects = projects.filter((p) => Object.values(p).some((v) => v.trim() !== ""));
+  const filledServices = services.filter((s) => s.category.trim() !== "");
   const uploadedDocs = DOC_FIELDS.map((d) => ({ label: d.label, names: fileNames[d.name] ?? [] })).filter(
     (d) => d.names.length > 0
   );
@@ -1261,20 +1334,18 @@ function ReviewModal({
             </ReviewBlock>
           ))}
 
-          <ReviewBlock title="Past Projects" onEdit={() => onEdit(3)}>
-            {filledProjects.length ? (
+          <ReviewBlock title="Services" onEdit={() => onEdit(3)}>
+            {filledServices.length ? (
               <ul className="space-y-2">
-                {filledProjects.map((p, i) => (
+                {filledServices.map((s, i) => (
                   <li key={i} className="rounded-lg border border-slate-100 bg-slate-50/60 px-3 py-2 text-sm text-slate-700">
-                    <span className="font-medium text-slate-800">{i + 1}.</span>{" "}
-                    {[p.clientName, p.capacity, p.projectType, p.location, p.yearOfCompletion]
-                      .filter((v) => v.trim())
-                      .join(" · ") || "—"}
+                    <span className="font-medium text-slate-800">{s.category}</span>
+                    {s.item.trim() && <span className="text-slate-500"> — {s.item.trim()}</span>}
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="text-sm italic text-slate-400">No projects added.</p>
+              <p className="text-sm italic text-slate-400">No services added.</p>
             )}
           </ReviewBlock>
 

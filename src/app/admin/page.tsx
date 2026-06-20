@@ -53,7 +53,7 @@ export default async function DashboardPage() {
       prisma.vendor.findMany({
         orderBy: { createdAt: "desc" },
         take: 6,
-        include: { _count: { select: { projects: true, documents: true } } },
+        include: { _count: { select: { services: true, documents: true } } },
       }),
       prisma.vendor.groupBy({ by: ["status"], _count: { _all: true } }),
       prisma.$queryRaw<{ month: Date; count: number }[]>`
@@ -194,7 +194,7 @@ export default async function DashboardPage() {
                     <th className={thCls}>Company</th>
                     <th className={thCls}>Email</th>
                     <th className={thCls}>GST</th>
-                    <th className={thCls}>Projects</th>
+                    <th className={thCls}>Services</th>
                     <th className={thCls}>Status</th>
                     <th className={thCls}>Submitted</th>
                   </tr>
@@ -214,10 +214,10 @@ export default async function DashboardPage() {
                         <span className="text-slate-600">{v.email}</span>
                       </td>
                       <td className={tdCls}>
-                        <span className="text-slate-600">{v.gstNo}</span>
+                        <span className="text-slate-600">{v.gstNo || "—"}</span>
                       </td>
                       <td className={tdCls}>
-                        <span className="text-slate-500">{v._count.projects}</span>
+                        <span className="text-slate-500">{v._count.services}</span>
                       </td>
                       <td className={tdCls}>
                         <Badge value={v.status} />

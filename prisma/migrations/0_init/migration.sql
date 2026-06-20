@@ -21,12 +21,14 @@ CREATE TABLE "Vendor" (
     "email" TEXT NOT NULL,
     "address" TEXT,
     "state" TEXT,
+    "country" TEXT,
+    "pinCode" TEXT,
     "website" TEXT,
     "dateOfIncorporation" TIMESTAMP(3),
     "yearsOfService" TEXT,
     "annualTurnover" TEXT,
-    "gstNo" TEXT NOT NULL,
-    "panNo" TEXT NOT NULL,
+    "gstNo" TEXT,
+    "panNo" TEXT,
     "exciseNo" TEXT,
     "tinNo" TEXT,
     "vatLstNo" TEXT,
@@ -51,21 +53,13 @@ CREATE TABLE "Vendor" (
 );
 
 -- CreateTable
-CREATE TABLE "VendorProject" (
+CREATE TABLE "VendorService" (
     "id" TEXT NOT NULL,
     "vendorId" TEXT NOT NULL,
-    "serialNo" INTEGER,
-    "clientName" TEXT,
-    "capacity" TEXT,
-    "projectType" TEXT,
-    "contractType" TEXT,
-    "location" TEXT,
-    "yearOfCompletion" TEXT,
-    "scopeOfWork" TEXT,
-    "percentCompleted" TEXT,
-    "remarks" TEXT,
+    "category" TEXT NOT NULL,
+    "item" TEXT,
 
-    CONSTRAINT "VendorProject_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "VendorService_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -131,7 +125,7 @@ CREATE INDEX "Vendor_status_idx" ON "Vendor"("status");
 CREATE INDEX "Vendor_gstNo_idx" ON "Vendor"("gstNo");
 
 -- CreateIndex
-CREATE INDEX "VendorProject_vendorId_idx" ON "VendorProject"("vendorId");
+CREATE INDEX "VendorService_vendorId_idx" ON "VendorService"("vendorId");
 
 -- CreateIndex
 CREATE INDEX "VendorDocument_vendorId_idx" ON "VendorDocument"("vendorId");
@@ -161,7 +155,7 @@ CREATE INDEX "DocumentRequest_vendorId_idx" ON "DocumentRequest"("vendorId");
 CREATE INDEX "DocumentRequest_status_idx" ON "DocumentRequest"("status");
 
 -- AddForeignKey
-ALTER TABLE "VendorProject" ADD CONSTRAINT "VendorProject_vendorId_fkey" FOREIGN KEY ("vendorId") REFERENCES "Vendor"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "VendorService" ADD CONSTRAINT "VendorService_vendorId_fkey" FOREIGN KEY ("vendorId") REFERENCES "Vendor"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "VendorDocument" ADD CONSTRAINT "VendorDocument_vendorId_fkey" FOREIGN KEY ("vendorId") REFERENCES "Vendor"("id") ON DELETE CASCADE ON UPDATE CASCADE;
