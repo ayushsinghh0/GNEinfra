@@ -1,8 +1,14 @@
+-- CreateSchema
+CREATE SCHEMA IF NOT EXISTS "public";
+
 -- CreateEnum
 CREATE TYPE "VendorStatus" AS ENUM ('INVITED', 'SUBMITTED', 'UNDER_REVIEW', 'APPROVED', 'REJECTED');
 
 -- CreateEnum
 CREATE TYPE "InviteStatus" AS ENUM ('PENDING', 'USED', 'EXPIRED', 'REVOKED');
+
+-- CreateEnum
+CREATE TYPE "DocumentRequestStatus" AS ENUM ('PENDING', 'USED', 'EXPIRED', 'REVOKED');
 
 -- CreateTable
 CREATE TABLE "Vendor" (
@@ -68,10 +74,16 @@ CREATE TABLE "VendorDocument" (
     "vendorId" TEXT NOT NULL,
     "docType" TEXT NOT NULL,
     "originalName" TEXT NOT NULL,
-    "storedPath" TEXT NOT NULL,
+    "storageKey" TEXT NOT NULL,
     "mimeType" TEXT,
-    "sizeBytes" INTEGER,
+    "originalSize" INTEGER,
+    "storedSize" INTEGER,
+    "compressed" BOOLEAN NOT NULL DEFAULT false,
     "uploadedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "downloadCount" INTEGER NOT NULL DEFAULT 0,
+    "firstDownloadedAt" TIMESTAMP(3),
+    "purgeAfter" TIMESTAMP(3),
+    "purgedAt" TIMESTAMP(3),
 
     CONSTRAINT "VendorDocument_pkey" PRIMARY KEY ("id")
 );
@@ -89,6 +101,21 @@ CREATE TABLE "VendorInvite" (
     "usedAt" TIMESTAMP(3),
 
     CONSTRAINT "VendorInvite_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "DocumentRequest" (
+    "id" TEXT NOT NULL,
+    "token" TEXT NOT NULL,
+    "vendorId" TEXT NOT NULL,
+    "documentId" TEXT,
+    "docType" TEXT NOT NULL,
+    "status" "DocumentRequestStatus" NOT NULL DEFAULT 'PENDING',
+    "expiresAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "fulfilledAt" TIMESTAMP(3),
+
+    CONSTRAINT "DocumentRequest_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -110,6 +137,9 @@ CREATE INDEX "VendorProject_vendorId_idx" ON "VendorProject"("vendorId");
 CREATE INDEX "VendorDocument_vendorId_idx" ON "VendorDocument"("vendorId");
 
 -- CreateIndex
+CREATE INDEX "VendorDocument_purgeAfter_idx" ON "VendorDocument"("purgeAfter");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "VendorInvite_token_key" ON "VendorInvite"("token");
 
 -- CreateIndex
@@ -121,6 +151,15 @@ CREATE INDEX "VendorInvite_email_idx" ON "VendorInvite"("email");
 -- CreateIndex
 CREATE INDEX "VendorInvite_status_idx" ON "VendorInvite"("status");
 
+-- CreateIndex
+CREATE UNIQUE INDEX "DocumentRequest_token_key" ON "DocumentRequest"("token");
+
+-- CreateIndex
+CREATE INDEX "DocumentRequest_vendorId_idx" ON "DocumentRequest"("vendorId");
+
+-- CreateIndex
+CREATE INDEX "DocumentRequest_status_idx" ON "DocumentRequest"("status");
+
 -- AddForeignKey
 ALTER TABLE "VendorProject" ADD CONSTRAINT "VendorProject_vendorId_fkey" FOREIGN KEY ("vendorId") REFERENCES "Vendor"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
@@ -129,3 +168,7 @@ ALTER TABLE "VendorDocument" ADD CONSTRAINT "VendorDocument_vendorId_fkey" FOREI
 
 -- AddForeignKey
 ALTER TABLE "VendorInvite" ADD CONSTRAINT "VendorInvite_vendorId_fkey" FOREIGN KEY ("vendorId") REFERENCES "Vendor"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "DocumentRequest" ADD CONSTRAINT "DocumentRequest_vendorId_fkey" FOREIGN KEY ("vendorId") REFERENCES "Vendor"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+

@@ -9,7 +9,6 @@ import {
   Building2,
   Mail,
   Settings,
-  FolderKanban,
   Pickaxe,
   Boxes,
   Wallet,
@@ -22,7 +21,6 @@ import {
 
 const nav: { href: string; label: string; icon: LucideIcon; exact: boolean }[] = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
-  { href: "/admin/projects", label: "Projects", icon: FolderKanban, exact: false },
   { href: "/admin/vendors", label: "Vendors", icon: Building2, exact: false },
   { href: "/admin/invites", label: "Invitations", icon: Mail, exact: false },
   { href: "/admin/settings", label: "Settings", icon: Settings, exact: false },
