@@ -22,6 +22,7 @@ import {
   Eye,
   Download,
   FileDown,
+  FileSpreadsheet,
   CalendarDays,
   BadgeCheck,
   AlertTriangle,
@@ -103,9 +104,13 @@ export default async function VendorDetail({
           <ArrowLeft className="h-4 w-4" />
           Vendors
         </Link>
+        <a href={`/api/vendors/${v.id}/export`} className={btn("secondary", "sm")}>
+          <FileSpreadsheet className="h-4 w-4" />
+          Excel
+        </a>
         <a href={`/vendors/${v.id}/print`} target="_blank" rel="noopener noreferrer" className={btn("primary", "sm")}>
           <FileDown className="h-4 w-4" />
-          Download PDF
+          PDF
         </a>
       </PageHeader>
 
