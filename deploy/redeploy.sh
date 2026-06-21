@@ -13,5 +13,6 @@ npm ci
 npx prisma generate
 npx prisma migrate deploy
 npm run build
-pm2 restart gne-erp --update-env
+pm2 startOrReload ecosystem.config.js --update-env
+pm2 save
 echo "Redeployed $(git rev-parse --short HEAD) on $BRANCH."

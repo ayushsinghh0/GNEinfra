@@ -231,10 +231,13 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Fire off notification emails (failures shouldn't fail the registration).
+  // Fire off notification emails WITHOUT awaiting: holding the response open on
+  // SMTP (1–3s to Gmail) would throttle throughput under load. The Node server is
+  // long-running (pm2), so these finish in the background; failures are non-fatal
+  // and already swallowed by allSettled.
   const base = process.env.APP_BASE_URL || "http://localhost:3000";
   const notify = process.env.PROCUREMENT_NOTIFY_EMAIL;
-  await Promise.allSettled([
+  void Promise.allSettled([
     (async () => {
       const tpl = vendorConfirmationEmail(d.companyName);
       await sendMail({ to: d.email, subject: tpl.subject, html: tpl.html, text: tpl.text });

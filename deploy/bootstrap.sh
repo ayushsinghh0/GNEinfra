@@ -52,9 +52,9 @@ npx prisma generate
 npx prisma migrate deploy   # applies migrations to the Neon DB in DATABASE_URL
 npm run build
 
-echo "==> Starting app under pm2"
+echo "==> Starting app under pm2 (ecosystem.config.js — memory-capped, auto-restart)"
 pm2 delete gne-erp 2>/dev/null || true
-PORT=3000 pm2 start npm --name gne-erp -- start
+pm2 start ecosystem.config.js
 pm2 save
 sudo env PATH="$PATH:/usr/bin" pm2 startup systemd -u "$USER" --hp "$HOME" >/dev/null 2>&1 || true
 
