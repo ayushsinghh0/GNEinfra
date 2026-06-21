@@ -70,10 +70,12 @@ sudo systemctl enable caddy >/dev/null 2>&1
 
 echo "==> Installing cron jobs (document purge hourly, DB backup every 6h)"
 chmod +x deploy/purge-cron.sh deploy/backup-db.sh
-CRON_PURGE="0 * * * * $APP_DIR/deploy/purge-cron.sh >> \$HOME/cron.log 2>&1"
-CRON_BACKUP="30 */6 * * * $APP_DIR/deploy/backup-db.sh >> \$HOME/cron.log 2>&1"
-( crontab -l 2>/dev/null | grep -vF "deploy/purge-cron.sh" | grep -vF "deploy/backup-db.sh"; \
-  echo "$CRON_PURGE"; echo "$CRON_BACKUP" ) | crontab -
+sudo systemctl enable --now cron >/dev/null 2>&1 || true
+# `|| true` because grep exits 1 on an empty crontab and `set -e` would abort.
+EXISTING=$(crontab -l 2>/dev/null | grep -vF "deploy/purge-cron.sh" | grep -vF "deploy/backup-db.sh" || true)
+{ [ -n "$EXISTING" ] && printf '%s\n' "$EXISTING"
+  echo "0 * * * * $APP_DIR/deploy/purge-cron.sh >> \$HOME/cron.log 2>&1"
+  echo "30 */6 * * * $APP_DIR/deploy/backup-db.sh >> \$HOME/cron.log 2>&1"; } | crontab -
 
 echo "==> Done. App live at: https://$DOMAIN"
 echo "    (Open ports 80 + 443 in the EC2 Security Group if you haven't.)"
