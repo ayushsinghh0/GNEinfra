@@ -22,7 +22,7 @@ DOMAIN="${DOMAIN:?Set DOMAIN (e.g. <ip>.sslip.io for a bare IP, or your real hos
 export DEBIAN_FRONTEND=noninteractive
 echo "==> Installing system packages (Node, Caddy, build tools)"
 sudo apt-get update -qq
-sudo apt-get install -y -qq curl ca-certificates git nodejs npm caddy build-essential
+sudo apt-get install -y -qq curl ca-certificates git nodejs npm caddy build-essential postgresql-client cron
 sudo npm install -g pm2 >/dev/null
 
 echo "==> Ensuring 1G swap (so 'next build' survives on a 1GB instance)"
@@ -67,6 +67,13 @@ $DOMAIN {
 EOF
 sudo systemctl restart caddy
 sudo systemctl enable caddy >/dev/null 2>&1
+
+echo "==> Installing cron jobs (document purge hourly, DB backup every 6h)"
+chmod +x deploy/purge-cron.sh deploy/backup-db.sh
+CRON_PURGE="0 * * * * $APP_DIR/deploy/purge-cron.sh >> \$HOME/cron.log 2>&1"
+CRON_BACKUP="30 */6 * * * $APP_DIR/deploy/backup-db.sh >> \$HOME/cron.log 2>&1"
+( crontab -l 2>/dev/null | grep -vF "deploy/purge-cron.sh" | grep -vF "deploy/backup-db.sh"; \
+  echo "$CRON_PURGE"; echo "$CRON_BACKUP" ) | crontab -
 
 echo "==> Done. App live at: https://$DOMAIN"
 echo "    (Open ports 80 + 443 in the EC2 Security Group if you haven't.)"
