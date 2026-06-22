@@ -63,15 +63,16 @@ export default async function VendorsPage({
               description="No vendors match your search. Try a different term or status filter."
             />
           ) : (
-            <table className="w-full table-fixed text-sm">
+            <div className="overflow-x-auto">
+            <table className="w-full min-w-[920px] table-fixed text-sm">
               <colgroup>
+                <col className="w-[19%]" />
                 <col className="w-[20%]" />
-                <col className="w-[22%]" />
-                <col className="w-[16%]" />
+                <col className="w-[15%]" />
                 <col className="w-[11%]" />
                 <col className="w-[11%]" />
+                <col className="w-[13%]" />
                 <col className="w-[11%]" />
-                <col className="w-[9%]" />
               </colgroup>
               <thead>
                 <tr className={theadRowCls}>
@@ -105,6 +106,7 @@ export default async function VendorsPage({
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </Card>
       </div>
