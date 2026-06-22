@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { UploadCloud, FileText, X, Check } from "lucide-react";
 import { cn } from "@/components/ui";
 
@@ -41,7 +41,8 @@ export default function Dropzone({
   const [files, setFiles] = useState<File[]>([]);
   const [drag, setDrag] = useState(false);
   const [urls, setUrls] = useState<Record<string, string>>({});
-  const errId = name ? `${name}-error` : undefined;
+  const reactId = useId();
+  const errId = `${name ?? reactId}-error`;
 
   // Derive image object-URLs from the current files; revoke on change / unmount.
   // Kept in state (not a ref) so render reads state, never a ref.
@@ -65,35 +66,37 @@ export default function Dropzone({
     el.files = dt.files;
   }, []);
 
+  // Pure updates: compute `next` from the current `files`, commit it, THEN run
+  // side-effects (DOM input sync + parent callback). Never mutate the DOM or call
+  // a parent setter inside a setState updater — under React 19 StrictMode /
+  // concurrent render that can fire twice or against discarded state, which would
+  // desync inputRef.files (read by FormData) from committed state and silently
+  // drop/duplicate a KYC document.
   const apply = useCallback(
     (incoming: File[]) => {
       if (!incoming.length) return;
-      setFiles((prev) => {
-        let next: File[];
-        if (multiple) {
-          const seen = new Set(prev.map(keyOf));
-          next = [...prev, ...incoming.filter((f) => !seen.has(keyOf(f)))];
-        } else {
-          next = incoming.slice(-1);
-        }
-        syncInput(next);
-        onFiles?.(next);
-        return next;
-      });
+      let next: File[];
+      if (multiple) {
+        const seen = new Set(files.map(keyOf));
+        next = [...files, ...incoming.filter((f) => !seen.has(keyOf(f)))];
+      } else {
+        next = incoming.slice(-1);
+      }
+      setFiles(next);
+      syncInput(next);
+      onFiles?.(next);
     },
-    [multiple, onFiles, syncInput]
+    [files, multiple, onFiles, syncInput]
   );
 
   const removeAt = useCallback(
     (i: number) => {
-      setFiles((prev) => {
-        const next = prev.filter((_, idx) => idx !== i);
-        syncInput(next);
-        onFiles?.(next);
-        return next;
-      });
+      const next = files.filter((_, idx) => idx !== i);
+      setFiles(next);
+      syncInput(next);
+      onFiles?.(next);
     },
-    [onFiles, syncInput]
+    [files, onFiles, syncInput]
   );
 
   return (
@@ -128,9 +131,9 @@ export default function Dropzone({
         </span>
         <span className="text-sm font-semibold text-slate-700">
           {label}
-          {hint && <span className="ml-1 font-normal text-slate-400">— {hint}</span>}
+          {hint && <span className="ml-1 font-normal text-slate-500">— {hint}</span>}
         </span>
-        <span className="text-xs text-slate-400">
+        <span className="text-xs text-slate-500">
           Drag &amp; drop, or <span className="font-medium text-brand-700">browse</span> · PDF or image, max 10&nbsp;MB
         </span>
         <input
@@ -139,6 +142,7 @@ export default function Dropzone({
           type="file"
           multiple={multiple}
           accept={accept}
+          aria-label={label}
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? errId : undefined}
           onChange={(e) => apply(Array.from(e.target.files ?? []))}
@@ -165,11 +169,13 @@ export default function Dropzone({
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-medium text-slate-700">{f.name}</span>
-                  <span className="nums block text-xs text-slate-400">{fmtBytes(f.size)}</span>
+                  <span className="nums block text-xs text-slate-500">{fmtBytes(f.size)}</span>
                 </span>
-                <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-emerald-500 text-white" aria-label="Ready">
-                  <Check className="h-3 w-3" />
-                </span>
+                {!error && (
+                  <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-emerald-500 text-white" aria-label="Attached">
+                    <Check className="h-3 w-3" />
+                  </span>
+                )}
                 <button
                   type="button"
                   onClick={() => removeAt(i)}

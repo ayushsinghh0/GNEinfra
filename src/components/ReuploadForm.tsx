@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button, Eyebrow } from "@/components/ui";
 import { SunGlow, Atmosphere, Wave, Blob, SuccessCheck } from "@/components/chrome";
 import Dropzone from "@/components/Dropzone";
@@ -29,6 +29,12 @@ export default function ReuploadForm({
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+  const doneRef = useRef<HTMLHeadingElement>(null);
+
+  // Announce success to assistive tech and move focus to the heading.
+  useEffect(() => {
+    if (done) doneRef.current?.focus();
+  }, [done]);
 
   function onFiles(files: File[]) {
     const f = files[0] ?? null;
@@ -67,9 +73,17 @@ export default function ReuploadForm({
     return (
       <main className="relative flex flex-1 items-center justify-center overflow-hidden p-6">
         <Blob className="-top-24 right-[10%] h-72 w-72" color="rgba(20,184,166,0.18)" />
-        <div className="relative w-full max-w-lg overflow-hidden rounded-3xl bg-white p-10 text-center shadow-[var(--shadow-pop)]">
+        <div
+          role="status"
+          aria-live="polite"
+          className="relative w-full max-w-lg overflow-hidden rounded-3xl bg-white p-10 text-center shadow-[var(--shadow-pop)]"
+        >
           <SuccessCheck className="mx-auto mb-2" />
-          <h1 className="font-display text-2xl font-extrabold tracking-[-0.02em] text-slate-900">
+          <h1
+            ref={doneRef}
+            tabIndex={-1}
+            className="font-display text-2xl font-extrabold tracking-[-0.02em] text-slate-900 outline-none"
+          >
             Upload received
           </h1>
           <p className="mt-2 text-sm text-slate-600">
@@ -85,7 +99,7 @@ export default function ReuploadForm({
       <Blob className="-top-24 right-[8%] h-72 w-72" color="rgba(45,212,191,0.2)" />
       <Blob className="-bottom-20 left-[6%] h-72 w-72" color="rgba(245,158,11,0.12)" />
       <div className="relative w-full max-w-lg overflow-hidden rounded-3xl bg-white shadow-[var(--shadow-pop)]">
-        <div className="relative h-24 bg-gradient-to-br from-brand-400 via-brand-600 to-brand-700">
+        <div className="relative h-24 bg-gradient-to-br from-brand-600 via-brand-700 to-brand-800">
           <SunGlow className="-top-10 right-8 h-32 w-32" animate />
           <Atmosphere dots grain />
           <div className="absolute left-7 top-7 grid h-11 w-11 place-items-center rounded-2xl bg-white/15 text-sm font-extrabold tracking-tight text-white ring-1 ring-inset ring-white/25 backdrop-blur">

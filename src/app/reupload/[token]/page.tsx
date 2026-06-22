@@ -22,16 +22,16 @@ function Notice({
   }[tone];
   return (
     <main className="flex-1 flex items-center justify-center p-6">
-      <div className="max-w-lg w-full bg-white rounded-2xl border border-slate-200/80 shadow-[0_1px_2px_rgba(15,23,42,0.04)] p-10 text-center">
-        <div className="mx-auto mb-3 grid h-11 w-11 place-items-center rounded-xl bg-brand text-white text-sm font-bold tracking-tight shadow-sm">
+      <div className="max-w-lg w-full bg-white rounded-3xl shadow-[var(--shadow-pop)] p-10 text-center">
+        <div className="mx-auto mb-3 grid h-11 w-11 place-items-center rounded-xl bg-gradient-to-b from-brand-500 to-brand-700 text-white text-sm font-extrabold tracking-tight shadow-[var(--shadow-cta)]">
           GNE
         </div>
         <div className={`mx-auto mb-4 grid h-12 w-12 place-items-center rounded-2xl ${tones.ring}`}>
           {tones.icon}
         </div>
-        <h1 className="text-xl font-semibold tracking-tight text-slate-900">{title}</h1>
+        <h1 className="font-display text-xl font-extrabold tracking-[-0.02em] text-slate-900">{title}</h1>
         <p className="mt-2 text-sm text-slate-600">{body}</p>
-        <p className="mt-6 text-xs text-slate-400">
+        <p className="mt-6 text-xs text-slate-500">
           Please contact GNE procurement if you need a new link.
         </p>
       </div>

@@ -53,7 +53,7 @@ export default function AdminLogin() {
   return (
     <main className="min-h-dvh bg-white lg:grid lg:grid-cols-2">
       {/* ── Brand panel: mobile = sunrise hero w/ wave; desktop = full-height left ── */}
-      <div className="relative isolate overflow-hidden bg-gradient-to-br from-brand-400 via-brand-600 to-brand-800 px-6 pt-12 pb-16 text-white lg:flex lg:h-dvh lg:flex-col lg:justify-between lg:px-12 lg:py-12">
+      <div className="relative isolate overflow-hidden bg-gradient-to-br from-brand-600 via-brand-700 to-brand-800 px-6 pt-12 pb-16 text-white lg:flex lg:h-dvh lg:flex-col lg:justify-between lg:px-12 lg:py-12">
         <SunGlow className="-top-16 -right-10 h-56 w-56" animate />
         <Blob className="-bottom-12 -left-12 h-72 w-72" color="rgba(16,185,129,0.22)" />
         <Atmosphere dots grain />
@@ -70,18 +70,18 @@ export default function AdminLogin() {
         </div>
 
         <div className="relative z-10 mt-8 lg:mt-0">
-          <Eyebrow className="text-white/85">Solar EPC · Procurement</Eyebrow>
+          <Eyebrow className="text-white">Solar EPC · Procurement</Eyebrow>
           <h2 className="font-display mt-3 max-w-sm text-3xl font-extrabold leading-[1.05] tracking-[-0.02em] sm:text-4xl">
             Vendor management for solar EPC, done right.
           </h2>
-          <p className="mt-3 max-w-sm text-sm leading-relaxed text-white/80">
+          <p className="mt-3 max-w-sm text-sm leading-relaxed text-white/90">
             Onboard suppliers, verify their compliance details, and keep every document in order — all in one place.
           </p>
         </div>
 
         <ul className="relative z-10 mt-8 hidden space-y-3 lg:block">
           {features.map((f) => (
-            <li key={f.text} className="flex items-center gap-3 text-sm text-white/85">
+            <li key={f.text} className="flex items-center gap-3 text-sm text-white/90">
               <span className="grid h-8 w-8 place-items-center rounded-lg bg-white/10 ring-1 ring-white/15">
                 <f.icon className="h-4 w-4" />
               </span>

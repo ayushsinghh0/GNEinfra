@@ -14,8 +14,14 @@ const buckets = new Map<string, Bucket>();
 const RULES: { prefix: string; limit: number; windowMs: number }[] = [
   { prefix: "/api/admin/login", limit: 10, windowMs: 60_000 },
   { prefix: "/api/register", limit: 20, windowMs: 60_000 },
+  { prefix: "/api/reupload", limit: 20, windowMs: 60_000 },
   { prefix: "/api/invites", limit: 30, windowMs: 60_000 },
 ];
+
+// Reject obviously-oversized upload bodies early (defense-in-depth). The reverse
+// proxy enforces the hard cap; Content-Length is omitted for chunked bodies, so
+// this is a cheap first gate, not the sole control.
+const MAX_UPLOAD_BYTES = 12 * 1024 * 1024;
 
 function clientIp(req: NextRequest): string {
   const fwd = req.headers.get("x-forwarded-for");
@@ -31,6 +37,14 @@ function clientIp(req: NextRequest): string {
 
 export function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname;
+
+  if (path.startsWith("/api/register") || path.startsWith("/api/reupload")) {
+    const cl = Number(req.headers.get("content-length") || 0);
+    if (cl > MAX_UPLOAD_BYTES) {
+      return NextResponse.json({ error: "Upload too large." }, { status: 413 });
+    }
+  }
+
   const rule = RULES.find((r) => path.startsWith(r.prefix));
   if (!rule) return NextResponse.next();
 
@@ -59,5 +73,10 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/api/admin/login", "/api/register/:path*", "/api/invites/:path*"],
+  matcher: [
+    "/api/admin/login",
+    "/api/register/:path*",
+    "/api/reupload/:path*",
+    "/api/invites/:path*",
+  ],
 };

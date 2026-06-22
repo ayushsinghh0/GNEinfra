@@ -136,7 +136,7 @@ body {
    one should add transition-transform. */
 .press:active { transform: scale(0.97); }
 .lift { transition: transform 0.2s var(--ease-out-soft), box-shadow 0.2s var(--ease-out-soft); }
-.lift:hover { transform: translateY(-3px); }
+.lift:hover { transform: translateY(-3px); box-shadow: var(--shadow-card-hover); }
 @media (prefers-reduced-motion: reduce) {
   .press:active, .lift:hover { transform: none; }
 }

@@ -17,6 +17,32 @@ const ALLOWED = new Set([
   "image/webp",
 ]);
 
+// Cap decompression output so a crafted/corrupt .gz can't inflate unboundedly
+// (zip-bomb DoS). Comfortably above the 10 MB upload limit.
+const MAX_INFLATED_BYTES = 16 * 1024 * 1024;
+
+// Verify the file's ACTUAL bytes (magic number) — never trust the client-supplied
+// MIME type. Returns the canonical type, or null if it's not an allowed format.
+// Prevents storing e.g. HTML/SVG/script disguised as image/png.
+function sniffType(buf: Buffer): string | null {
+  if (buf.length >= 4 && buf[0] === 0x25 && buf[1] === 0x50 && buf[2] === 0x44 && buf[3] === 0x46)
+    return "application/pdf"; // %PDF
+  if (
+    buf.length >= 8 &&
+    buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47 &&
+    buf[4] === 0x0d && buf[5] === 0x0a && buf[6] === 0x1a && buf[7] === 0x0a
+  )
+    return "image/png";
+  if (buf.length >= 3 && buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) return "image/jpeg";
+  if (
+    buf.length >= 12 &&
+    buf.toString("ascii", 0, 4) === "RIFF" &&
+    buf.toString("ascii", 8, 12) === "WEBP"
+  )
+    return "image/webp";
+  return null;
+}
+
 export type SavedDocument = {
   originalName: string;
   storageKey: string;
@@ -44,6 +70,14 @@ export async function saveDocument(
   }
 
   const original = Buffer.from(await file.arrayBuffer());
+
+  // Content sniffing — the bytes must actually be a PDF/PNG/JPEG/WEBP, regardless
+  // of the client-declared MIME. The detected type is what we store + serve.
+  const detected = sniffType(original);
+  if (!detected) {
+    throw new Error(`File ${file.name} is not a valid PDF or image`);
+  }
+
   const gz = await gzipAsync(original, { level: 9 });
   const compressed = gz.length < original.length;
   const body = compressed ? gz : original;
@@ -52,11 +86,7 @@ export async function saveDocument(
   const rand = randomBytes(6).toString("hex");
   const key = `vendors/${vendorId}/${rand}-${safeName}${compressed ? ".gz" : ""}`;
 
-  await storage.put(
-    key,
-    body,
-    compressed ? "application/gzip" : file.type || "application/octet-stream"
-  );
+  await storage.put(key, body, compressed ? "application/gzip" : detected);
 
   // Strip control characters / quotes from the display name so it can never break
   // a Content-Disposition header on download; keep it readable and bounded.
@@ -66,7 +96,7 @@ export async function saveDocument(
   return {
     originalName: cleanName,
     storageKey: key,
-    mimeType: file.type || "application/octet-stream",
+    mimeType: detected,
     originalSize: original.length,
     storedSize: body.length,
     compressed,
@@ -79,7 +109,9 @@ export async function readDocument(doc: {
   compressed: boolean;
 }): Promise<Buffer> {
   const raw = await storage.get(doc.storageKey);
-  return doc.compressed ? await gunzipAsync(raw) : raw;
+  return doc.compressed
+    ? await gunzipAsync(raw, { maxOutputLength: MAX_INFLATED_BYTES })
+    : raw;
 }
 
 export async function deleteDocument(storageKey: string) {

@@ -81,17 +81,15 @@ export function AreaChart({
       )}
 
       {pts.map((p, i) => (
-        <g key={i} className="group">
-          <circle cx={p.x} cy={p.y} r="3.5" fill="#fff" stroke="#0d9488" strokeWidth="2" />
-          {/* hover hit area + value label */}
-          <rect x={p.x - innerW / (data.length * 2)} y={pad.t} width={innerW / data.length} height={innerH} fill="transparent" />
-          <g className="pointer-events-none opacity-0 transition-opacity group-hover:opacity-100">
-            <rect x={p.x - 14} y={p.y - 26} width="28" height="18" rx="5" fill="#0f172a" />
-            <text x={p.x} y={p.y - 13} textAnchor="middle" fontSize="11" fontWeight="700" fill="#fff" className="nums">
+        <g key={i}>
+          {/* Persistent value label — visible on touch/keyboard/everyone (no hover-only). */}
+          {p.value > 0 && (
+            <text x={p.x} y={p.y - 12} textAnchor="middle" fontSize="11" fontWeight="700" fill="#0f766e" className="nums">
               {p.value}
             </text>
-          </g>
-          <text x={p.x} y={H - 8} textAnchor="middle" fontSize="11" fill="#94a3b8">
+          )}
+          <circle cx={p.x} cy={p.y} r="3.5" fill="#fff" stroke="#0d9488" strokeWidth="2" />
+          <text x={p.x} y={H - 8} textAnchor="middle" fontSize="11" fill="#64748b">
             {p.label}
           </text>
         </g>

@@ -166,7 +166,7 @@ export function Field({
       <span className="mb-1.5 flex items-center gap-1 text-[13px] font-medium text-slate-700">
         {label}
         {required && <span className="text-rose-500">*</span>}
-        {hint && <span className="font-normal text-slate-400">— {hint}</span>}
+        {hint && <span className="font-normal text-slate-500">— {hint}</span>}
       </span>
       {children}
       {error && (
@@ -292,7 +292,7 @@ export function PageHeader({
     <header className="glass sticky top-14 md:top-0 z-20 flex h-16 items-center justify-between gap-4 border-b border-slate-200/70 px-6 sm:px-8">
       <div className="flex items-baseline gap-3 min-w-0">
         <h1 className="text-lg font-semibold tracking-tight text-slate-900 truncate">{title}</h1>
-        {subtitle && <span className="text-sm text-slate-400 truncate">{subtitle}</span>}
+        {subtitle && <span className="text-sm text-slate-500 truncate">{subtitle}</span>}
       </div>
       {children && <div className="flex items-center gap-2 shrink-0">{children}</div>}
     </header>
@@ -319,7 +319,7 @@ export function ProgressBar({
   return (
     <div className={cn("h-2 overflow-hidden rounded-full bg-slate-100", className)}>
       <div
-        className={cn("h-2 rounded-full bg-gradient-to-r transition-all duration-500", tones[tone])}
+        className={cn("h-2 rounded-full bg-gradient-to-r transition-all duration-500 motion-reduce:transition-none", tones[tone])}
         style={{ width: `${v}%` }}
       />
     </div>
@@ -349,7 +349,7 @@ export function Table({ children }: { children: React.ReactNode }) {
 }
 
 export const thCls =
-  "px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-400";
+  "px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500";
 export const tdCls = "px-4 py-3.5 text-sm text-slate-700 align-middle";
 export const tdNumCls = "px-4 py-3.5 text-sm text-slate-700 align-middle text-right nums";
 export const theadRowCls = "border-b border-slate-200/80";

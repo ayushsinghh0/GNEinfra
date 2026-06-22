@@ -145,7 +145,7 @@ export function BrandHero({
       className={cn(
         "relative overflow-hidden",
         teal
-          ? "bg-gradient-to-br from-brand-400 via-brand-600 to-brand-700 text-white"
+          ? "bg-gradient-to-br from-brand-600 via-brand-700 to-brand-800 text-white"
           : "bg-gradient-to-br from-brand-100 via-brand-100 to-brand-200 text-slate-900",
         className
       )}
@@ -154,7 +154,7 @@ export function BrandHero({
       {atmosphere && <Atmosphere dots grain={teal} />}
       <div className="relative z-10">
         {eyebrow && (
-          <Eyebrow className={teal ? "text-white/85" : "text-brand-700"}>{eyebrow}</Eyebrow>
+          <Eyebrow className={teal ? "text-white" : "text-brand-800"}>{eyebrow}</Eyebrow>
         )}
         {title && (
           <h1
@@ -168,7 +168,7 @@ export function BrandHero({
           </h1>
         )}
         {subtitle && (
-          <p className={cn("mt-2 text-sm leading-relaxed", teal ? "text-white/80" : "text-slate-600")}>
+          <p className={cn("mt-2 text-sm leading-relaxed", teal ? "text-white/90" : "text-slate-600")}>
             {subtitle}
           </p>
         )}
@@ -206,7 +206,7 @@ export function SuccessCheck({
             style={{ left: s.x, top: s.y, background: s.c, borderRadius: s.r ? "999px" : "2px", animationDelay: "0.9s" }}
           />
         ))}
-      <svg viewBox="0 0 100 100" className="h-24 w-24">
+      <svg viewBox="0 0 100 100" className="h-24 w-24" aria-hidden="true">
         <circle className="draw-ring stroke-brand-500" cx="50" cy="50" r="42" fill="none" strokeWidth="5" strokeLinecap="round" />
         <path className="draw-tick stroke-brand-700" d="M34 51 L45 62 L66 40" fill="none" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
       </svg>

@@ -78,6 +78,28 @@ R2/MinIO-compatible via `S3_ENDPOINT`), or SMTP provider is a `.env` change only
   expiry + status. Register and reupload consume their token inside a transaction with a
   conditional status flip, so concurrent double-submits can't double-create.
 
+## UI & design system ("Soft Wave")
+
+Premium-**light** design language. Don't hand-roll one-off styles — compose the existing system:
+- **Tokens** (`src/app/globals.css`): `@theme` brand teal + slate + solar amber; `:root` holds
+  shadow/easing/field vars consumed as arbitrary utilities (e.g. `shadow-[var(--shadow-card)]`);
+  motion keyframes + `.animate-*` / `.draw-*` / `.skeleton`; atmosphere utilities `.glass`,
+  `.gne-dots`, `.gne-grain`; `.nums` (tabular figures). Fonts: **Plus Jakarta Sans** (`font-sans`),
+  **Sora** (`font-display`, headings only), Geist Mono (`font-mono`, for codes/IDs).
+- **Primitives** (`src/components/ui.tsx`): `Button`/`btn()`, `Card`, `Input`/`Field`, `StatCard`,
+  `PageHeader`, table helpers, `Skeleton`, `Eyebrow`. **Reusable chrome** (`src/components/chrome.tsx`):
+  `BrandHero`, `Wave`, `Atmosphere`, `SunGlow`, `Blob`, `SuccessCheck`; plus `CountUp` and the
+  drag-drop `Dropzone` (keeps a hidden `<input>` synced via DataTransfer so `FormData` +
+  image compression still work).
+- **Guardrails** (non-negotiable): light mode only; brand **atmosphere** (gradients / glow / grain /
+  dot-grid / waves) lives **only in chrome** — heroes, rails, headers, success/empty states —
+  **never behind form fields or data tables** (daylight legibility). Gate **all** motion on
+  `prefers-reduced-motion` (extend the block in `globals.css` when adding animations), transparency
+  on `prefers-reduced-transparency`, and bleeding-edge CSS behind `@supports`. **No chart/animation
+  libraries** — charts are bespoke SVG+CSS (`src/components/Charts.tsx` `AreaChart`/`Donut`); keep
+  it that way. Tabular `.nums` on codes/money/dates; 16px inputs (no iOS zoom); 44px tap targets;
+  `:focus-visible` rings. Full rationale: `docs/superpowers/specs/2026-06-22-vendor-portal-ui-redesign-design.md`.
+
 ## Database & migrations
 
 Postgres via Prisma. Core models: `Vendor` (mirrors the registration form),
@@ -89,6 +111,13 @@ Postgres via Prisma. Core models: `Vendor` (mirrors the registration form),
 several times because the live DB held no real data yet. **Once real vendor data exists, stop
 doing that** — every schema change must be an additive `prisma migrate dev` migration; never
 reset/squash a DB with real data.
+
+⚠️ **Local dev DB may be schema-drifted.** The docker `gne_erp` DB can lag `schema.prisma`
+(e.g. missing `VendorService` / `Vendor.country`), which makes `migrate deploy` error
+(`type already exists`) and 500s the admin Vendor pages — the public/vendor screens still work.
+To run/screenshot the admin UI, create a fresh DB and migrate into it rather than touching the
+drifted one: `CREATE DATABASE gne_shots` → `DATABASE_URL=…/gne_shots npx prisma migrate deploy`
+→ point the dev server at it. Production **Neon** is correct/unaffected.
 
 ## Environment
 

@@ -1014,7 +1014,7 @@ function Rail({
 }) {
   const pct = complete ? 100 : Math.round(((step + 1) / STEPS.length) * 100);
   return (
-    <aside className="relative isolate sticky top-0 hidden h-dvh flex-col gap-9 overflow-hidden bg-gradient-to-b from-brand-500 via-brand-700 to-brand-900 px-8 py-10 text-white lg:flex xl:px-10">
+    <aside className="relative isolate sticky top-0 hidden h-dvh flex-col gap-9 overflow-hidden bg-gradient-to-b from-brand-600 via-brand-700 to-brand-900 px-8 py-10 text-white lg:flex xl:px-10">
       <SunGlow className="-top-16 -right-12 h-56 w-56" animate />
       <Atmosphere dots grain />
 
@@ -1024,7 +1024,7 @@ function Rail({
         </div>
         <div className="min-w-0">
           <p className="text-sm font-semibold tracking-tight">Vendor Registration</p>
-          <p className="text-xs text-brand-100/70">GNE Solar EPC · Supplier onboarding</p>
+          <p className="text-xs text-white/75">GNE Solar EPC · Supplier onboarding</p>
         </div>
       </div>
 
@@ -1059,16 +1059,16 @@ function Rail({
                       ? "bg-white text-brand-700 shadow-sm"
                       : state === "current"
                         ? "scale-110 bg-white/15 text-white ring-2 ring-white"
-                        : "bg-white/10 text-brand-100/60"
+                        : "bg-white/10 text-white/70"
                   )}
                 >
                   {state === "done" ? <Check className="animate-tick h-4 w-4" /> : i + 1}
                 </span>
                 <span className="min-w-0 pt-0.5">
-                  <span className={cn("block text-sm font-medium", state === "todo" ? "text-brand-100/60" : "text-white")}>
+                  <span className={cn("block text-sm font-medium", state === "todo" ? "text-white/70" : "text-white")}>
                     {s.title}
                   </span>
-                  <span className="block text-xs text-brand-100/55">{s.short}</span>
+                  <span className="block text-xs text-white/65">{s.short}</span>
                 </span>
               </button>
             </li>
@@ -1078,15 +1078,15 @@ function Rail({
 
       <div className="relative z-10 mt-auto space-y-5">
         <div>
-          <div className="flex items-center justify-between text-xs text-brand-100/70">
+          <div className="flex items-center justify-between text-xs text-white/80">
             <span>Progress</span>
             <span className="nums">{complete ? "Complete" : `Step ${step + 1} of ${STEPS.length}`}</span>
           </div>
           <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/15">
-            <div className="h-full rounded-full bg-white transition-all duration-500" style={{ width: `${pct}%` }} />
+            <div className="h-full rounded-full bg-white transition-all duration-500 motion-reduce:transition-none" style={{ width: `${pct}%` }} />
           </div>
         </div>
-        <div className="space-y-2 text-xs text-brand-100/70">
+        <div className="space-y-2 text-xs text-white/80">
           <p className="flex items-center gap-2">
             <ShieldCheck className="h-4 w-4 shrink-0 text-brand-200" />
             Shared only with GNE procurement.
@@ -1105,7 +1105,7 @@ function Rail({
 
 function MobileHeader({ step, complete }: { step: number; complete: boolean }) {
   return (
-    <header className="relative isolate overflow-hidden bg-gradient-to-br from-brand-400 via-brand-600 to-brand-700 px-4 pt-9 pb-6 text-white lg:hidden">
+    <header className="relative isolate overflow-hidden bg-gradient-to-br from-brand-600 via-brand-700 to-brand-800 px-4 pt-9 pb-6 text-white lg:hidden">
       <SunGlow className="-top-12 -right-8 h-36 w-36" />
       <Atmosphere dots grain />
       <div className="relative z-10 flex items-center gap-3">
@@ -1114,7 +1114,7 @@ function MobileHeader({ step, complete }: { step: number; complete: boolean }) {
         </div>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold">Vendor Registration</p>
-          <p className="nums text-xs text-white/75">
+          <p className="nums text-xs text-white/90">
             {complete ? "Complete" : `${STEPS[step].title} · Step ${step + 1} of ${STEPS.length}`}
           </p>
         </div>
@@ -1153,7 +1153,7 @@ function Toggle({
       aria-checked={checked}
       onClick={() => onChange(!checked)}
       className={cn(
-        "flex items-center gap-2.5 text-sm font-medium transition-colors",
+        "flex items-center gap-2.5 rounded-lg text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2",
         checked ? "text-slate-800" : "text-slate-500"
       )}
     >
@@ -1318,7 +1318,7 @@ function ReviewModal({
           </button>
         </div>
 
-        <div className="max-h-[60vh] overflow-y-auto px-5 py-4">
+        <div className="max-h-[60dvh] overflow-y-auto px-5 py-4">
           {sections.map((s) => (
             <ReviewBlock key={s.step} title={s.title} onEdit={() => onEdit(s.step)}>
               {s.rows.length ? (
