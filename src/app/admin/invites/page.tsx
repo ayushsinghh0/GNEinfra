@@ -41,6 +41,7 @@ export default async function InvitesPage() {
               description="Invite a vendor above to send them a unique registration link."
             />
           ) : (
+            <div className="overflow-x-auto">
             <Table>
               <thead>
                 <tr className={theadRowCls}>
@@ -62,10 +63,10 @@ export default async function InvitesPage() {
                       {inv.companyHint || <span className="text-slate-400">—</span>}
                     </td>
                     <td className={tdCls}>
-                      <span className="text-slate-500">{fmtDate(inv.sentAt)}</span>
+                      <span className="nums text-slate-500">{fmtDate(inv.sentAt)}</span>
                     </td>
                     <td className={tdCls}>
-                      <span className="text-slate-500">{fmtDate(inv.expiresAt) || "—"}</span>
+                      <span className="nums text-slate-500">{fmtDate(inv.expiresAt) || "—"}</span>
                     </td>
                     <td className={tdCls}>
                       <Badge
@@ -93,6 +94,7 @@ export default async function InvitesPage() {
                 ))}
               </tbody>
             </Table>
+            </div>
           )}
         </Card>
       </div>

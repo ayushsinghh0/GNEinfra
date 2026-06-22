@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Dev-only scratch tooling (seed + screenshot harness), not shipped.
+    "dev-tools/**",
   ]),
 ]);
 

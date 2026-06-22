@@ -4,7 +4,9 @@ import { isAdminAuthed } from "@/lib/auth";
 import { fmtDate } from "@/lib/format";
 import Badge from "@/components/Badge";
 import InviteForm from "@/components/InviteForm";
-import { MonthlyBars, StatusBars } from "@/components/Charts";
+import CountUp from "@/components/CountUp";
+import { AreaChart, Donut } from "@/components/Charts";
+import { BrandHero } from "@/components/chrome";
 import {
   Building2,
   Clock,
@@ -13,11 +15,10 @@ import {
   CalendarDays,
   ChevronRight,
   Inbox,
-  BarChart3,
+  TrendingUp,
   PieChart,
 } from "lucide-react";
 import {
-  PageHeader,
   StatCard,
   Card,
   CardHeader,
@@ -83,69 +84,58 @@ export default async function DashboardPage() {
     REJECTED: "Rejected",
   };
   const statusCounts = new Map(statusGroups.map((g) => [g.status, g._count._all]));
-  const statusData = (["SUBMITTED", "UNDER_REVIEW", "APPROVED", "REJECTED"] as const).map(
-    (s) => ({ status: s, label: STATUS_LABELS[s], value: statusCounts.get(s) ?? 0 })
-  );
+  const statusData = (["SUBMITTED", "UNDER_REVIEW", "APPROVED", "REJECTED"] as const).map((s) => ({
+    status: s,
+    label: STATUS_LABELS[s],
+    value: statusCounts.get(s) ?? 0,
+  }));
+
+  const pct = (n: number) => (total ? Math.round((n / total) * 100) : 0);
 
   return (
     <>
-      <PageHeader title="Dashboard" />
+      <BrandHero
+        variant="mint"
+        size="sm"
+        wave={false}
+        eyebrow="GNE Procurement"
+        title="Dashboard"
+        subtitle="Your supplier pipeline at a glance."
+        className="px-6 pb-7 pt-9 sm:px-8"
+      />
 
-      <div className="p-8 space-y-6">
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="space-y-6 p-6 sm:p-8">
+        {/* KPI bento */}
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
           <Link href="/admin/vendors" className="block">
-            <StatCard
-              label="Total vendors"
-              value={total}
-              tone="brand"
-              icon={<Building2 className="h-[18px] w-[18px]" />}
-            />
+            <StatCard label="Total vendors" value={<CountUp value={total} />} tone="brand" spark={100} icon={<Building2 className="h-[18px] w-[18px]" />} />
           </Link>
           <Link href="/admin/vendors?status=SUBMITTED" className="block">
-            <StatCard
-              label="Awaiting review"
-              value={awaiting}
-              tone="amber"
-              icon={<Clock className="h-[18px] w-[18px]" />}
-            />
+            <StatCard label="Awaiting review" value={<CountUp value={awaiting} />} tone="amber" spark={pct(awaiting)} icon={<Clock className="h-[18px] w-[18px]" />} />
           </Link>
           <Link href="/admin/vendors?status=APPROVED" className="block">
-            <StatCard
-              label="Approved"
-              value={approved}
-              tone="emerald"
-              icon={<CheckCircle className="h-[18px] w-[18px]" />}
-            />
+            <StatCard label="Approved" value={<CountUp value={approved} />} tone="emerald" spark={pct(approved)} icon={<CheckCircle className="h-[18px] w-[18px]" />} />
           </Link>
           <Link href="/admin/invites" className="block">
-            <StatCard
-              label="Pending invites"
-              value={pendingInvites}
-              tone="blue"
-              icon={<Mail className="h-[18px] w-[18px]" />}
-            />
+            <StatCard label="Pending invites" value={<CountUp value={pendingInvites} />} tone="blue" icon={<Mail className="h-[18px] w-[18px]" />} />
           </Link>
-          <StatCard
-            label="This month"
-            value={thisMonth}
-            tone="slate"
-            icon={<CalendarDays className="h-[18px] w-[18px]" />}
-          />
+          <StatCard label="This month" value={<CountUp value={thisMonth} />} tone="slate" icon={<CalendarDays className="h-[18px] w-[18px]" />} />
         </div>
 
+        {/* Charts */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           <Card className="lg:col-span-2">
             <CardHeader
               title={
                 <span className="flex items-center gap-2">
-                  <BarChart3 className="h-[18px] w-[18px] text-brand" />
+                  <TrendingUp className="h-[18px] w-[18px] text-brand" />
                   Registrations
                 </span>
               }
               subtitle="New vendors per month (last 6 months)"
             />
             <CardBody>
-              <MonthlyBars data={months} />
+              <AreaChart data={months} />
             </CardBody>
           </Card>
 
@@ -160,7 +150,7 @@ export default async function DashboardPage() {
               subtitle="Vendor pipeline"
             />
             <CardBody>
-              <StatusBars data={statusData} />
+              <Donut data={statusData} />
             </CardBody>
           </Card>
         </div>
@@ -173,7 +163,7 @@ export default async function DashboardPage() {
             action={
               <Link
                 href="/admin/vendors"
-                className="inline-flex items-center gap-1 text-sm font-medium text-brand-700 transition-colors hover:text-brand"
+                className="press inline-flex items-center gap-1 text-sm font-medium text-brand-700 transition-colors hover:text-brand"
               >
                 View all
                 <ChevronRight className="h-4 w-4" />
@@ -188,47 +178,49 @@ export default async function DashboardPage() {
             />
           ) : (
             <CardBody className="pt-0">
-              <Table>
-                <thead>
-                  <tr className={theadRowCls}>
-                    <th className={thCls}>Company</th>
-                    <th className={thCls}>Email</th>
-                    <th className={thCls}>GST</th>
-                    <th className={thCls}>Services</th>
-                    <th className={thCls}>Status</th>
-                    <th className={thCls}>Submitted</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recent.map((v) => (
-                    <tr key={v.id} className={trCls}>
-                      <td className={tdCls}>
-                        <Link
-                          href={`/admin/vendors/${v.id}`}
-                          className="font-medium text-slate-900 transition-colors hover:text-brand-700"
-                        >
-                          {v.companyName}
-                        </Link>
-                      </td>
-                      <td className={tdCls}>
-                        <span className="text-slate-600">{v.email}</span>
-                      </td>
-                      <td className={tdCls}>
-                        <span className="text-slate-600">{v.gstNo || "—"}</span>
-                      </td>
-                      <td className={tdCls}>
-                        <span className="text-slate-500">{v._count.services}</span>
-                      </td>
-                      <td className={tdCls}>
-                        <Badge value={v.status} />
-                      </td>
-                      <td className={tdCls}>
-                        <span className="text-slate-500">{fmtDate(v.createdAt)}</span>
-                      </td>
+              <div className="overflow-x-auto">
+                <Table>
+                  <thead>
+                    <tr className={theadRowCls}>
+                      <th className={thCls}>Company</th>
+                      <th className={thCls}>Email</th>
+                      <th className={thCls}>GST</th>
+                      <th className={thCls}>Services</th>
+                      <th className={thCls}>Status</th>
+                      <th className={thCls}>Submitted</th>
                     </tr>
-                  ))}
-                </tbody>
-              </Table>
+                  </thead>
+                  <tbody>
+                    {recent.map((v) => (
+                      <tr key={v.id} className={trCls}>
+                        <td className={tdCls}>
+                          <Link
+                            href={`/admin/vendors/${v.id}`}
+                            className="font-medium text-slate-900 transition-colors hover:text-brand-700"
+                          >
+                            {v.companyName}
+                          </Link>
+                        </td>
+                        <td className={tdCls}>
+                          <span className="text-slate-600">{v.email}</span>
+                        </td>
+                        <td className={tdCls}>
+                          <span className="nums text-slate-600">{v.gstNo || "—"}</span>
+                        </td>
+                        <td className={tdCls}>
+                          <span className="nums text-slate-500">{v._count.services}</span>
+                        </td>
+                        <td className={tdCls}>
+                          <Badge value={v.status} />
+                        </td>
+                        <td className={tdCls}>
+                          <span className="nums text-slate-500">{fmtDate(v.createdAt)}</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              </div>
             </CardBody>
           )}
         </Card>

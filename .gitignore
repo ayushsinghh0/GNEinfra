@@ -48,6 +48,9 @@ yarn-error.log*
 # superpowers brainstorm companion (local mockups / scratch)
 .superpowers/
 
+# dev-only tooling (seed + screenshot harness for the redesign)
+dev-tools/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

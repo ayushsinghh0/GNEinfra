@@ -39,10 +39,7 @@ function isActive(pathname: string, href: string, exact: boolean) {
 }
 
 // Shared nav markup, used by both the in-flow rail and the mobile drawer so the
-// menu logic is never duplicated. `collapsed` drives the md icon-rail look:
-// when true, labels/headings collapse to the lg breakpoint (hidden below lg)
-// and rows center their icons; the drawer passes collapsed={false} so labels
-// are always visible.
+// menu logic is never duplicated. `collapsed` drives the md icon-rail look.
 function NavItems({
   collapsed,
   pathname,
@@ -59,7 +56,7 @@ function NavItems({
   return (
     <nav className="flex-1 overflow-y-auto px-3 py-5">
       <div
-        className={`px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500 ${headingCls}`}
+        className={`px-3 pb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400 ${headingCls}`}
       >
         Menu
       </div>
@@ -73,10 +70,10 @@ function NavItems({
                 href={item.href}
                 title={collapsed ? item.label : undefined}
                 onClick={onNavigate}
-                className={`group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${rowJustify} ${
+                className={`press group relative flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-colors ${rowJustify} ${
                   active
-                    ? "bg-brand/10 text-white"
-                    : "text-slate-400 hover:bg-white/5 hover:text-white"
+                    ? "bg-brand-50 text-brand-700"
+                    : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"
                 }`}
               >
                 {active && (
@@ -84,7 +81,7 @@ function NavItems({
                 )}
                 <Icon
                   className={`h-[18px] w-[18px] shrink-0 transition-colors ${
-                    active ? "text-brand-300" : "text-slate-500 group-hover:text-slate-300"
+                    active ? "text-brand-600" : "text-slate-400 group-hover:text-slate-600"
                   }`}
                 />
                 <span className={labelCls}>{item.label}</span>
@@ -95,7 +92,7 @@ function NavItems({
       </ul>
 
       <div
-        className={`px-3 pb-2 pt-7 text-[11px] font-semibold uppercase tracking-wider text-slate-600 ${headingCls}`}
+        className={`px-3 pb-2 pt-7 text-[11px] font-semibold uppercase tracking-wider text-slate-300 ${headingCls}`}
       >
         Coming soon
       </div>
@@ -105,13 +102,13 @@ function NavItems({
           return (
             <li key={item.label}>
               <div
-                className={`flex cursor-not-allowed items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 ${rowJustify}`}
+                className={`flex cursor-not-allowed items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-slate-300 ${rowJustify}`}
                 title={collapsed ? item.label : "Available in a later phase"}
               >
-                <Icon className="h-[18px] w-[18px] shrink-0 text-slate-700" />
+                <Icon className="h-[18px] w-[18px] shrink-0 text-slate-300" />
                 <span className={labelCls}>{item.label}</span>
                 <span
-                  className={`ml-auto rounded-full bg-white/5 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-500 ${labelCls}`}
+                  className={`ml-auto rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-400 ${labelCls}`}
                 >
                   Soon
                 </span>
@@ -134,15 +131,24 @@ function LogoutButton({
   const labelCls = collapsed ? "hidden lg:inline" : "";
   const rowJustify = collapsed ? "justify-center lg:justify-start" : "";
   return (
-    <div className="border-t border-white/5 p-3">
+    <div className="border-t border-slate-200 p-3">
       <button
         onClick={onLogout}
         title={collapsed ? "Log out" : undefined}
-        className={`group flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-400 transition-colors hover:bg-white/5 hover:text-white ${rowJustify}`}
+        className={`press group flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-slate-500 transition-colors hover:bg-rose-50 hover:text-rose-600 ${rowJustify}`}
       >
-        <LogOut className="h-[18px] w-[18px] shrink-0 text-slate-500 transition-colors group-hover:text-slate-300" />
+        <LogOut className="h-[18px] w-[18px] shrink-0 text-slate-400 transition-colors group-hover:text-rose-500" />
         <span className={labelCls}>Log out</span>
       </button>
+    </div>
+  );
+}
+
+function LogoBlock({ withText }: { withText: boolean }) {
+  return (
+    <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-to-b from-brand-500 to-brand-700 text-sm font-extrabold tracking-tight text-white shadow-[var(--shadow-cta)]">
+      GNE
+      {withText && <span className="sr-only">GNE ERP</span>}
     </div>
   );
 }
@@ -157,8 +163,7 @@ export default function Sidebar() {
     router.refresh();
   }
 
-  // Close the drawer when the route changes. Guard with a ref so this only
-  // reacts to an actual pathname change, not the initial mount.
+  // Close the drawer when the route changes (only on an actual change).
   const prevPath = useRef(pathname);
   useEffect(() => {
     if (prevPath.current !== pathname) {
@@ -180,15 +185,12 @@ export default function Sidebar() {
   return (
     <>
       {/* ── In-flow rail: collapsed icon-rail at md, full sidebar at lg ──── */}
-      <aside className="hidden md:flex md:w-16 lg:w-64 shrink-0 flex-col bg-slate-900 text-slate-300 sticky top-0 h-dvh self-start">
-        {/* Logo block: mark only at md, mark + text at lg */}
-        <div className="flex h-16 items-center gap-3 border-b border-white/5 px-5 md:justify-center lg:justify-start">
-          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-brand text-white text-sm font-bold tracking-tight shadow-sm shadow-brand/30">
-            GNE
-          </div>
+      <aside className="sticky top-0 hidden h-dvh shrink-0 flex-col self-start border-r border-slate-200 bg-white text-slate-600 md:flex md:w-16 lg:w-64">
+        <div className="flex h-16 items-center gap-3 border-b border-slate-200 px-5 md:justify-center lg:justify-start">
+          <LogoBlock withText />
           <div className="hidden leading-tight lg:block">
-            <div className="text-sm font-semibold tracking-tight text-white">GNE ERP</div>
-            <div className="text-[11px] text-slate-500">Vendor Portal</div>
+            <div className="text-sm font-semibold tracking-tight text-slate-900">GNE ERP</div>
+            <div className="text-[11px] text-slate-400">Vendor Portal</div>
           </div>
         </div>
 
@@ -197,27 +199,25 @@ export default function Sidebar() {
       </aside>
 
       {/* ── Mobile: fixed top bar (under md) ────────────────────────────── */}
-      <header className="md:hidden fixed inset-x-0 top-0 z-30 flex h-14 items-center gap-3 border-b border-white/5 bg-slate-900 px-4 text-white">
+      <header className="glass fixed inset-x-0 top-0 z-30 flex h-14 items-center gap-3 border-b border-slate-200/70 px-4 md:hidden">
         <button
           type="button"
           onClick={() => setOpen(true)}
           aria-label="Open menu"
           aria-expanded={open}
           aria-controls="mobile-sidebar"
-          className="grid h-9 w-9 place-items-center rounded-lg text-slate-300 transition-colors hover:bg-white/5 hover:text-white"
+          className="press grid h-9 w-9 place-items-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
         >
           <Menu className="h-5 w-5" />
         </button>
-        <div className="grid h-8 w-8 place-items-center rounded-lg bg-brand text-white text-[11px] font-bold tracking-tight shadow-sm shadow-brand/30">
-          GNE
-        </div>
-        <span className="text-sm font-semibold tracking-tight">GNE ERP</span>
+        <LogoBlock withText={false} />
+        <span className="text-sm font-semibold tracking-tight text-slate-900">GNE ERP</span>
       </header>
 
       {/* ── Mobile: dimmed backdrop ─────────────────────────────────────── */}
       {open && (
         <div
-          className="md:hidden fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-sm"
+          className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm md:hidden"
           onClick={() => setOpen(false)}
           aria-hidden="true"
         />
@@ -230,23 +230,21 @@ export default function Sidebar() {
         aria-modal="true"
         aria-label="Navigation"
         inert={!open || undefined}
-        className={`md:hidden fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-slate-900 text-slate-300 transition-transform duration-300 ease-out ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-white text-slate-600 shadow-xl transition-transform duration-300 ease-out md:hidden ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="flex h-16 items-center gap-3 border-b border-white/5 px-5">
-          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-brand text-white text-sm font-bold tracking-tight shadow-sm shadow-brand/30">
-            GNE
-          </div>
+        <div className="flex h-16 items-center gap-3 border-b border-slate-200 px-5">
+          <LogoBlock withText={false} />
           <div className="leading-tight">
-            <div className="text-sm font-semibold tracking-tight text-white">GNE ERP</div>
-            <div className="text-[11px] text-slate-500">Vendor Portal</div>
+            <div className="text-sm font-semibold tracking-tight text-slate-900">GNE ERP</div>
+            <div className="text-[11px] text-slate-400">Vendor Portal</div>
           </div>
           <button
             type="button"
             onClick={() => setOpen(false)}
             aria-label="Close menu"
-            className="ml-auto grid h-9 w-9 place-items-center rounded-lg text-slate-400 transition-colors hover:bg-white/5 hover:text-white"
+            className="press ml-auto grid h-9 w-9 place-items-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
           >
             <X className="h-5 w-5" />
           </button>

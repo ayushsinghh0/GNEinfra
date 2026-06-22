@@ -149,7 +149,7 @@ function ViewRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex gap-4 py-2 border-b border-slate-100 last:border-0">
       <dt className="w-44 shrink-0 text-sm text-slate-500">{label}</dt>
-      <dd className="text-sm font-medium text-slate-900">
+      <dd className="nums text-sm font-medium text-slate-900">
         {value || <span className="font-normal text-slate-300">—</span>}
       </dd>
     </div>

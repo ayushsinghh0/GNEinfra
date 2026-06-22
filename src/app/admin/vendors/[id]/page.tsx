@@ -116,19 +116,19 @@ export default async function VendorDetail({
 
       <div className="p-8 space-y-6">
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+          <h1 className="font-display text-2xl font-extrabold tracking-[-0.02em] text-slate-900">
             {v.companyName}
           </h1>
           <Badge value={v.status} />
           {v.vendorCode && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-semibold text-brand-700 ring-1 ring-inset ring-brand-600/20">
+            <span className="nums inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-semibold text-brand-700 ring-1 ring-inset ring-brand-600/20">
               <BadgeCheck className="h-3.5 w-3.5" />
               {v.vendorCode}
             </span>
           )}
           <span className="ml-auto inline-flex items-center gap-1.5 text-sm text-slate-400">
             <CalendarDays className="h-4 w-4" />
-            Registered {fmtDate(v.createdAt)}
+            Registered <span className="nums">{fmtDate(v.createdAt)}</span>
           </span>
         </div>
 

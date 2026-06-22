@@ -12,9 +12,12 @@ import {
   Textarea,
   Select,
   Button,
+  Skeleton,
   btn,
   cn,
 } from "@/components/ui";
+import { SunGlow, Atmosphere, Wave, Blob, SuccessCheck } from "@/components/chrome";
+import Dropzone from "@/components/Dropzone";
 import {
   validateRequired,
   validateCompanyName,
@@ -37,7 +40,6 @@ import {
   Trash2,
   CheckCircle2,
   AlertCircle,
-  UploadCloud,
   ChevronLeft,
   ChevronRight,
   Check,
@@ -628,6 +630,7 @@ export default function RegistrationForm({
     } = {}
   ) {
     const hasErr = Boolean(touched[name] && errors[name]);
+    const isValid = Boolean(VALIDATORS[name] && touched[name] && !errors[name] && form[name].trim());
     const errId = `${name}-error`;
     return (
       <UIField
@@ -638,21 +641,31 @@ export default function RegistrationForm({
         errorId={hasErr ? errId : undefined}
         className={opts.className}
       >
-        <Input
-          name={name}
-          type={opts.type ?? "text"}
-          inputMode={opts.inputMode}
-          maxLength={MAX_BY_FIELD[name] ?? MAX_LEN.text}
-          value={form[name]}
-          placeholder={opts.placeholder}
-          onChange={(e) => setField(name, e.target.value)}
-          onBlur={() => blurField(name)}
-          aria-invalid={hasErr || undefined}
-          aria-describedby={hasErr ? errId : undefined}
-          className={
-            hasErr ? "border-rose-400 focus:border-rose-400 focus:ring-rose-100/70" : undefined
-          }
-        />
+        <div className="relative">
+          <Input
+            name={name}
+            type={opts.type ?? "text"}
+            inputMode={opts.inputMode}
+            maxLength={MAX_BY_FIELD[name] ?? MAX_LEN.text}
+            value={form[name]}
+            placeholder={opts.placeholder}
+            onChange={(e) => setField(name, e.target.value)}
+            onBlur={() => blurField(name)}
+            aria-invalid={hasErr || undefined}
+            aria-describedby={hasErr ? errId : undefined}
+            className={cn(
+              hasErr
+                ? "border-rose-300 focus:border-rose-300 focus:ring-rose-200/60"
+                : isValid
+                  ? "border-emerald-300"
+                  : undefined,
+              isValid && opts.type !== "date" ? "pr-10" : undefined
+            )}
+          />
+          {isValid && opts.type !== "date" && (
+            <Check className="animate-tick pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-500" />
+          )}
+        </div>
       </UIField>
     );
   }
@@ -668,24 +681,45 @@ export default function RegistrationForm({
 
   if (!ready) {
     content = (
-      <div className="flex items-center justify-center gap-2.5 rounded-2xl border border-slate-200/80 bg-white px-6 py-10 text-sm text-slate-500 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-        <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-brand" />
-        Loading your registration form…
+      <div className="w-full space-y-4">
+        <div className={cn("bg-white rounded-2xl shadow-[var(--shadow-card)] p-6")}>
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-10 w-10 rounded-xl" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-4 w-40" />
+              <Skeleton className="h-3 w-56" />
+            </div>
+          </div>
+          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="space-y-2">
+                <Skeleton className="h-3 w-24" />
+                <Skeleton className="h-11 w-full rounded-xl" />
+              </div>
+            ))}
+          </div>
+        </div>
+        <p className="text-center text-sm text-slate-400">Loading your registration form…</p>
       </div>
     );
   } else if (terminal) {
     content = (
       <div
         role="alert"
-        className="w-full max-w-lg rounded-2xl border border-slate-200/80 bg-white p-10 text-center shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
+        className="relative w-full max-w-lg overflow-hidden rounded-3xl bg-white p-10 text-center shadow-[var(--shadow-pop)]"
       >
-        <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-amber-50 text-amber-600">
-          <AlertCircle className="h-7 w-7" />
+        <Blob className="-top-16 -right-12 h-44 w-44" color="rgba(245,158,11,0.16)" />
+        <div className="relative mx-auto mb-4 grid h-16 w-16 place-items-center rounded-2xl bg-amber-50 text-amber-600 ring-1 ring-amber-200/70">
+          <AlertCircle className="h-8 w-8" />
         </div>
-        <h1 ref={terminalRef} tabIndex={-1} className="text-2xl font-semibold tracking-tight text-slate-900 outline-none">
+        <h1
+          ref={terminalRef}
+          tabIndex={-1}
+          className="font-display relative text-2xl font-extrabold tracking-[-0.02em] text-slate-900 outline-none"
+        >
           {terminal.title}
         </h1>
-        <p className="mt-2 text-sm text-slate-600">{terminal.body}</p>
+        <p className="relative mt-2 text-sm text-slate-600">{terminal.body}</p>
       </div>
     );
   } else if (done) {
@@ -693,20 +727,23 @@ export default function RegistrationForm({
       <div
         role="status"
         aria-live="polite"
-        className="w-full max-w-lg rounded-2xl border border-slate-200/80 bg-white p-10 text-center shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
+        className="relative w-full max-w-lg overflow-hidden rounded-3xl bg-white p-10 text-center shadow-[var(--shadow-pop)]"
       >
-        <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-emerald-50 text-emerald-600">
-          <CheckCircle2 className="h-7 w-7" />
-        </div>
-        <h1 ref={successRef} tabIndex={-1} className="text-2xl font-semibold tracking-tight text-slate-900 outline-none">
+        <Blob className="-top-16 left-1/2 h-48 w-48 -translate-x-1/2" color="rgba(20,184,166,0.18)" />
+        <SuccessCheck className="relative mx-auto mb-2" confetti />
+        <h1
+          ref={successRef}
+          tabIndex={-1}
+          className="font-display relative text-2xl font-extrabold tracking-[-0.02em] text-slate-900 outline-none"
+        >
           Registration submitted
         </h1>
-        <p className="mt-2 text-sm text-slate-600">
+        <p className="relative mt-2 text-sm text-slate-600">
           Thank you. We&apos;ve received your details and emailed you a confirmation. Our procurement team
           will review and get in touch. This registration link is now closed.
         </p>
         {docWarnings && (
-          <div className="mx-auto mt-5 max-w-md rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-left text-sm text-amber-700">
+          <div className="relative mx-auto mt-5 max-w-md rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-left text-sm text-amber-700">
             <p className="font-medium">Some documents couldn&apos;t be saved:</p>
             <ul className="mt-1 list-disc pl-5">
               {docWarnings.map((w, i) => (
@@ -729,7 +766,7 @@ export default function RegistrationForm({
           {showStepBanner && (
             <div
               role="alert"
-              className="flex items-start gap-2.5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700"
+              className="animate-fade-up flex items-start gap-2.5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700"
             >
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
               <span>Please fix the highlighted items on this step before continuing.</span>
@@ -819,10 +856,10 @@ export default function RegistrationForm({
             <Section title="Services" description={STEPS[3].description} icon={STEPS[3].icon}>
               <div className="space-y-4">
                 {services.map((row, i) => (
-                  <div key={i} className="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+                  <div key={i} className="rounded-2xl border border-slate-200 bg-slate-50/50 p-4">
                     <div className="mb-3 flex items-center justify-between">
                       <span className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700">
-                        <span className="grid h-6 w-6 place-items-center rounded-md bg-brand-50 text-xs font-bold text-brand-700 tabular-nums">
+                        <span className="nums grid h-6 w-6 place-items-center rounded-md bg-brand-50 text-xs font-bold text-brand-700">
                           {i + 1}
                         </span>
                         Service {i + 1}
@@ -831,7 +868,7 @@ export default function RegistrationForm({
                         <button
                           type="button"
                           onClick={() => setServices((r) => r.filter((_, idx) => idx !== i))}
-                          className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-600"
+                          className="press inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-600"
                           aria-label="Remove service"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
@@ -865,7 +902,7 @@ export default function RegistrationForm({
               <button
                 type="button"
                 onClick={() => setServices((r) => [...r, emptyService()])}
-                className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-dashed border-slate-300 px-4 py-2 text-sm font-medium text-brand-700 transition-colors hover:border-brand hover:bg-brand-50/40"
+                className="press mt-4 inline-flex items-center gap-1.5 rounded-xl border border-dashed border-slate-300 px-4 py-2 text-sm font-medium text-brand-700 transition-colors hover:border-brand hover:bg-brand-50/40"
               >
                 <Plus className="h-4 w-4" />
                 Add another service
@@ -878,15 +915,14 @@ export default function RegistrationForm({
             <Section title="Documents" description={STEPS[4].description} icon={STEPS[4].icon}>
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 {DOC_FIELDS.map((d) => (
-                  <FileField
+                  <Dropzone
                     key={d.name}
                     name={d.name}
                     label={d.label}
                     hint={d.hint}
                     multiple={d.multiple}
-                    names={fileNames[d.name] ?? []}
                     error={fileErrors[d.name]}
-                    onSelect={onFilesSelected}
+                    onFiles={(files) => onFilesSelected(d.name, files)}
                   />
                 ))}
               </div>
@@ -896,12 +932,12 @@ export default function RegistrationForm({
 
         {/* Sticky action bar */}
         <div
-          className="sticky bottom-0 z-10 mt-6 flex items-center justify-between gap-3 border-t border-slate-200/70 bg-canvas/85 py-3 backdrop-blur"
+          className="glass sticky bottom-0 z-10 mt-6 flex items-center justify-between gap-3 rounded-t-2xl border-t border-slate-200/70 py-3 px-1"
           style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
         >
           <div>
             {step > 0 && (
-              <button type="button" onClick={goBack} className={btn("secondary", "md")}>
+              <button type="button" onClick={goBack} className={cn(btn("secondary", "md"), "rounded-full")}>
                 <ChevronLeft className="h-4 w-4" />
                 Back
               </button>
@@ -915,12 +951,12 @@ export default function RegistrationForm({
               </span>
             )}
             {step < LAST ? (
-              <Button type="button" onClick={goNext} className="h-11 px-6 text-sm">
+              <Button type="button" onClick={goNext} size="lg" className="rounded-full px-7">
                 Next
                 <ChevronRight className="h-4 w-4" />
               </Button>
             ) : (
-              <Button type="button" onClick={openReview} variant="primary" className="h-11 px-7 text-sm">
+              <Button type="button" onClick={openReview} variant="primary" size="lg" className="rounded-full px-7">
                 Review &amp; Submit
               </Button>
             )}
@@ -978,9 +1014,12 @@ function Rail({
 }) {
   const pct = complete ? 100 : Math.round(((step + 1) / STEPS.length) * 100);
   return (
-    <aside className="sticky top-0 hidden h-dvh flex-col gap-9 overflow-y-auto bg-gradient-to-b from-brand-800 to-brand-900 px-8 py-10 text-white lg:flex xl:px-10">
-      <div className="flex items-center gap-3">
-        <div className="grid h-11 w-11 place-items-center rounded-xl bg-white/10 font-bold tracking-tight ring-1 ring-inset ring-white/20">
+    <aside className="relative isolate sticky top-0 hidden h-dvh flex-col gap-9 overflow-hidden bg-gradient-to-b from-brand-500 via-brand-700 to-brand-900 px-8 py-10 text-white lg:flex xl:px-10">
+      <SunGlow className="-top-16 -right-12 h-56 w-56" animate />
+      <Atmosphere dots grain />
+
+      <div className="relative z-10 flex items-center gap-3">
+        <div className="grid h-11 w-11 place-items-center rounded-2xl bg-white/15 font-extrabold tracking-tight ring-1 ring-inset ring-white/25 backdrop-blur">
           GNE
         </div>
         <div className="min-w-0">
@@ -989,35 +1028,43 @@ function Rail({
         </div>
       </div>
 
-      <ol className="space-y-1">
+      <ol className="relative z-10 space-y-1">
         {STEPS.map((s, i) => {
           const state = complete || i < step ? "done" : i === step ? "current" : "todo";
           const clickable = !complete && i <= maxStep;
+          const isLast = i === STEPS.length - 1;
           return (
-            <li key={s.id}>
+            <li key={s.id} className="relative">
+              {!isLast && (
+                <span
+                  aria-hidden="true"
+                  className="absolute left-[1.65rem] top-[2.4rem] h-[calc(100%-1.4rem)] w-0.5 -translate-x-1/2 rounded-full transition-colors"
+                  style={{ background: state === "done" ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.18)" }}
+                />
+              )}
               <button
                 type="button"
                 disabled={!clickable}
                 onClick={() => clickable && onStep(i)}
                 aria-current={state === "current" ? "step" : undefined}
                 className={cn(
-                  "flex w-full items-start gap-3 rounded-xl px-3 py-2.5 text-left transition-colors",
-                  clickable ? "cursor-pointer hover:bg-white/5" : "cursor-default"
+                  "relative flex w-full items-start gap-3 rounded-xl px-3 py-2.5 text-left transition-colors",
+                  clickable ? "cursor-pointer hover:bg-white/10" : "cursor-default"
                 )}
               >
                 <span
                   className={cn(
-                    "mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-semibold tabular-nums transition-colors",
+                    "grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-semibold transition-all nums",
                     state === "done"
-                      ? "bg-white text-brand-700"
+                      ? "bg-white text-brand-700 shadow-sm"
                       : state === "current"
-                        ? "bg-white/15 text-white ring-2 ring-white"
+                        ? "scale-110 bg-white/15 text-white ring-2 ring-white"
                         : "bg-white/10 text-brand-100/60"
                   )}
                 >
-                  {state === "done" ? <Check className="h-4 w-4" /> : i + 1}
+                  {state === "done" ? <Check className="animate-tick h-4 w-4" /> : i + 1}
                 </span>
-                <span className="min-w-0">
+                <span className="min-w-0 pt-0.5">
                   <span className={cn("block text-sm font-medium", state === "todo" ? "text-brand-100/60" : "text-white")}>
                     {s.title}
                   </span>
@@ -1029,11 +1076,11 @@ function Rail({
         })}
       </ol>
 
-      <div className="mt-auto space-y-5">
+      <div className="relative z-10 mt-auto space-y-5">
         <div>
           <div className="flex items-center justify-between text-xs text-brand-100/70">
             <span>Progress</span>
-            <span className="tabular-nums">{complete ? "Complete" : `Step ${step + 1} of ${STEPS.length}`}</span>
+            <span className="nums">{complete ? "Complete" : `Step ${step + 1} of ${STEPS.length}`}</span>
           </div>
           <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/15">
             <div className="h-full rounded-full bg-white transition-all duration-500" style={{ width: `${pct}%` }} />
@@ -1057,85 +1104,34 @@ function Rail({
 // ── Compact header (mobile) ──────────────────────────────────────────────────
 
 function MobileHeader({ step, complete }: { step: number; complete: boolean }) {
-  const pct = complete ? 100 : Math.round(((step + 1) / STEPS.length) * 100);
   return (
-    <header className="sticky top-0 z-20 border-b border-slate-200/70 bg-white/85 px-4 py-3 backdrop-blur lg:hidden">
-      <div className="flex items-center gap-3">
-        <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-brand text-xs font-bold tracking-tight text-white">
+    <header className="relative isolate overflow-hidden bg-gradient-to-br from-brand-400 via-brand-600 to-brand-700 px-4 pt-9 pb-6 text-white lg:hidden">
+      <SunGlow className="-top-12 -right-8 h-36 w-36" />
+      <Atmosphere dots grain />
+      <div className="relative z-10 flex items-center gap-3">
+        <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white/15 text-xs font-extrabold tracking-tight ring-1 ring-inset ring-white/25">
           GNE
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-slate-900">
-            {complete ? "Vendor Registration" : STEPS[step].title}
-          </p>
-          <p className="text-xs text-slate-500">
-            {complete ? "Complete" : `Step ${step + 1} of ${STEPS.length}`}
+          <p className="truncate text-sm font-semibold">Vendor Registration</p>
+          <p className="nums text-xs text-white/75">
+            {complete ? "Complete" : `${STEPS[step].title} · Step ${step + 1} of ${STEPS.length}`}
           </p>
         </div>
       </div>
-      <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-slate-100">
-        <div className="h-full rounded-full bg-brand transition-all duration-500" style={{ width: `${pct}%` }} />
+      <div className="relative z-10 mt-3 flex gap-1.5">
+        {STEPS.map((s, i) => (
+          <span
+            key={s.id}
+            className={cn(
+              "h-1 flex-1 rounded-full transition-colors",
+              complete || i < step ? "bg-white" : i === step ? "bg-accent-300" : "bg-white/30"
+            )}
+          />
+        ))}
       </div>
+      <Wave className="absolute inset-x-0 bottom-[-1px]" />
     </header>
-  );
-}
-
-// ── File upload field (module scope so it is NOT remounted on every render — a
-//    remount would wipe the user's selected files) ──────────────────────────────
-
-function FileField({
-  name,
-  label,
-  hint,
-  multiple,
-  names,
-  error,
-  onSelect,
-}: {
-  name: string;
-  label: string;
-  hint?: string;
-  multiple?: boolean;
-  names: string[];
-  error?: string;
-  onSelect: (name: string, files: File[]) => void;
-}) {
-  const errId = `${name}-error`;
-  return (
-    <label
-      className={cn(
-        "group block cursor-pointer rounded-lg border border-dashed px-4 py-3 transition-colors",
-        error
-          ? "border-rose-300 bg-rose-50/40"
-          : "border-slate-300 bg-slate-50/50 hover:border-brand hover:bg-brand-50/40"
-      )}
-    >
-      <span className="flex items-center gap-1.5 text-sm font-medium text-slate-700">
-        {label}
-        {hint && <span className="font-normal text-slate-400">— {hint}</span>}
-      </span>
-      <span className="mt-1 flex items-center gap-2 text-xs text-slate-400">
-        <UploadCloud className="h-4 w-4 text-slate-400 group-hover:text-brand" />
-        PDF or image, max 10 MB
-      </span>
-      <input
-        name={name}
-        type="file"
-        multiple={multiple}
-        accept=".pdf,image/*"
-        aria-invalid={error ? true : undefined}
-        aria-describedby={error ? errId : undefined}
-        onChange={(e) => onSelect(name, Array.from(e.target.files ?? []))}
-        className="mt-2 block w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-brand file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-white hover:file:bg-brand-700"
-      />
-      {error ? (
-        <span id={errId} className="mt-2 block text-xs font-medium text-rose-600">
-          {error}
-        </span>
-      ) : names.length > 0 ? (
-        <span className="mt-2 block truncate text-xs font-medium text-emerald-600">{names.join(", ")}</span>
-      ) : null}
-    </label>
   );
 }
 
@@ -1197,7 +1193,9 @@ function Section({
       <CardHeader
         title={
           <span className="flex items-center gap-2.5">
-            <span className="grid h-8 w-8 place-items-center rounded-lg bg-brand-50 text-brand-700">{icon}</span>
+            <span className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-b from-brand-50 to-brand-100 text-brand-700 ring-1 ring-brand-200/60">
+              {icon}
+            </span>
             {title}
           </span>
         }
@@ -1290,18 +1288,22 @@ function ReviewModal({
   );
 
   return createPortal(
-    <div className="animate-overlay-in fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-900/40 p-4 backdrop-blur-sm sm:items-center">
+    <div className="animate-overlay-in fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-slate-900/40 backdrop-blur-sm sm:items-center sm:p-4">
       <div
         ref={panelRef}
         tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-labelledby="review-title"
-        className="animate-modal-in my-8 w-full max-w-2xl rounded-2xl border border-slate-200 bg-white shadow-xl outline-none"
+        className="animate-sheet-up w-full max-w-2xl rounded-t-3xl border border-slate-200 bg-white shadow-xl outline-none sm:my-8 sm:animate-modal-in sm:rounded-2xl"
       >
+        {/* mobile grab handle */}
+        <div className="flex justify-center pt-2.5 sm:hidden">
+          <span className="h-1.5 w-10 rounded-full bg-slate-300" />
+        </div>
         <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
           <div>
-            <h2 id="review-title" className="text-base font-semibold text-slate-900">
+            <h2 id="review-title" className="font-display text-lg font-extrabold tracking-[-0.01em] text-slate-900">
               Review your details
             </h2>
             <p className="text-xs text-slate-500">Please check everything is correct before submitting.</p>
@@ -1309,7 +1311,7 @@ function ReviewModal({
           <button
             onClick={onClose}
             disabled={submitting}
-            className="grid h-8 w-8 place-items-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50"
+            className="press grid h-8 w-8 place-items-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50"
             aria-label="Close"
           >
             <X className="h-4 w-4" />
@@ -1365,11 +1367,14 @@ function ReviewModal({
           </ReviewBlock>
         </div>
 
-        <div className="border-t border-slate-100 px-5 py-4">
+        <div
+          className="border-t border-slate-100 px-5 py-4"
+          style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
+        >
           {submitError && (
             <div
               role="alert"
-              className="mb-3 flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700"
+              className="animate-fade-up mb-3 flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700"
             >
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
               <span>{submitError}</span>
@@ -1378,10 +1383,10 @@ function ReviewModal({
           <div className="flex flex-col-reverse items-stretch gap-2 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs text-slate-400">By submitting, you confirm the details above are accurate.</p>
             <div className="flex items-center justify-end gap-2">
-              <button type="button" onClick={onClose} disabled={submitting} className={btn("secondary", "md")}>
+              <button type="button" onClick={onClose} disabled={submitting} className={cn(btn("secondary", "md"), "rounded-full")}>
                 Back to form
               </button>
-              <Button type="button" onClick={onConfirm} disabled={submitting} className="px-6">
+              <Button type="button" onClick={onConfirm} disabled={submitting} className="rounded-full px-6">
                 {submitting ? "Submitting…" : "Confirm & Submit"}
               </Button>
             </div>
@@ -1409,7 +1414,7 @@ function ReviewBlock({
         <button
           type="button"
           onClick={onEdit}
-          className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-brand-700 hover:bg-brand-50"
+          className="press inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-brand-700 hover:bg-brand-50"
         >
           <Pencil className="h-3 w-3" />
           Edit
