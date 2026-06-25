@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { isAdminAuthed } from "@/lib/auth";
 import { inviteSchema } from "@/lib/validation";
 import { newInviteToken } from "@/lib/tokens";
-import { sendMail, inviteEmail } from "@/lib/mailer";
+import { sendMail, inviteEmail, requirePublicBaseUrl } from "@/lib/mailer";
 
 // POST /api/invites  (admin only)
 // Creates an invite and emails the vendor a unique registration link.
@@ -40,12 +40,37 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Could not create the invitation." }, { status: 500 });
   }
 
-  const base = process.env.APP_BASE_URL || "http://localhost:3000";
+  // Refuse to email a link built on a non-public base URL. A localhost / bare-IP /
+  // sslip.io link is a dead end for the vendor (and a heavy spam signal), so we keep
+  // the invite row but skip the send and tell the admin to fix APP_BASE_URL + resend.
+  let base: string;
+  try {
+    base = requirePublicBaseUrl();
+  } catch (err) {
+    console.error("[invites] refusing to email an invite link", err);
+    return NextResponse.json(
+      {
+        ok: true,
+        emailed: false,
+        link: `${process.env.APP_BASE_URL || ""}/register/${token}`,
+        warning:
+          "Invite created, but APP_BASE_URL is not a public HTTPS domain — no email was sent. Set APP_BASE_URL to your real domain and resend.",
+        invite: { id: invite.id, email: invite.email },
+      },
+      { status: 200 }
+    );
+  }
   const link = `${base}/register/${token}`;
   const tpl = inviteEmail(link, companyHint);
 
   try {
-    await sendMail({ to: email, subject: tpl.subject, html: tpl.html, text: tpl.text });
+    await sendMail({
+      to: email,
+      subject: tpl.subject,
+      html: tpl.html,
+      text: tpl.text,
+      unsubscribe: `mailto:${process.env.MAIL_REPLY_TO || process.env.SMTP_USER || ""}?subject=unsubscribe`,
+    });
   } catch (err) {
     // Log the raw SMTP error server-side; return only a generic message so we
     // don't leak transport/infrastructure details to the client.

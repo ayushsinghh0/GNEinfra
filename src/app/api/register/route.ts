@@ -6,6 +6,7 @@ import {
   sendMail,
   vendorConfirmationEmail,
   adminNotificationEmail,
+  requirePublicBaseUrl,
 } from "@/lib/mailer";
 
 // Document form-field name -> stored docType.
@@ -235,15 +236,25 @@ export async function POST(req: NextRequest) {
   // SMTP (1–3s to Gmail) would throttle throughput under load. The Node server is
   // long-running (pm2), so these finish in the background; failures are non-fatal
   // and already swallowed by allSettled.
-  const base = process.env.APP_BASE_URL || "http://localhost:3000";
+  // The admin-notification email contains a link, so it needs a public base URL.
+  // If APP_BASE_URL is unusable we still send the vendor confirmation (no link) and
+  // simply skip the admin link rather than emailing a dead one — registration itself
+  // already succeeded above and must not be affected.
+  let base = "";
+  try {
+    base = requirePublicBaseUrl();
+  } catch (err) {
+    console.error("[register] APP_BASE_URL unusable for admin link", err);
+  }
   const notify = process.env.PROCUREMENT_NOTIFY_EMAIL;
+  const unsubscribe = `mailto:${process.env.MAIL_REPLY_TO || process.env.SMTP_USER || ""}?subject=unsubscribe`;
   void Promise.allSettled([
     (async () => {
       const tpl = vendorConfirmationEmail(d.companyName);
-      await sendMail({ to: d.email, subject: tpl.subject, html: tpl.html, text: tpl.text });
+      await sendMail({ to: d.email, subject: tpl.subject, html: tpl.html, text: tpl.text, unsubscribe });
     })(),
     (async () => {
-      if (!notify) return;
+      if (!notify || !base) return;
       const tpl = adminNotificationEmail({
         company: d.companyName,
         email: d.email,
@@ -251,6 +262,7 @@ export async function POST(req: NextRequest) {
         panNo: d.panNo ?? "—",
         adminLink: `${base}/admin/vendors/${vendor.id}`,
       });
+      // Internal team mail — no unsubscribe header needed.
       await sendMail({
         to: notify.split(",").map((s) => s.trim()),
         subject: tpl.subject,
@@ -258,7 +270,13 @@ export async function POST(req: NextRequest) {
         text: tpl.text,
       });
     })(),
-  ]);
+  ]).then((results) => {
+    // Sends are fire-and-forget; surface any swallowed SMTP failure in the logs so a
+    // future deliverability problem (e.g. a Gmail rate-limit lock) isn't invisible.
+    for (const r of results) {
+      if (r.status === "rejected") console.error("[register] notification email failed", r.reason);
+    }
+  });
 
   return NextResponse.json({
     ok: true,

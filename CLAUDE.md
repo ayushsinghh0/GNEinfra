@@ -72,11 +72,31 @@ R2/MinIO-compatible via `S3_ENDPOINT`), or SMTP provider is a `.env` change only
   register route sends mail **fire-and-forget** (not awaited) so SMTP latency doesn't throttle
   registration throughput.
 - **Rate limiting** (`src/middleware.ts`): in-memory limiter on `/api/admin/login`,
-  `/api/register`, `/api/invites`. Trusts the **rightmost** `x-forwarded-for` entry (the reverse
-  proxy appends the real client IP) — assumes a single instance behind a trusted proxy.
+  `/api/register`, `/api/reupload`, `/api/invites` (+ an early `413` on oversized upload bodies for
+  register/reupload). Trusts the **rightmost** `x-forwarded-for` entry (the reverse proxy appends
+  the real client IP) — assumes a single instance behind a trusted proxy. Rate-limit any NEW
+  unauthenticated endpoint here.
 - **Tokens** (`src/lib/tokens.ts`): invite + document-request links are unguessable tokens with
   expiry + status. Register and reupload consume their token inside a transaction with a
   conditional status flip, so concurrent double-submits can't double-create.
+
+## Security baseline (don't regress)
+
+A full audit hardened this; preserve the invariants when adding code:
+- **Every route guards itself.** The `/admin` layout gate does NOT protect API route handlers or
+  RSC data fetching — each admin RSC page and each non-public `/api/*` route calls `isAdminAuthed()`
+  itself (KYC endpoints `documents/[id]`, `vendors/[id]/export`, the `print` page, etc. are all
+  gated → no IDOR). Any new route that touches vendor data must do the same.
+- **Never trust client-supplied MIME.** `src/lib/documents.ts` sniffs **magic bytes** and only
+  accepts real PDF/PNG/JPEG/WEBP, storing the *detected* type; `gunzip` output is size-capped
+  (zip-bomb guard). Keep `text/html`/`svg` out of the allow-list.
+- **Headers/CSP** live in `next.config.mjs`: HSTS, `X-Frame-Options: DENY`, `nosniff`, Referrer/
+  Permissions-Policy, and a CSP (`object-src`/`frame-ancestors`/`base-uri`/`form-action` locked;
+  `img` allows `data:`/`blob:`). CSP adds `'unsafe-eval'` in **dev only** (Turbopack HMR) — never
+  in prod. Validate CSP changes against a *production* server, not dev.
+- Zod schemas are the field whitelist (status/`vendorCode`/posting-groups are NOT vendor-settable);
+  the dashboard's `$queryRaw` is parameterized. `/api/health` returns `{ok}` to anon, full config
+  only to authed admins.
 
 ## UI & design system ("Soft Wave")
 

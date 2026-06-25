@@ -9,8 +9,19 @@
 #   - File uploads         -> local disk (STORAGE_DRIVER=local), auto-purged
 #
 # Because Postgres is external, this box only needs ~enough RAM to build the app.
-# Usage:
-#   DOMAIN=16.171.13.188.sslip.io ./deploy/bootstrap.sh
+#
+# ⚠️ STABLE IP FIRST: an EC2 instance's auto-assigned public IPv4 CHANGES on every
+#    stop/start, which silently breaks <ip>.sslip.io, the TLS cert, and APP_BASE_URL
+#    (this is the #1 cause of "the invite link won't load"). Before running this,
+#    allocate + associate an Elastic IP so the address never moves:
+#      aws ec2 allocate-address --domain vpc
+#      aws ec2 associate-address --instance-id i-XXXX --allocation-id eipalloc-XXXX
+#    then point a REAL domain's A record at that Elastic IP and pass it as DOMAIN.
+#    (sslip.io still works for a quick test, but the app refuses to email sslip.io /
+#    bare-IP links — see requirePublicBaseUrl in src/lib/mailer.ts.)
+#
+# Usage (prefer a real hostname):
+#   DOMAIN=vendors.yourdomain.com ./deploy/bootstrap.sh
 # (Create ./.env first — see deploy/.env.server.example.)
 set -euo pipefail
 

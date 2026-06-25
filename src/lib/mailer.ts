@@ -27,12 +27,63 @@ type SendArgs = {
   subject: string;
   html: string;
   text?: string;
+  // Where replies should go. Defaults to MAIL_REPLY_TO. A monitored human inbox
+  // earns positive two-way sending reputation (helps deliverability).
+  replyTo?: string;
+  // RFC 2369 List-Unsubscribe target. Pass a `mailto:` — it needs no web endpoint.
+  // Do NOT advertise RFC 8058 one-click (List-Unsubscribe-Post): there is no HTTP
+  // unsubscribe route, and a POST target that 404s hurts trust more than it helps.
+  unsubscribe?: string;
 };
 
-export async function sendMail({ to, subject, html, text }: SendArgs) {
+export async function sendMail({ to, subject, html, text, replyTo, unsubscribe }: SendArgs) {
   const transport = createTransport();
   const from = process.env.MAIL_FROM || "GNE Procurement <no-reply@gne.local>";
-  return transport.sendMail({ from, to, subject, html, text });
+  return transport.sendMail({
+    from,
+    to,
+    subject,
+    html,
+    text,
+    replyTo: replyTo || process.env.MAIL_REPLY_TO || undefined,
+    // mailto-only List-Unsubscribe (a valid header that needs no HTTP endpoint).
+    ...(unsubscribe ? { list: { unsubscribe } } : {}),
+    headers: {
+      // Mark machine-generated mail so providers don't read it as bulk-promo or
+      // bounce an auto-reply back at us.
+      "Auto-Submitted": "auto-generated",
+      "X-Auto-Response-Suppress": "OOF, AutoReply",
+    },
+  });
+}
+
+// Returns a safe public base origin for links embedded in email, or THROWS if
+// APP_BASE_URL is unusable. In production an emailed link MUST be a public HTTPS
+// domain — localhost, a bare IPv4, or a wildcard-DNS host (sslip.io/nip.io/xip.io)
+// is either unreachable for the recipient or a heavy spam/phishing signal, so we
+// refuse to ship it. In development localhost is allowed (dev mail → Mailpit, where
+// a localhost link is exactly right).
+export function requirePublicBaseUrl(): string {
+  const raw = process.env.APP_BASE_URL || "";
+  let u: URL;
+  try {
+    u = new URL(raw);
+  } catch {
+    throw new Error(`APP_BASE_URL is not a valid URL: "${raw}"`);
+  }
+  if (process.env.NODE_ENV !== "production") return u.origin;
+  const host = u.hostname;
+  const isLocal =
+    host === "localhost" || host === "127.0.0.1" || host === "::1" || host.endsWith(".local");
+  const isBareIPv4 = /^\d{1,3}(\.\d{1,3}){3}$/.test(host);
+  const isWildcardDns = /(^|\.)(sslip\.io|nip\.io|xip\.io)$/i.test(host);
+  if (u.protocol !== "https:" || isLocal || isBareIPv4 || isWildcardDns) {
+    throw new Error(
+      `APP_BASE_URL must be a public HTTPS domain for emailed links; refusing "${raw}" ` +
+        `(localhost / bare IP / sslip.io hosts are not deliverable).`
+    );
+  }
+  return u.origin;
 }
 
 // ── Email templates ───────────────────────────────────────────────────────
@@ -54,7 +105,9 @@ function wrap(title: string, body: string) {
     <div style="max-width:560px;margin:0 auto;padding:24px">
       <div style="background:${BRAND};color:#fff;padding:18px 24px;border-radius:10px 10px 0 0;font-size:18px;font-weight:bold">GNE — ${title}</div>
       <div style="background:#fff;padding:24px;border-radius:0 0 10px 10px;border:1px solid #e2e8f0;border-top:none;line-height:1.6">${body}</div>
-      <p style="color:#94a3b8;font-size:12px;text-align:center;margin-top:16px">This is an automated message from the GNE ERP vendor portal.</p>
+      <p style="color:#94a3b8;font-size:12px;text-align:center;margin-top:16px;line-height:1.5">This is an automated message from the GNE ERP vendor portal.${
+        process.env.MAIL_FOOTER_ADDRESS ? `<br>${esc(process.env.MAIL_FOOTER_ADDRESS)}` : ""
+      }</p>
     </div></body></html>`;
 }
 
