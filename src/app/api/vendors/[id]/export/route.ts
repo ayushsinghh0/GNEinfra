@@ -20,6 +20,10 @@ export async function GET(
     include: {
       services: { orderBy: { id: "asc" } },
       documents: { orderBy: { uploadedAt: "asc" } },
+      products: { orderBy: { id: "asc" } },
+      experiences: { orderBy: { id: "asc" } },
+      purchaseOrders: { orderBy: { id: "asc" } },
+      turnovers: { orderBy: { id: "asc" } },
     },
   });
   if (!vendor) {

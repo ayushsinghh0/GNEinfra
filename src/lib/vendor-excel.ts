@@ -1,19 +1,34 @@
 import ExcelJS from "exceljs";
-import type { Vendor, VendorService, VendorDocument } from "@prisma/client";
+import type {
+  Vendor,
+  VendorService,
+  VendorDocument,
+  VendorProduct,
+  VendorExperience,
+  VendorPurchaseOrder,
+  VendorTurnover,
+} from "@prisma/client";
 import { DOC_LABELS } from "@/lib/doc-labels";
 
 type VendorWithRelations = Vendor & {
   services: VendorService[];
   documents: VendorDocument[];
+  products: VendorProduct[];
+  experiences: VendorExperience[];
+  purchaseOrders: VendorPurchaseOrder[];
+  turnovers: VendorTurnover[];
 };
 
-// Build an .xlsx of a single vendor's record — the same content as the print/PDF
-// view (company, statutory, bank, services, documents), as a downloadable sheet.
+// Build a multi-sheet .xlsx of a single vendor's record.
+// Sheet 1 "Overview": key-value (Company, Statutory, Bank).
+// Sheets 2-5: table sheets for Services & Products, Experience, Purchase Orders, Turnover.
+// Sheet 6 "Documents": uploaded KYC file list.
 export async function buildVendorWorkbook(v: VendorWithRelations): Promise<Buffer> {
   const wb = new ExcelJS.Workbook();
   wb.creator = "GNE ERP";
 
-  const ws = wb.addWorksheet("Vendor Record");
+  // ── Sheet 1: Overview (key-value layout) ──────────────────────────────────
+  const ws = wb.addWorksheet("Overview");
   ws.columns = [{ width: 30 }, { width: 64 }];
 
   const fmtDate = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : "");
@@ -43,6 +58,12 @@ export async function buildVendorWorkbook(v: VendorWithRelations): Promise<Buffe
     r.getCell(2).alignment = { wrapText: true, vertical: "top" };
   };
 
+  // Build a readable category string from the boolean flags
+  const categoryParts: string[] = [];
+  if (v.offersService) categoryParts.push("Service");
+  if (v.offersProduct) categoryParts.push("Product");
+  const categoryStr = categoryParts.length > 0 ? categoryParts.join(", ") : "—";
+
   section("Company Information");
   kv("Contact Person", v.contactPerson);
   kv("Mobile Number", v.mobileNumber);
@@ -55,6 +76,8 @@ export async function buildVendorWorkbook(v: VendorWithRelations): Promise<Buffe
   kv("Date of Incorporation", fmtDate(v.dateOfIncorporation));
   kv("Years of Service", v.yearsOfService);
   kv("Annual Turnover", v.annualTurnover);
+  kv("Category", categoryStr);
+  kv("OEM / Dealer", v.oemOrDealer);
   ws.addRow([]);
 
   section("Statutory & Tax");
@@ -76,31 +99,81 @@ export async function buildVendorWorkbook(v: VendorWithRelations): Promise<Buffe
   kv("IFSC Code", v.ifscCode);
   kv("SWIFT Code", v.swiftCode);
   kv("IBAN Code", v.ibanCode);
-  ws.addRow([]);
 
-  section(`Services (${v.services.length})`);
-  const sHead = ws.addRow(["Service Category", "Item / Details"]);
-  sHead.font = { bold: true };
-  if (v.services.length === 0) {
-    ws.addRow(["—", ""]);
-  } else {
-    for (const s of v.services) ws.addRow([s.category, s.item?.trim() || "—"]);
-  }
-  ws.addRow([]);
+  // ── Table-sheet helper (sheets 2-6) ──────────────────────────────────────
+  const tableSheet = (
+    title: string,
+    headers: string[],
+    rows: (string | null | undefined)[][]
+  ) => {
+    const sheet = wb.addWorksheet(title);
+    sheet.columns = headers.map(() => ({ width: 28 }));
+    const head = sheet.addRow(headers);
+    head.font = { bold: true };
+    for (const r of rows)
+      sheet.addRow(r.map((c) => (c && String(c).trim() ? String(c) : "—")));
+  };
 
-  section(`Documents (${v.documents.length})`);
-  const dHead = ws.addRow(["Document", "File / Status"]);
-  dHead.font = { bold: true };
-  if (v.documents.length === 0) {
-    ws.addRow(["—", ""]);
-  } else {
-    for (const d of v.documents) {
-      ws.addRow([
-        DOC_LABELS[d.docType] ?? d.docType,
-        d.purgedAt ? "deleted after retention window" : d.originalName,
-      ]);
-    }
-  }
+  // Sheet 2: Services & Products
+  tableSheet(
+    "Services & Products",
+    ["Type", "Category / Activity", "Brand / Item", "Model"],
+    [
+      ...v.services.map((s): (string | null | undefined)[] => [
+        "Service",
+        s.category,
+        s.item,
+        "",
+      ]),
+      ...v.products.map((p): (string | null | undefined)[] => [
+        "Product",
+        p.name,
+        p.brand,
+        p.model,
+      ]),
+    ]
+  );
+
+  // Sheet 3: Experience
+  tableSheet(
+    "Experience",
+    ["Financial Year", "Client / Project", "Scope", "Value"],
+    v.experiences.map((e): (string | null | undefined)[] => [
+      e.financialYear,
+      e.clientProject,
+      e.scope,
+      e.value,
+    ])
+  );
+
+  // Sheet 4: Purchase Orders
+  tableSheet(
+    "Purchase Orders",
+    ["PO Number", "Client", "Value", "Date"],
+    v.purchaseOrders.map((p): (string | null | undefined)[] => [
+      p.poNumber,
+      p.client,
+      p.value,
+      p.poDate ? p.poDate.toISOString().slice(0, 10) : "",
+    ])
+  );
+
+  // Sheet 5: Turnover
+  tableSheet(
+    "Turnover",
+    ["Financial Year", "Amount"],
+    v.turnovers.map((t): (string | null | undefined)[] => [t.financialYear, t.amount])
+  );
+
+  // Sheet 6: Documents
+  tableSheet(
+    "Documents",
+    ["Document", "File / Status"],
+    v.documents.map((d): (string | null | undefined)[] => [
+      DOC_LABELS[d.docType] ?? d.docType,
+      d.purgedAt ? "deleted after retention window" : d.originalName,
+    ])
+  );
 
   const buf = await wb.xlsx.writeBuffer();
   return Buffer.from(buf);
