@@ -31,7 +31,9 @@ import {
   type FieldError,
 } from "@/lib/vendor-validation";
 
-// The 25 editable vendor scalar fields, as strings (empty string = blank).
+// The 20 editable vendor scalar fields, as strings (empty string = blank).
+// Legacy tax fields (exciseNo, tinNo, vatLstNo, cstNo, serviceTaxNo) are kept
+// in the DB but removed from the admin edit form — too archaic to bother admins.
 export type VendorFields = {
   companyName: string;
   contactPerson: string;
@@ -47,11 +49,6 @@ export type VendorFields = {
   annualTurnover: string;
   gstNo: string;
   panNo: string;
-  exciseNo: string;
-  tinNo: string;
-  vatLstNo: string;
-  cstNo: string;
-  serviceTaxNo: string;
   msmeNo: string;
   bankName: string;
   bankBranchAddress: string;
@@ -79,11 +76,6 @@ const LABELS: Record<FieldKey, string> = {
   annualTurnover: "Annual Turnover",
   gstNo: "GST No",
   panNo: "PAN No",
-  exciseNo: "Excise No",
-  tinNo: "TIN No",
-  vatLstNo: "VAT / LST No",
-  cstNo: "CST No",
-  serviceTaxNo: "Service Tax No",
   msmeNo: "MSME No",
   bankName: "Bank Name",
   bankBranchAddress: "Branch Address",
@@ -100,7 +92,12 @@ const VALIDATORS: Partial<Record<FieldKey, (v: string) => FieldError>> = {
   mobileNumber: validateMobile,
   email: validateEmail,
   gstNo: validateGst,
-  panNo: validatePan,
+  // PAN is required in the admin edit form (unlike the vendor-facing wizard where
+  // it was behind a toggle). Check non-empty first, then validate the format.
+  panNo: (v) => {
+    if (!v.trim()) return "PAN is required";
+    return validatePan(v);
+  },
   ifscCode: validateIfsc,
 };
 
@@ -109,6 +106,7 @@ const REQUIRED = new Set<FieldKey>([
   "contactPerson",
   "mobileNumber",
   "email",
+  "panNo",
 ]);
 
 const COMPANY: FieldKey[] = [
@@ -128,11 +126,6 @@ const COMPANY: FieldKey[] = [
 const STATUTORY: FieldKey[] = [
   "gstNo",
   "panNo",
-  "exciseNo",
-  "tinNo",
-  "vatLstNo",
-  "cstNo",
-  "serviceTaxNo",
   "msmeNo",
 ];
 const BANK: FieldKey[] = [
