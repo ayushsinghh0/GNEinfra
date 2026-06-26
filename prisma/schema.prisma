@@ -54,6 +54,11 @@ model Vendor {
   yearsOfService    String?
   annualTurnover    String?
 
+  // ── Category (Service and/or Product) ──
+  offersService Boolean @default(false)
+  offersProduct Boolean @default(false)
+  oemOrDealer   String? // "OEM" | "DEALER" — product vendors
+
   // ── Statutory / tax registration ──
   gstNo         String? // optional — vendor toggles whether they have GST
   panNo         String? // optional — vendor toggles whether they have PAN
@@ -84,6 +89,10 @@ model Vendor {
   documents      VendorDocument[]
   invite         VendorInvite?
   documentRequests DocumentRequest[]
+  products       VendorProduct[]
+  experiences    VendorExperience[]
+  purchaseOrders VendorPurchaseOrder[]
+  turnovers      VendorTurnover[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -104,6 +113,47 @@ model VendorService {
   category String  // e.g. EPC, Module, Cables, Others (see RegistrationForm)
   item     String? // free-text item / material details for this category
 
+  @@index([vendorId])
+}
+
+model VendorProduct {
+  id       String @id @default(cuid())
+  vendorId String
+  vendor   Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  name     String  // product / category supplied
+  brand    String? // make / brand
+  model    String?
+  @@index([vendorId])
+}
+
+model VendorExperience {
+  id            String @id @default(cuid())
+  vendorId      String
+  vendor        Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  financialYear String
+  clientProject String
+  scope         String?
+  value         String?
+  @@index([vendorId])
+}
+
+model VendorPurchaseOrder {
+  id       String    @id @default(cuid())
+  vendorId String
+  vendor   Vendor    @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  poNumber String?
+  client   String?
+  value    String?
+  poDate   DateTime?
+  @@index([vendorId])
+}
+
+model VendorTurnover {
+  id            String @id @default(cuid())
+  vendorId      String
+  vendor        Vendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  financialYear String
+  amount        String
   @@index([vendorId])
 }
 
