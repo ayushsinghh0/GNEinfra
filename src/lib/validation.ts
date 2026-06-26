@@ -25,7 +25,33 @@ export const serviceSchema = z.object({
   item: optionalStr,
 });
 
-export const registrationSchema = z.object({
+// FormData sends booleans as the strings "true"/"false"; coerce explicitly
+// (z.coerce.boolean would treat "false" as true).
+const formBool = z.preprocess((v) => v === "true" || v === "1" || v === true, z.boolean());
+
+export const productSchema = z.object({
+  name: z.string().trim().min(1, "Product name is required").max(200),
+  brand: optionalStr,
+  model: optionalStr,
+});
+export const experienceSchema = z.object({
+  financialYear: z.string().trim().min(1, "Year is required").max(50),
+  clientProject: z.string().trim().min(1, "Client / project is required").max(200),
+  scope: optionalStr,
+  value: optionalStr,
+});
+export const purchaseOrderSchema = z.object({
+  poNumber: optionalStr,
+  client: optionalStr,
+  value: optionalStr,
+  poDate: optionalStr, // ISO date string from <input type=date>
+});
+export const turnoverSchema = z.object({
+  financialYear: z.string().trim().min(1, "Year is required").max(50),
+  amount: z.string().trim().min(1, "Turnover amount is required").max(100),
+});
+
+const baseRegistration = z.object({
   // Company
   companyName: z.string().trim().min(2, "Company name is required").max(200),
   contactPerson: z.string().trim().min(1, "Contact person is required").max(200),
@@ -63,9 +89,9 @@ export const registrationSchema = z.object({
   panNo: z
     .string()
     .trim()
-    .optional()
-    .transform((v) => (v ? v.toUpperCase() : undefined))
-    .refine((v) => !v || PAN_RE.test(v), "Enter a valid 10-character PAN (e.g. ABCDE1234F)"),
+    .min(1, "PAN number is required")
+    .transform((v) => v.toUpperCase())
+    .refine((v) => PAN_RE.test(v), "Enter a valid 10-character PAN (e.g. ABCDE1234F)"),
   exciseNo: optionalStr,
   tinNo: optionalStr,
   vatLstNo: optionalStr,
@@ -89,15 +115,47 @@ export const registrationSchema = z.object({
   ibanCode: optionalStr,
 
   services: z.array(serviceSchema).max(50, "Too many service rows").optional().default([]),
+
+  offersService: formBool.optional().default(false),
+  offersProduct: formBool.optional().default(false),
+  oemOrDealer: z.enum(["OEM", "DEALER"]).optional(),
+  otherServiceDetails: optionalStr,
+  serviceActivities: z.array(serviceSchema).max(20).optional().default([]),
+  products: z.array(productSchema).max(100, "Too many product rows").optional().default([]),
+  experiences: z.array(experienceSchema).max(50, "Too many experience rows").optional().default([]),
+  purchaseOrders: z.array(purchaseOrderSchema).max(100, "Too many PO rows").optional().default([]),
+  turnovers: z.array(turnoverSchema).max(10, "Too many turnover rows").optional().default([]),
 });
+
+export const registrationSchema = baseRegistration
+  .refine((d) => d.offersService || d.offersProduct, {
+    message: "Select at least one category (Service or Product)",
+    path: ["offersService"],
+  })
+  .refine((d) => !d.offersProduct || !!d.oemOrDealer, {
+    message: "Select whether you are an OEM or a Dealer",
+    path: ["oemOrDealer"],
+  });
 
 export type RegistrationInput = z.infer<typeof registrationSchema>;
 
 // Admin correcting a submitted vendor's own fields. Identical rules to
 // registration (GST/PAN upper-cased, mobile normalised, IFSC checked) so the
-// edit form and the wizard can never validate differently — minus `services`,
-// which the admin edit screen does not touch.
-export const vendorEditSchema = registrationSchema.omit({ services: true });
+// edit form and the wizard can never validate differently — minus `services`
+// and the new array/category fields, which the admin edit screen does not touch.
+// NOTE: .omit() does not exist on a refined schema, so we point at baseRegistration.
+export const vendorEditSchema = baseRegistration.omit({
+  services: true,
+  serviceActivities: true,
+  products: true,
+  experiences: true,
+  purchaseOrders: true,
+  turnovers: true,
+  offersService: true,
+  offersProduct: true,
+  oemOrDealer: true,
+  otherServiceDetails: true,
+});
 export type VendorEditInput = z.infer<typeof vendorEditSchema>;
 
 // Admin sending an invitation. Email is lower-cased so the "one live token per

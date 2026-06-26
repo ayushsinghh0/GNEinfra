@@ -100,3 +100,12 @@ export function validatePin(value: string): FieldError {
   if (!v) return null;
   return PIN_RE.test(v) ? null : "Enter a valid 6-digit PIN code";
 }
+
+// Service-activity checklist (replaces the old free-form service categories).
+// "Other" reveals a manual-details field; persisted as a VendorService row.
+export const SERVICE_ACTIVITIES = ["EPC", "BOS", "I&C", "Other"] as const;
+export type ServiceActivity = (typeof SERVICE_ACTIVITIES)[number];
+
+// Product vendors classify themselves once.
+export const OEM_DEALER = ["OEM", "DEALER"] as const;
+export type OemDealer = (typeof OEM_DEALER)[number];
