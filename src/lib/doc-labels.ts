@@ -5,6 +5,8 @@ export const DOC_LABELS: Record<string, string> = {
   GST_CERTIFICATE: "GST Certificate",
   PAN_CARD: "PAN Card",
   OTHER: "Other",
+  MSME_CERTIFICATE: "MSME / Udyam Certificate",
+  PURCHASE_ORDER: "Purchase Order Copy",
 };
 
 export function docLabel(type: string): string {

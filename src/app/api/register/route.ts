@@ -15,6 +15,8 @@ const DOC_FIELDS: Record<string, string> = {
   gstCertificate: "GST_CERTIFICATE",
   panCard: "PAN_CARD",
   otherDocs: "OTHER",
+  msmeCertificate: "MSME_CERTIFICATE",
+  purchaseOrderDocs: "PURCHASE_ORDER",
 };
 
 // Thrown inside the registration transaction when another request already
@@ -87,6 +89,32 @@ export async function POST(req: NextRequest) {
   }
   raw.services = services;
 
+  const parseRows = (key: string): unknown[] => {
+    try {
+      const raw = form.get(key);
+      if (typeof raw !== "string" || !raw) return [];
+      const arr = JSON.parse(raw);
+      return Array.isArray(arr) ? arr : [];
+    } catch {
+      return [];
+    }
+  };
+
+  const offersService = form.get("offersService") === "true";
+  const offersProduct = form.get("offersProduct") === "true";
+  const oemOrDealer = ((form.get("oemOrDealer") as string) || "").trim() || undefined;
+  const otherServiceDetails = ((form.get("otherServiceDetails") as string) || "").trim() || undefined;
+
+  raw.offersService = offersService;
+  raw.offersProduct = offersProduct;
+  raw.oemOrDealer = oemOrDealer;
+  raw.otherServiceDetails = otherServiceDetails;
+  raw.serviceActivities = parseRows("serviceActivities");
+  raw.products = parseRows("products");
+  raw.experiences = parseRows("experiences");
+  raw.purchaseOrders = parseRows("purchaseOrders");
+  raw.turnovers = parseRows("turnovers");
+
   const parsed = registrationSchema.safeParse(raw);
   if (!parsed.success) {
     // Return every issue (field + message) so the client can route each error
@@ -105,9 +133,6 @@ export async function POST(req: NextRequest) {
     );
   }
   const d = parsed.data;
-
-  // Drop service rows that have no category.
-  const cleanServices = (d.services ?? []).filter((s) => s.category && s.category.trim());
 
   const doi = d.dateOfIncorporation ? new Date(d.dateOfIncorporation) : null;
 
@@ -173,11 +198,43 @@ export async function POST(req: NextRequest) {
           ifscCode: d.ifscCode,
           swiftCode: d.swiftCode,
           ibanCode: d.ibanCode,
+          offersService: d.offersService,
+          offersProduct: d.offersProduct,
+          oemOrDealer: d.oemOrDealer ?? null,
           services: {
-            create: cleanServices.map((s) => ({
-              category: s.category.trim(),
-              item: s.item,
-            })),
+            create: (d.serviceActivities ?? [])
+              .filter((s) => s.category.trim())
+              .map((s) => ({ category: s.category.trim(), item: s.item ?? null })),
+          },
+          products: {
+            create: (d.products ?? [])
+              .filter((p) => p.name.trim())
+              .map((p) => ({ name: p.name.trim(), brand: p.brand ?? null, model: p.model ?? null })),
+          },
+          experiences: {
+            create: (d.experiences ?? [])
+              .filter((e) => e.financialYear.trim() && e.clientProject.trim())
+              .map((e) => ({
+                financialYear: e.financialYear.trim(),
+                clientProject: e.clientProject.trim(),
+                scope: e.scope ?? null,
+                value: e.value ?? null,
+              })),
+          },
+          turnovers: {
+            create: (d.turnovers ?? [])
+              .filter((t) => t.financialYear.trim() && t.amount.trim())
+              .map((t) => ({ financialYear: t.financialYear.trim(), amount: t.amount.trim() })),
+          },
+          purchaseOrders: {
+            create: (d.purchaseOrders ?? [])
+              .filter((p) => p.poNumber || p.client || p.value || p.poDate)
+              .map((p) => ({
+                poNumber: p.poNumber ?? null,
+                client: p.client ?? null,
+                value: p.value ?? null,
+                poDate: p.poDate ? new Date(p.poDate) : null,
+              })),
           },
         },
       });
