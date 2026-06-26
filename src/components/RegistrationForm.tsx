@@ -10,7 +10,6 @@ import {
   Field as UIField,
   Input,
   Textarea,
-  Select,
   Button,
   Skeleton,
   btn,
@@ -28,13 +27,14 @@ import {
   validateIfsc,
   validatePin,
   MAX_LEN,
+  SERVICE_ACTIVITIES,
+  OEM_DEALER,
   type FieldError,
 } from "@/lib/vendor-validation";
 import {
   Building2,
   ShieldCheck,
   Banknote,
-  Briefcase,
   FileText,
   Plus,
   Trash2,
@@ -46,44 +46,27 @@ import {
   Pencil,
   X,
   Lock,
+  Tag,
+  TrendingUp,
 } from "lucide-react";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-// The fixed list of service / supply categories a vendor can offer.
-const SERVICE_CATEGORIES = [
-  "I & C",
-  "EPC",
-  "Product",
-  "Module",
-  "Inverter",
-  "IDT",
-  "MMS",
-  "Major BOS",
-  "Other Structures",
-  "Cables",
-  "Conduit Pipe",
-  "Electrical Termination Items",
-  "Lighting & Lightning Material",
-  "Safety Material",
-  "MCS",
-  "Pre-commissioning & Commissioning Charges",
-  "Bay Construction at SS",
-  "Overhead Transmission Line",
-  "Spares Considered for O&M",
-  "Reactive Power Required for the Plant",
-  "Infrastructure Development",
-  "Piling Works",
-  "Road & Drainage Cost",
-  "Others",
-] as const;
+type ProductRow = { name: string; brand: string; model: string };
+type ExperienceRow = { financialYear: string; clientProject: string; scope: string; value: string };
+type POrow = { poNumber: string; client: string; value: string; poDate: string };
+type TurnoverRow = { financialYear: string; amount: string };
 
-type ServiceRow = {
-  category: string;
-  item: string;
-};
+const emptyProduct = (): ProductRow => ({ name: "", brand: "", model: "" });
+const emptyExperience = (): ExperienceRow => ({ financialYear: "", clientProject: "", scope: "", value: "" });
+const emptyPO = (): POrow => ({ poNumber: "", client: "", value: "", poDate: "" });
+const emptyTurnover = (): TurnoverRow => ({ financialYear: "", amount: "" });
 
-const emptyService = (): ServiceRow => ({ category: "", item: "" });
+// PAN is now required in the new 6-step flow.
+function validatePanRequired(v: string): FieldError {
+  if (!v.trim()) return "PAN is required";
+  return validatePan(v);
+}
 
 // Every scalar text/date field on the form. File inputs stay native (see below).
 type FormState = {
@@ -101,11 +84,6 @@ type FormState = {
   annualTurnover: string;
   gstNo: string;
   panNo: string;
-  exciseNo: string;
-  tinNo: string;
-  vatLstNo: string;
-  cstNo: string;
-  serviceTaxNo: string;
   msmeNo: string;
   bankName: string;
   bankBranchAddress: string;
@@ -133,11 +111,6 @@ const EMPTY_FORM: FormState = {
   annualTurnover: "",
   gstNo: "",
   panNo: "",
-  exciseNo: "",
-  tinNo: "",
-  vatLstNo: "",
-  cstNo: "",
-  serviceTaxNo: "",
   msmeNo: "",
   bankName: "",
   bankBranchAddress: "",
@@ -164,11 +137,6 @@ const LABELS: Record<FieldName, string> = {
   annualTurnover: "Annual Turnover",
   gstNo: "GST No",
   panNo: "PAN No",
-  exciseNo: "Excise No",
-  tinNo: "TIN No",
-  vatLstNo: "VAT / LST No",
-  cstNo: "CST No",
-  serviceTaxNo: "Service Tax No",
   msmeNo: "MSME No",
   bankName: "Bank Name",
   bankBranchAddress: "Branch Address",
@@ -187,7 +155,7 @@ const VALIDATORS: Partial<Record<FieldName, (v: string) => FieldError>> = {
   email: validateEmail,
   pinCode: validatePin,
   gstNo: validateGst,
-  panNo: validatePan,
+  panNo: validatePanRequired,
   ifscCode: validateIfsc,
 };
 
@@ -195,9 +163,9 @@ type StepDef = {
   id: string;
   title: string;
   description: string;
-  short: string; // one-line label for the sidebar rail
+  short: string;
   icon: React.ReactNode;
-  fields: FieldName[]; // fields that gate "Next" on this step
+  fields: FieldName[];
 };
 
 const STEPS: StepDef[] = [
@@ -223,12 +191,28 @@ const STEPS: StepDef[] = [
     ],
   },
   {
+    id: "offerings",
+    title: "Offerings",
+    description: "What services or products does your company offer?",
+    short: "Services & products",
+    icon: <Tag className="h-4 w-4" />,
+    fields: [],
+  },
+  {
+    id: "track-record",
+    title: "Track record",
+    description: "Share your past project experience and financial turnover.",
+    short: "Experience & turnover",
+    icon: <TrendingUp className="h-4 w-4" />,
+    fields: [],
+  },
+  {
     id: "statutory",
     title: "Statutory & Tax",
     description: "Provide the registrations applicable to your business.",
-    short: "GST, PAN & tax IDs",
+    short: "GST, PAN & MSME",
     icon: <ShieldCheck className="h-4 w-4" />,
-    fields: ["gstNo", "panNo", "exciseNo", "tinNo", "vatLstNo", "cstNo", "serviceTaxNo", "msmeNo"],
+    fields: ["gstNo", "panNo", "msmeNo"],
   },
   {
     id: "bank",
@@ -237,14 +221,6 @@ const STEPS: StepDef[] = [
     short: "Account for payments",
     icon: <Banknote className="h-4 w-4" />,
     fields: ["bankName", "bankBranchAddress", "bankAccountNo", "bankBranchCode", "ifscCode", "swiftCode", "ibanCode"],
-  },
-  {
-    id: "services",
-    title: "Services",
-    description: "Select the categories you supply or execute, and describe the items for each.",
-    short: "What you offer",
-    icon: <Briefcase className="h-4 w-4" />,
-    fields: [],
   },
   {
     id: "documents",
@@ -258,10 +234,10 @@ const STEPS: StepDef[] = [
 
 const LAST = STEPS.length - 1;
 const DOC_STEP = STEPS.findIndex((s) => s.id === "documents");
+const OFFERINGS_STEP = STEPS.findIndex((s) => s.id === "offerings");
+const STATUTORY_STEP = STEPS.findIndex((s) => s.id === "statutory");
 
-// Max length per field, mirroring the server schema (company/contact/email 200,
-// everything else 500). Used as input maxLength so over-long input never reaches
-// a server 400.
+// Max length per field, mirroring the server schema.
 const MAX_BY_FIELD: Partial<Record<FieldName, number>> = {
   companyName: MAX_LEN.name,
   contactPerson: MAX_LEN.name,
@@ -272,11 +248,12 @@ const DOC_FIELDS: { name: string; label: string; hint?: string; multiple?: boole
   { name: "cancelledCheque", label: "Cancelled Cheque", hint: "recommended" },
   { name: "gstCertificate", label: "GST Certificate" },
   { name: "panCard", label: "PAN Card" },
+  { name: "msmeCertificate", label: "MSME Certificate" },
+  { name: "purchaseOrderDocs", label: "Purchase Order Copies", multiple: true },
   { name: "otherDocs", label: "Other Documents", multiple: true },
 ];
 
-// Mirror the server's accepted document types + size cap (src/lib/documents.ts)
-// so an unsupported/oversize file is caught BEFORE the single-use link is spent.
+// Mirror the server's accepted document types + size cap.
 const ALLOWED_DOC_TYPES = ["application/pdf", "image/png", "image/jpeg", "image/jpg", "image/webp"];
 const MAX_DOC_BYTES = 10 * 1024 * 1024;
 
@@ -310,9 +287,23 @@ export default function RegistrationForm({
     email: defaultEmail ?? "",
     companyName: defaultCompany ?? "",
   }));
-  const [services, setServices] = useState<ServiceRow[]>([emptyService()]);
+
+  // Category toggles (Company step)
+  const [offersService, setOffersService] = useState(false);
+  const [offersProduct, setOffersProduct] = useState(false);
+
+  // Offerings state
+  const [serviceActivities, setServiceActivities] = useState<Set<string>>(new Set());
+  const [otherServiceDetails, setOtherServiceDetails] = useState("");
+  const [oemOrDealer, setOemOrDealer] = useState("");
+  const [products, setProducts] = useState<ProductRow[]>([emptyProduct()]);
+
+  // Track record state
+  const [experiences, setExperiences] = useState<ExperienceRow[]>([emptyExperience()]);
+  const [purchaseOrders, setPurchaseOrders] = useState<POrow[]>([emptyPO()]);
+  const [turnovers, setTurnovers] = useState<TurnoverRow[]>([emptyTurnover()]);
+
   const [hasGst, setHasGst] = useState(false);
-  const [hasPan, setHasPan] = useState(false);
   const [fileNames, setFileNames] = useState<Record<string, string[]>>({});
   const [fileErrors, setFileErrors] = useState<Record<string, string>>({});
 
@@ -340,14 +331,21 @@ export default function RegistrationForm({
     el?.scrollIntoView?.({ block: "center", behavior: "smooth" });
   }, []);
 
-  // Restore any locally-saved draft once, on the client, THEN reveal the form
-  // (ready=true). Gating the editable form behind `ready` keeps the server HTML
-  // and the first client render identical (no hydration mismatch) and removes the
-  // window where a user could type before the draft is restored.
+  // Restore any locally-saved draft once, on the client, THEN reveal the form.
   useEffect(() => {
-    let draft:
-      | { form?: Partial<FormState>; services?: ServiceRow[]; hasGst?: boolean; hasPan?: boolean }
-      | null = null;
+    let draft: {
+      form?: Partial<FormState>;
+      hasGst?: boolean;
+      offersService?: boolean;
+      offersProduct?: boolean;
+      serviceActivitiesArr?: string[];
+      otherServiceDetails?: string;
+      oemOrDealer?: string;
+      products?: ProductRow[];
+      experiences?: ExperienceRow[];
+      purchaseOrders?: POrow[];
+      turnovers?: TurnoverRow[];
+    } | null = null;
     try {
       const raw = localStorage.getItem(storageKey);
       if (raw) draft = JSON.parse(raw);
@@ -356,10 +354,16 @@ export default function RegistrationForm({
     }
     /* eslint-disable react-hooks/set-state-in-effect -- one-time client hydration + reveal */
     if (draft?.form) setForm((f) => ({ ...f, ...draft!.form }));
-    if (Array.isArray(draft?.services) && draft.services.length) setServices(draft.services);
-    // Restore toggles; fall back to "on" if a value was already saved for that field.
     setHasGst(draft?.hasGst ?? Boolean(draft?.form?.gstNo));
-    setHasPan(draft?.hasPan ?? Boolean(draft?.form?.panNo));
+    if (draft?.offersService !== undefined) setOffersService(draft.offersService);
+    if (draft?.offersProduct !== undefined) setOffersProduct(draft.offersProduct);
+    if (Array.isArray(draft?.serviceActivitiesArr)) setServiceActivities(new Set(draft.serviceActivitiesArr));
+    if (draft?.otherServiceDetails !== undefined) setOtherServiceDetails(draft.otherServiceDetails);
+    if (draft?.oemOrDealer !== undefined) setOemOrDealer(draft.oemOrDealer);
+    if (Array.isArray(draft?.products) && draft.products.length) setProducts(draft.products);
+    if (Array.isArray(draft?.experiences) && draft.experiences.length) setExperiences(draft.experiences);
+    if (Array.isArray(draft?.purchaseOrders) && draft.purchaseOrders.length) setPurchaseOrders(draft.purchaseOrders);
+    if (Array.isArray(draft?.turnovers) && draft.turnovers.length) setTurnovers(draft.turnovers);
     setReady(true);
     /* eslint-enable react-hooks/set-state-in-effect */
   }, [storageKey]);
@@ -372,11 +376,40 @@ export default function RegistrationForm({
     }
     if (done) return;
     try {
-      localStorage.setItem(storageKey, JSON.stringify({ form, services, hasGst, hasPan }));
+      localStorage.setItem(
+        storageKey,
+        JSON.stringify({
+          form,
+          hasGst,
+          offersService,
+          offersProduct,
+          serviceActivitiesArr: [...serviceActivities],
+          otherServiceDetails,
+          oemOrDealer,
+          products,
+          experiences,
+          purchaseOrders,
+          turnovers,
+        })
+      );
     } catch {
       /* storage full / unavailable — non-fatal */
     }
-  }, [form, services, hasGst, hasPan, done, storageKey]);
+  }, [
+    form,
+    hasGst,
+    offersService,
+    offersProduct,
+    serviceActivities,
+    otherServiceDetails,
+    oemOrDealer,
+    products,
+    experiences,
+    purchaseOrders,
+    turnovers,
+    done,
+    storageKey,
+  ]);
 
   // After a step becomes visible, move focus to the pending field (if any).
   useEffect(() => {
@@ -457,6 +490,16 @@ export default function RegistrationForm({
       focusField(Object.keys(found)[0]);
       return;
     }
+    // Company step: at least one category must be selected.
+    if (step === 0 && !offersService && !offersProduct) {
+      setStepError(true);
+      return;
+    }
+    // Offerings step: OEM/Dealer required when product vendor.
+    if (step === OFFERINGS_STEP && offersProduct && !oemOrDealer) {
+      setStepError(true);
+      return;
+    }
     if (step === DOC_STEP) {
       const badField = Object.keys(fileErrors).find((k) => fileErrors[k]);
       if (badField) {
@@ -514,6 +557,24 @@ export default function RegistrationForm({
       }
       return;
     }
+    // Category check
+    if (!offersService && !offersProduct) {
+      setStepError(true);
+      if (step !== 0) {
+        setStep(0);
+        setMaxStep((m) => Math.max(m, 0));
+      }
+      return;
+    }
+    // OEM/Dealer check
+    if (offersProduct && !oemOrDealer) {
+      setStepError(true);
+      if (step !== OFFERINGS_STEP) {
+        setStep(OFFERINGS_STEP);
+        setMaxStep((m) => Math.max(m, OFFERINGS_STEP));
+      }
+      return;
+    }
     const badFile = Object.keys(fileErrors).find((k) => fileErrors[k]);
     if (badFile) {
       setStepError(true);
@@ -531,13 +592,32 @@ export default function RegistrationForm({
     setShowReview(true);
   }
 
-  // Route a server-side validation rejection (the backstop) back to the field.
+  // Route a server-side validation rejection back to the correct field/step.
   function applyServerIssues(issues: { field: string; message: string }[]) {
+    // Non-FormState fields mapped to their step index.
+    const EXTRA_FIELD_STEP: Record<string, number> = {
+      offersService: 0,
+      offersProduct: 0,
+      oemOrDealer: OFFERINGS_STEP,
+      serviceActivities: OFFERINGS_STEP,
+      panNo: STATUTORY_STEP,
+    };
+
     const mapped: Partial<Record<FieldName, string>> = {};
     for (const it of issues) {
       if (it.field in EMPTY_FORM) mapped[it.field as FieldName] = it.message;
     }
     if (!Object.keys(mapped).length) {
+      // Try routing via extra-field map before falling back to a banner.
+      const firstExtra = issues.find((it) => it.field in EXTRA_FIELD_STEP);
+      if (firstExtra) {
+        const targetStep = EXTRA_FIELD_STEP[firstExtra.field];
+        setSubmitError(firstExtra.message);
+        setShowReview(false);
+        setStepError(true);
+        if (targetStep !== step) setStep(targetStep);
+        return;
+      }
       setSubmitError(issues[0]?.message || "Please review your details and try again.");
       return;
     }
@@ -567,10 +647,43 @@ export default function RegistrationForm({
     try {
       const fd = new FormData(formEl);
       fd.set("token", token);
-      const filledServices = services
-        .filter((s) => s.category.trim() !== "")
-        .map((s) => ({ category: s.category.trim(), item: s.item.trim() || undefined }));
-      fd.set("services", JSON.stringify(filledServices));
+
+      // Category / offerings
+      fd.set("offersService", String(offersService));
+      fd.set("offersProduct", String(offersProduct));
+      if (oemOrDealer) fd.set("oemOrDealer", oemOrDealer);
+      if (otherServiceDetails.trim()) fd.set("otherServiceDetails", otherServiceDetails.trim());
+
+      // Service activities as {category, item} rows
+      fd.set(
+        "serviceActivities",
+        JSON.stringify(
+          [...serviceActivities].map((a) => ({
+            category: a,
+            item: a === "Other" ? otherServiceDetails : "",
+          }))
+        )
+      );
+
+      // Products, experiences, purchase orders, turnovers
+      fd.set("products", JSON.stringify(products.filter((p) => p.name.trim())));
+      fd.set(
+        "experiences",
+        JSON.stringify(
+          experiences.filter((e) => e.financialYear.trim() && e.clientProject.trim())
+        )
+      );
+      fd.set(
+        "purchaseOrders",
+        JSON.stringify(
+          purchaseOrders.filter((p) => p.poNumber || p.client || p.value || p.poDate)
+        )
+      );
+      fd.set(
+        "turnovers",
+        JSON.stringify(turnovers.filter((t) => t.financialYear.trim() && t.amount.trim()))
+      );
+
       await compressFormImages(formEl, fd);
 
       const res = await fetch("/api/register", { method: "POST", body: fd });
@@ -670,8 +783,18 @@ export default function RegistrationForm({
     );
   }
 
-  function updateService(i: number, key: keyof ServiceRow, value: string) {
-    setServices((rows) => rows.map((r, idx) => (idx === i ? { ...r, [key]: value } : r)));
+  // Row updaters (mirror updateService pattern for each repeatable group).
+  function updateProduct(i: number, key: keyof ProductRow, value: string) {
+    setProducts((rows) => rows.map((r, idx) => (idx === i ? { ...r, [key]: value } : r)));
+  }
+  function updateExperience(i: number, key: keyof ExperienceRow, value: string) {
+    setExperiences((rows) => rows.map((r, idx) => (idx === i ? { ...r, [key]: value } : r)));
+  }
+  function updatePO(i: number, key: keyof POrow, value: string) {
+    setPurchaseOrders((rows) => rows.map((r, idx) => (idx === i ? { ...r, [key]: value } : r)));
+  }
+  function updateTurnover(i: number, key: keyof TurnoverRow, value: string) {
+    setTurnovers((rows) => rows.map((r, idx) => (idx === i ? { ...r, [key]: value } : r)));
   }
 
   // ── Content per state ──────────────────────────────────────────────────────
@@ -758,7 +881,10 @@ export default function RegistrationForm({
   } else {
     const visibleFieldErrors = STEPS[step].fields.filter((f) => touched[f] && errors[f]);
     const visibleFileError = step === DOC_STEP && Object.values(fileErrors).some(Boolean);
-    const showStepBanner = stepError && (visibleFieldErrors.length > 0 || visibleFileError);
+    const categoryMissing = step === 0 && stepError && !offersService && !offersProduct;
+    const oemMissing = step === OFFERINGS_STEP && stepError && offersProduct && !oemOrDealer;
+    const showStepBanner =
+      stepError && (visibleFieldErrors.length > 0 || visibleFileError || categoryMissing || oemMissing);
 
     content = (
       <>
@@ -779,7 +905,13 @@ export default function RegistrationForm({
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 {tf("companyName", { required: true })}
                 {tf("contactPerson", { required: true })}
-                {tf("mobileNumber", { required: true, type: "tel", inputMode: "tel", hint: "10-digit Indian mobile", placeholder: "98765 43210" })}
+                {tf("mobileNumber", {
+                  required: true,
+                  type: "tel",
+                  inputMode: "tel",
+                  hint: "10-digit Indian mobile",
+                  placeholder: "98765 43210",
+                })}
                 {tf("email", { required: true, type: "email", inputMode: "email" })}
                 <UIField label="Address" className="md:col-span-2">
                   <Textarea
@@ -798,14 +930,421 @@ export default function RegistrationForm({
                 {tf("yearsOfService")}
                 {tf("annualTurnover")}
               </div>
+
+              {/* Category selection */}
+              <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50/60 px-4 py-4">
+                <p className="mb-3 text-sm font-medium text-slate-700">
+                  What does your company offer?{" "}
+                  <span className="text-rose-500" aria-hidden="true">
+                    *
+                  </span>
+                </p>
+                <div className="flex flex-wrap gap-x-8 gap-y-3">
+                  <label className="flex cursor-pointer items-center gap-2.5 text-sm font-medium text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={offersService}
+                      onChange={(e) => {
+                        setOffersService(e.target.checked);
+                        setStepError(false);
+                      }}
+                      className="h-4 w-4 rounded border-slate-300 accent-brand"
+                    />
+                    Services (EPC, I&amp;C, BOS, etc.)
+                  </label>
+                  <label className="flex cursor-pointer items-center gap-2.5 text-sm font-medium text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={offersProduct}
+                      onChange={(e) => {
+                        setOffersProduct(e.target.checked);
+                        setStepError(false);
+                      }}
+                      className="h-4 w-4 rounded border-slate-300 accent-brand"
+                    />
+                    Products / Equipment
+                  </label>
+                </div>
+                {categoryMissing && (
+                  <p className="mt-2 text-sm text-rose-600">Please select at least one category.</p>
+                )}
+              </div>
             </Section>
           </div>
 
-          {/* Step 1 — Statutory & Tax */}
+          {/* Step 1 — Offerings */}
           <div className={step === 1 ? "block animate-step-in" : "hidden"}>
-            <Section title="Statutory & Tax Registration" description={STEPS[1].description} icon={STEPS[1].icon}>
+            <Section title="Offerings" description={STEPS[1].description} icon={STEPS[1].icon}>
+              {!offersService && !offersProduct ? (
+                <p className="text-sm italic text-slate-400">
+                  Go back to Company and select at least one category.
+                </p>
+              ) : (
+                <div className="space-y-8">
+                  {/* Service activities */}
+                  {offersService && (
+                    <div>
+                      <p className="mb-3 text-sm font-semibold text-slate-700">Service Activities</p>
+                      <div className="space-y-2.5">
+                        {SERVICE_ACTIVITIES.map((act) => (
+                          <label key={act} className="flex cursor-pointer items-center gap-3">
+                            <input
+                              type="checkbox"
+                              checked={serviceActivities.has(act)}
+                              onChange={(e) => {
+                                setServiceActivities((prev) => {
+                                  const next = new Set(prev);
+                                  if (e.target.checked) next.add(act);
+                                  else next.delete(act);
+                                  return next;
+                                });
+                              }}
+                              className="h-4 w-4 rounded border-slate-300 accent-brand"
+                            />
+                            <span className="text-sm text-slate-700">{act}</span>
+                          </label>
+                        ))}
+                      </div>
+                      {serviceActivities.has("Other") && (
+                        <UIField label="Other service details" className="mt-4">
+                          <Textarea
+                            value={otherServiceDetails}
+                            rows={2}
+                            maxLength={MAX_LEN.text}
+                            placeholder="Describe your other services…"
+                            onChange={(e) => setOtherServiceDetails(e.target.value)}
+                          />
+                        </UIField>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Product vendor section */}
+                  {offersProduct && (
+                    <div>
+                      <p className="mb-3 text-sm font-semibold text-slate-700">
+                        OEM or Dealer?{" "}
+                        <span className="text-rose-500" aria-hidden="true">
+                          *
+                        </span>
+                      </p>
+                      <div className="mb-4 flex gap-6">
+                        {OEM_DEALER.map((od) => (
+                          <label key={od} className="flex cursor-pointer items-center gap-2.5">
+                            <input
+                              type="radio"
+                              name="oemOrDealerDisplay"
+                              value={od}
+                              checked={oemOrDealer === od}
+                              onChange={() => {
+                                setOemOrDealer(od);
+                                setStepError(false);
+                              }}
+                              className="h-4 w-4 border-slate-300 accent-brand"
+                            />
+                            <span className="text-sm font-medium text-slate-700">{od}</span>
+                          </label>
+                        ))}
+                      </div>
+                      {oemMissing && (
+                        <p className="mb-3 text-sm text-rose-600">Please select OEM or Dealer.</p>
+                      )}
+
+                      {/* Product repeatable rows */}
+                      <p className="mb-3 text-sm font-semibold text-slate-700">Products / Equipment</p>
+                      <div className="space-y-4">
+                        {products.map((row, i) => (
+                          <div
+                            key={i}
+                            className="rounded-2xl border border-slate-200 bg-slate-50/50 p-4"
+                          >
+                            <div className="mb-3 flex items-center justify-between">
+                              <span className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700">
+                                <span className="nums grid h-6 w-6 place-items-center rounded-md bg-brand-50 text-xs font-bold text-brand-700">
+                                  {i + 1}
+                                </span>
+                                Product {i + 1}
+                              </span>
+                              {products.length > 1 && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setProducts((r) => r.filter((_, idx) => idx !== i))
+                                  }
+                                  className="press inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-600"
+                                  aria-label="Remove product"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                  Remove
+                                </button>
+                              )}
+                            </div>
+                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                              <UIField label="Product / Category">
+                                <Input
+                                  value={row.name}
+                                  maxLength={MAX_LEN.text}
+                                  placeholder="e.g. Solar Module"
+                                  onChange={(e) => updateProduct(i, "name", e.target.value)}
+                                />
+                              </UIField>
+                              <UIField label="Make / Brand">
+                                <Input
+                                  value={row.brand}
+                                  maxLength={MAX_LEN.text}
+                                  placeholder="e.g. Waaree"
+                                  onChange={(e) => updateProduct(i, "brand", e.target.value)}
+                                />
+                              </UIField>
+                              <UIField label="Model">
+                                <Input
+                                  value={row.model}
+                                  maxLength={MAX_LEN.text}
+                                  placeholder="e.g. WS-400"
+                                  onChange={(e) => updateProduct(i, "model", e.target.value)}
+                                />
+                              </UIField>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setProducts((r) => [...r, emptyProduct()])}
+                        className="press mt-4 inline-flex items-center gap-1.5 rounded-xl border border-dashed border-slate-300 px-4 py-2 text-sm font-medium text-brand-700 transition-colors hover:border-brand hover:bg-brand-50/40"
+                      >
+                        <Plus className="h-4 w-4" />
+                        Add product
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </Section>
+          </div>
+
+          {/* Step 2 — Track record */}
+          <div className={step === 2 ? "block animate-step-in" : "hidden"}>
+            {/* Project Experience */}
+            <Section
+              title="Project Experience"
+              description="Past projects and client engagements."
+              icon={STEPS[2].icon}
+            >
+              <div className="space-y-4">
+                {experiences.map((row, i) => (
+                  <div
+                    key={i}
+                    className="rounded-2xl border border-slate-200 bg-slate-50/50 p-4"
+                  >
+                    <div className="mb-3 flex items-center justify-between">
+                      <span className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700">
+                        <span className="nums grid h-6 w-6 place-items-center rounded-md bg-brand-50 text-xs font-bold text-brand-700">
+                          {i + 1}
+                        </span>
+                        Experience {i + 1}
+                      </span>
+                      {experiences.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => setExperiences((r) => r.filter((_, idx) => idx !== i))}
+                          className="press inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-600"
+                          aria-label="Remove experience"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                          Remove
+                        </button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <UIField label="Financial Year">
+                        <Input
+                          value={row.financialYear}
+                          maxLength={MAX_LEN.text}
+                          placeholder="FY2023-24"
+                          onChange={(e) => updateExperience(i, "financialYear", e.target.value)}
+                        />
+                      </UIField>
+                      <UIField label="Client / Project">
+                        <Input
+                          value={row.clientProject}
+                          maxLength={MAX_LEN.text}
+                          onChange={(e) => updateExperience(i, "clientProject", e.target.value)}
+                        />
+                      </UIField>
+                      <UIField label="Scope">
+                        <Input
+                          value={row.scope}
+                          maxLength={MAX_LEN.text}
+                          onChange={(e) => updateExperience(i, "scope", e.target.value)}
+                        />
+                      </UIField>
+                      <UIField label="Value (₹)">
+                        <Input
+                          value={row.value}
+                          maxLength={MAX_LEN.text}
+                          onChange={(e) => updateExperience(i, "value", e.target.value)}
+                        />
+                      </UIField>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => setExperiences((r) => [...r, emptyExperience()])}
+                className="press mt-4 inline-flex items-center gap-1.5 rounded-xl border border-dashed border-slate-300 px-4 py-2 text-sm font-medium text-brand-700 transition-colors hover:border-brand hover:bg-brand-50/40"
+              >
+                <Plus className="h-4 w-4" />
+                Add experience
+              </button>
+            </Section>
+
+            {/* Purchase Orders */}
+            <Section
+              title="Purchase Orders"
+              description="Key purchase orders as evidence of track record."
+              icon={STEPS[2].icon}
+            >
+              <div className="space-y-4">
+                {purchaseOrders.map((row, i) => (
+                  <div
+                    key={i}
+                    className="rounded-2xl border border-slate-200 bg-slate-50/50 p-4"
+                  >
+                    <div className="mb-3 flex items-center justify-between">
+                      <span className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700">
+                        <span className="nums grid h-6 w-6 place-items-center rounded-md bg-brand-50 text-xs font-bold text-brand-700">
+                          {i + 1}
+                        </span>
+                        PO {i + 1}
+                      </span>
+                      {purchaseOrders.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => setPurchaseOrders((r) => r.filter((_, idx) => idx !== i))}
+                          className="press inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-600"
+                          aria-label="Remove purchase order"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                          Remove
+                        </button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <UIField label="PO Number">
+                        <Input
+                          value={row.poNumber}
+                          maxLength={MAX_LEN.text}
+                          onChange={(e) => updatePO(i, "poNumber", e.target.value)}
+                        />
+                      </UIField>
+                      <UIField label="Client">
+                        <Input
+                          value={row.client}
+                          maxLength={MAX_LEN.text}
+                          onChange={(e) => updatePO(i, "client", e.target.value)}
+                        />
+                      </UIField>
+                      <UIField label="Value (₹)">
+                        <Input
+                          value={row.value}
+                          maxLength={MAX_LEN.text}
+                          onChange={(e) => updatePO(i, "value", e.target.value)}
+                        />
+                      </UIField>
+                      <UIField label="PO Date">
+                        <Input
+                          type="date"
+                          value={row.poDate}
+                          onChange={(e) => updatePO(i, "poDate", e.target.value)}
+                        />
+                      </UIField>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => setPurchaseOrders((r) => [...r, emptyPO()])}
+                className="press mt-4 inline-flex items-center gap-1.5 rounded-xl border border-dashed border-slate-300 px-4 py-2 text-sm font-medium text-brand-700 transition-colors hover:border-brand hover:bg-brand-50/40"
+              >
+                <Plus className="h-4 w-4" />
+                Add PO
+              </button>
+            </Section>
+
+            {/* Annual Turnover */}
+            <Section
+              title="Annual Turnover"
+              description="Last 3 financial years recommended."
+              icon={STEPS[2].icon}
+            >
+              <div className="space-y-4">
+                {turnovers.map((row, i) => (
+                  <div
+                    key={i}
+                    className="rounded-2xl border border-slate-200 bg-slate-50/50 p-4"
+                  >
+                    <div className="mb-3 flex items-center justify-between">
+                      <span className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700">
+                        <span className="nums grid h-6 w-6 place-items-center rounded-md bg-brand-50 text-xs font-bold text-brand-700">
+                          {i + 1}
+                        </span>
+                        Year {i + 1}
+                      </span>
+                      {turnovers.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => setTurnovers((r) => r.filter((_, idx) => idx !== i))}
+                          className="press inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-600"
+                          aria-label="Remove turnover year"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                          Remove
+                        </button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <UIField label="Financial Year">
+                        <Input
+                          value={row.financialYear}
+                          maxLength={MAX_LEN.text}
+                          placeholder="FY2023-24"
+                          onChange={(e) => updateTurnover(i, "financialYear", e.target.value)}
+                        />
+                      </UIField>
+                      <UIField label="Amount (₹)">
+                        <Input
+                          value={row.amount}
+                          maxLength={MAX_LEN.text}
+                          onChange={(e) => updateTurnover(i, "amount", e.target.value)}
+                        />
+                      </UIField>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => setTurnovers((r) => [...r, emptyTurnover()])}
+                className="press mt-4 inline-flex items-center gap-1.5 rounded-xl border border-dashed border-slate-300 px-4 py-2 text-sm font-medium text-brand-700 transition-colors hover:border-brand hover:bg-brand-50/40"
+              >
+                <Plus className="h-4 w-4" />
+                Add year
+              </button>
+            </Section>
+          </div>
+
+          {/* Step 3 — Statutory & Tax */}
+          <div className={step === 3 ? "block animate-step-in" : "hidden"}>
+            <Section
+              title="Statutory & Tax Registration"
+              description={STEPS[3].description}
+              icon={STEPS[3].icon}
+            >
               <div className="mb-5 flex flex-wrap items-center gap-x-8 gap-y-3 rounded-xl border border-slate-200 bg-slate-50/60 px-4 py-3">
-                <span className="text-sm font-medium text-slate-600">Do you have:</span>
+                <span className="text-sm font-medium text-slate-600">Optional:</span>
                 <Toggle
                   label="GST registration"
                   checked={hasGst}
@@ -814,31 +1353,18 @@ export default function RegistrationForm({
                     if (!v) setField("gstNo", "");
                   }}
                 />
-                <Toggle
-                  label="PAN"
-                  checked={hasPan}
-                  onChange={(v) => {
-                    setHasPan(v);
-                    if (!v) setField("panNo", "");
-                  }}
-                />
               </div>
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 {hasGst && tf("gstNo", { hint: "15 characters", placeholder: "22AAAAA0000A1Z5" })}
-                {hasPan && tf("panNo", { hint: "10 characters", placeholder: "ABCDE1234F" })}
-                {tf("exciseNo", { hint: "if applicable" })}
-                {tf("tinNo", { hint: "if applicable" })}
-                {tf("vatLstNo", { hint: "if applicable" })}
-                {tf("cstNo", { hint: "if applicable" })}
-                {tf("serviceTaxNo", { hint: "if applicable" })}
+                {tf("panNo", { required: true, hint: "10 characters", placeholder: "ABCDE1234F" })}
                 {tf("msmeNo", { hint: "if applicable" })}
               </div>
             </Section>
           </div>
 
-          {/* Step 2 — Bank */}
-          <div className={step === 2 ? "block animate-step-in" : "hidden"}>
-            <Section title="Bank Details" description={STEPS[2].description} icon={STEPS[2].icon}>
+          {/* Step 4 — Bank */}
+          <div className={step === 4 ? "block animate-step-in" : "hidden"}>
+            <Section title="Bank Details" description={STEPS[4].description} icon={STEPS[4].icon}>
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 {tf("bankName")}
                 {tf("bankBranchAddress")}
@@ -851,68 +1377,9 @@ export default function RegistrationForm({
             </Section>
           </div>
 
-          {/* Step 3 — Services */}
-          <div className={step === 3 ? "block animate-step-in" : "hidden"}>
-            <Section title="Services" description={STEPS[3].description} icon={STEPS[3].icon}>
-              <div className="space-y-4">
-                {services.map((row, i) => (
-                  <div key={i} className="rounded-2xl border border-slate-200 bg-slate-50/50 p-4">
-                    <div className="mb-3 flex items-center justify-between">
-                      <span className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700">
-                        <span className="nums grid h-6 w-6 place-items-center rounded-md bg-brand-50 text-xs font-bold text-brand-700">
-                          {i + 1}
-                        </span>
-                        Service {i + 1}
-                      </span>
-                      {services.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => setServices((r) => r.filter((_, idx) => idx !== i))}
-                          className="press inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-600"
-                          aria-label="Remove service"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                          Remove
-                        </button>
-                      )}
-                    </div>
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                      <UIField label="Service Category">
-                        <Select value={row.category} onChange={(e) => updateService(i, "category", e.target.value)}>
-                          <option value="">Select a category…</option>
-                          {SERVICE_CATEGORIES.map((c) => (
-                            <option key={c} value={c}>
-                              {c}
-                            </option>
-                          ))}
-                        </Select>
-                      </UIField>
-                      <UIField label="Item / Details">
-                        <Input
-                          value={row.item}
-                          maxLength={MAX_LEN.text}
-                          onChange={(e) => updateService(i, "item", e.target.value)}
-                          placeholder="Specify the items for this category"
-                        />
-                      </UIField>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <button
-                type="button"
-                onClick={() => setServices((r) => [...r, emptyService()])}
-                className="press mt-4 inline-flex items-center gap-1.5 rounded-xl border border-dashed border-slate-300 px-4 py-2 text-sm font-medium text-brand-700 transition-colors hover:border-brand hover:bg-brand-50/40"
-              >
-                <Plus className="h-4 w-4" />
-                Add another service
-              </button>
-            </Section>
-          </div>
-
-          {/* Step 4 — Documents */}
-          <div className={step === 4 ? "block animate-step-in" : "hidden"}>
-            <Section title="Documents" description={STEPS[4].description} icon={STEPS[4].icon}>
+          {/* Step 5 — Documents */}
+          <div className={step === 5 ? "block animate-step-in" : "hidden"}>
+            <Section title="Documents" description={STEPS[5].description} icon={STEPS[5].icon}>
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 {DOC_FIELDS.map((d) => (
                   <Dropzone
@@ -986,7 +1453,15 @@ export default function RegistrationForm({
       {showReview && (
         <ReviewModal
           form={form}
-          services={services}
+          offersService={offersService}
+          offersProduct={offersProduct}
+          oemOrDealer={oemOrDealer}
+          serviceActivities={serviceActivities}
+          otherServiceDetails={otherServiceDetails}
+          products={products}
+          experiences={experiences}
+          purchaseOrders={purchaseOrders}
+          turnovers={turnovers}
           fileNames={fileNames}
           submitting={submitting}
           submitError={submitError}
@@ -1039,7 +1514,9 @@ function Rail({
                 <span
                   aria-hidden="true"
                   className="absolute left-[1.65rem] top-[2.4rem] h-[calc(100%-1.4rem)] w-0.5 -translate-x-1/2 rounded-full transition-colors"
-                  style={{ background: state === "done" ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.18)" }}
+                  style={{
+                    background: state === "done" ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.18)",
+                  }}
                 />
               )}
               <button
@@ -1065,7 +1542,12 @@ function Rail({
                   {state === "done" ? <Check className="animate-tick h-4 w-4" /> : i + 1}
                 </span>
                 <span className="min-w-0 pt-0.5">
-                  <span className={cn("block text-sm font-medium", state === "todo" ? "text-white/70" : "text-white")}>
+                  <span
+                    className={cn(
+                      "block text-sm font-medium",
+                      state === "todo" ? "text-white/70" : "text-white"
+                    )}
+                  >
                     {s.title}
                   </span>
                   <span className="block text-xs text-white/65">{s.short}</span>
@@ -1083,7 +1565,10 @@ function Rail({
             <span className="nums">{complete ? "Complete" : `Step ${step + 1} of ${STEPS.length}`}</span>
           </div>
           <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/15">
-            <div className="h-full rounded-full bg-white transition-all duration-500 motion-reduce:transition-none" style={{ width: `${pct}%` }} />
+            <div
+              className="h-full rounded-full bg-white transition-all duration-500 motion-reduce:transition-none"
+              style={{ width: `${pct}%` }}
+            />
           </div>
         </div>
         <div className="space-y-2 text-xs text-white/80">
@@ -1210,7 +1695,15 @@ function Section({
 
 function ReviewModal({
   form,
-  services,
+  offersService,
+  offersProduct,
+  oemOrDealer,
+  serviceActivities,
+  otherServiceDetails,
+  products,
+  experiences,
+  purchaseOrders,
+  turnovers,
   fileNames,
   submitting,
   submitError,
@@ -1219,7 +1712,15 @@ function ReviewModal({
   onConfirm,
 }: {
   form: FormState;
-  services: ServiceRow[];
+  offersService: boolean;
+  offersProduct: boolean;
+  oemOrDealer: string;
+  serviceActivities: Set<string>;
+  otherServiceDetails: string;
+  products: ProductRow[];
+  experiences: ExperienceRow[];
+  purchaseOrders: POrow[];
+  turnovers: TurnoverRow[];
   fileNames: Record<string, string[]>;
   submitting: boolean;
   submitError: string | null;
@@ -1276,16 +1777,14 @@ function ReviewModal({
   const rowsFrom = (keys: FieldName[]) =>
     keys.map((k) => ({ label: LABELS[k], value: form[k].trim() })).filter((r) => r.value);
 
-  const sections = [
-    { title: "Company Information", step: 0, rows: rowsFrom(STEPS[0].fields) },
-    { title: "Statutory & Tax", step: 1, rows: rowsFrom(STEPS[1].fields) },
-    { title: "Bank Details", step: 2, rows: rowsFrom(STEPS[2].fields) },
-  ];
-
-  const filledServices = services.filter((s) => s.category.trim() !== "");
-  const uploadedDocs = DOC_FIELDS.map((d) => ({ label: d.label, names: fileNames[d.name] ?? [] })).filter(
-    (d) => d.names.length > 0
-  );
+  const filledProducts = products.filter((p) => p.name.trim());
+  const filledExperiences = experiences.filter((e) => e.financialYear.trim() || e.clientProject.trim());
+  const filledPOs = purchaseOrders.filter((p) => p.poNumber || p.client || p.value || p.poDate);
+  const filledTurnovers = turnovers.filter((t) => t.financialYear.trim() && t.amount.trim());
+  const uploadedDocs = DOC_FIELDS.map((d) => ({
+    label: d.label,
+    names: fileNames[d.name] ?? [],
+  })).filter((d) => d.names.length > 0);
 
   return createPortal(
     <div className="animate-overlay-in fixed inset-0 z-50 flex items-end justify-center overflow-y-auto bg-slate-900/40 backdrop-blur-sm sm:items-center sm:p-4">
@@ -1303,7 +1802,10 @@ function ReviewModal({
         </div>
         <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
           <div>
-            <h2 id="review-title" className="font-display text-lg font-extrabold tracking-[-0.01em] text-slate-900">
+            <h2
+              id="review-title"
+              className="font-display text-lg font-extrabold tracking-[-0.01em] text-slate-900"
+            >
               Review your details
             </h2>
             <p className="text-xs text-slate-500">Please check everything is correct before submitting.</p>
@@ -1319,12 +1821,17 @@ function ReviewModal({
         </div>
 
         <div className="max-h-[60dvh] overflow-y-auto px-5 py-4">
-          {sections.map((s) => (
-            <ReviewBlock key={s.step} title={s.title} onEdit={() => onEdit(s.step)}>
-              {s.rows.length ? (
+          {/* Company */}
+          <ReviewBlock title="Company Information" onEdit={() => onEdit(0)}>
+            {(() => {
+              const rows = rowsFrom(STEPS[0].fields);
+              return rows.length ? (
                 <dl className="grid grid-cols-1 gap-x-6 gap-y-1.5 sm:grid-cols-2">
-                  {s.rows.map((r) => (
-                    <div key={r.label} className="flex justify-between gap-3 border-b border-slate-50 py-1 text-sm">
+                  {rows.map((r) => (
+                    <div
+                      key={r.label}
+                      className="flex justify-between gap-3 border-b border-slate-50 py-1 text-sm"
+                    >
                       <dt className="text-slate-500">{r.label}</dt>
                       <dd className="break-words text-right font-medium text-slate-800">{r.value}</dd>
                     </div>
@@ -1332,32 +1839,160 @@ function ReviewModal({
                 </dl>
               ) : (
                 <p className="text-sm italic text-slate-400">Nothing entered.</p>
-              )}
-            </ReviewBlock>
-          ))}
+              );
+            })()}
+            <div className="mt-2 text-sm text-slate-600">
+              <span className="font-medium">Category: </span>
+              {[offersService && "Services", offersProduct && "Products"].filter(Boolean).join(", ") ||
+                "None selected"}
+            </div>
+          </ReviewBlock>
 
-          <ReviewBlock title="Services" onEdit={() => onEdit(3)}>
-            {filledServices.length ? (
-              <ul className="space-y-2">
-                {filledServices.map((s, i) => (
-                  <li key={i} className="rounded-lg border border-slate-100 bg-slate-50/60 px-3 py-2 text-sm text-slate-700">
-                    <span className="font-medium text-slate-800">{s.category}</span>
-                    {s.item.trim() && <span className="text-slate-500"> — {s.item.trim()}</span>}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-sm italic text-slate-400">No services added.</p>
+          {/* Offerings */}
+          <ReviewBlock title="Offerings" onEdit={() => onEdit(1)}>
+            {offersService && serviceActivities.size > 0 && (
+              <div className="mb-2 text-sm text-slate-700">
+                <span className="font-medium text-slate-800">Service activities: </span>
+                {[...serviceActivities].join(", ")}
+                {serviceActivities.has("Other") && otherServiceDetails.trim() && (
+                  <span className="text-slate-500"> — {otherServiceDetails.trim()}</span>
+                )}
+              </div>
+            )}
+            {offersProduct && (
+              <>
+                {oemOrDealer && (
+                  <div className="mb-2 text-sm text-slate-700">
+                    <span className="font-medium text-slate-800">Type: </span>
+                    {oemOrDealer}
+                  </div>
+                )}
+                {filledProducts.length > 0 && (
+                  <ul className="space-y-1">
+                    {filledProducts.map((p, i) => (
+                      <li key={i} className="text-sm text-slate-700">
+                        <span className="font-medium text-slate-800">{p.name}</span>
+                        {p.brand && <span className="text-slate-500"> · {p.brand}</span>}
+                        {p.model && <span className="text-slate-500"> · {p.model}</span>}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </>
+            )}
+            {!offersService && !offersProduct && (
+              <p className="text-sm italic text-slate-400">No category selected.</p>
             )}
           </ReviewBlock>
 
-          <ReviewBlock title="Documents" onEdit={() => onEdit(4)}>
+          {/* Track record */}
+          <ReviewBlock title="Track Record" onEdit={() => onEdit(2)}>
+            {filledExperiences.length > 0 && (
+              <div className="mb-2">
+                <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                  Experience
+                </p>
+                <ul className="space-y-1">
+                  {filledExperiences.map((e, i) => (
+                    <li key={i} className="text-sm text-slate-700">
+                      <span className="font-medium text-slate-800">{e.clientProject}</span>
+                      {e.financialYear && (
+                        <span className="text-slate-500"> ({e.financialYear})</span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {filledTurnovers.length > 0 && (
+              <div>
+                <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                  Turnover
+                </p>
+                <ul className="space-y-1">
+                  {filledTurnovers.map((t, i) => (
+                    <li key={i} className="text-sm text-slate-700">
+                      <span className="font-medium text-slate-800">{t.financialYear}</span>
+                      <span className="text-slate-500"> — ₹{t.amount}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {filledPOs.length > 0 && (
+              <div className="mb-2">
+                <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                  Purchase Orders
+                </p>
+                <ul className="space-y-1">
+                  {filledPOs.map((p, i) => (
+                    <li key={i} className="text-sm text-slate-700">
+                      <span className="font-medium text-slate-800">{p.poNumber || "—"}</span>
+                      {p.client && <span className="text-slate-500"> · {p.client}</span>}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {filledExperiences.length === 0 && filledPOs.length === 0 && filledTurnovers.length === 0 && (
+              <p className="text-sm italic text-slate-400">Nothing entered.</p>
+            )}
+          </ReviewBlock>
+
+          {/* Statutory */}
+          <ReviewBlock title="Statutory & Tax" onEdit={() => onEdit(3)}>
+            {(() => {
+              const rows = rowsFrom(STEPS[3].fields);
+              return rows.length ? (
+                <dl className="grid grid-cols-1 gap-x-6 gap-y-1.5 sm:grid-cols-2">
+                  {rows.map((r) => (
+                    <div
+                      key={r.label}
+                      className="flex justify-between gap-3 border-b border-slate-50 py-1 text-sm"
+                    >
+                      <dt className="text-slate-500">{r.label}</dt>
+                      <dd className="break-words text-right font-medium text-slate-800">{r.value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              ) : (
+                <p className="text-sm italic text-slate-400">Nothing entered.</p>
+              );
+            })()}
+          </ReviewBlock>
+
+          {/* Bank */}
+          <ReviewBlock title="Bank Details" onEdit={() => onEdit(4)}>
+            {(() => {
+              const rows = rowsFrom(STEPS[4].fields);
+              return rows.length ? (
+                <dl className="grid grid-cols-1 gap-x-6 gap-y-1.5 sm:grid-cols-2">
+                  {rows.map((r) => (
+                    <div
+                      key={r.label}
+                      className="flex justify-between gap-3 border-b border-slate-50 py-1 text-sm"
+                    >
+                      <dt className="text-slate-500">{r.label}</dt>
+                      <dd className="break-words text-right font-medium text-slate-800">{r.value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              ) : (
+                <p className="text-sm italic text-slate-400">Nothing entered.</p>
+              );
+            })()}
+          </ReviewBlock>
+
+          {/* Documents */}
+          <ReviewBlock title="Documents" onEdit={() => onEdit(5)}>
             {uploadedDocs.length ? (
               <ul className="space-y-1 text-sm text-slate-700">
                 {uploadedDocs.map((d) => (
                   <li key={d.label} className="flex justify-between gap-3">
                     <span className="text-slate-500">{d.label}</span>
-                    <span className="break-words text-right font-medium text-slate-800">{d.names.join(", ")}</span>
+                    <span className="break-words text-right font-medium text-slate-800">
+                      {d.names.join(", ")}
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -1383,10 +2018,20 @@ function ReviewModal({
           <div className="flex flex-col-reverse items-stretch gap-2 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs text-slate-400">By submitting, you confirm the details above are accurate.</p>
             <div className="flex items-center justify-end gap-2">
-              <button type="button" onClick={onClose} disabled={submitting} className={cn(btn("secondary", "md"), "rounded-full")}>
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={submitting}
+                className={cn(btn("secondary", "md"), "rounded-full")}
+              >
                 Back to form
               </button>
-              <Button type="button" onClick={onConfirm} disabled={submitting} className="rounded-full px-6">
+              <Button
+                type="button"
+                onClick={onConfirm}
+                disabled={submitting}
+                className="rounded-full px-6"
+              >
                 {submitting ? "Submitting…" : "Confirm & Submit"}
               </Button>
             </div>
