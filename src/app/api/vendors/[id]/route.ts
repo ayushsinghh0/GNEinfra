@@ -48,11 +48,9 @@ export async function PATCH(
         annualTurnover: d.annualTurnover ?? null,
         gstNo: d.gstNo ?? null,
         panNo: d.panNo ?? null,
-        exciseNo: d.exciseNo ?? null,
-        tinNo: d.tinNo ?? null,
-        vatLstNo: d.vatLstNo ?? null,
-        cstNo: d.cstNo ?? null,
-        serviceTaxNo: d.serviceTaxNo ?? null,
+        // Legacy pre-GST tax fields (excise/TIN/VAT/CST/service-tax) were removed from
+        // the edit form. Omit them from the update so any retained DB values are
+        // preserved rather than silently nulled by an absent form field.
         msmeNo: d.msmeNo ?? null,
         bankName: d.bankName ?? null,
         bankBranchAddress: d.bankBranchAddress ?? null,
