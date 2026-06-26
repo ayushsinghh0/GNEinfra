@@ -101,6 +101,48 @@ export function validatePin(value: string): FieldError {
   return PIN_RE.test(v) ? null : "Enter a valid 6-digit PIN code";
 }
 
+// ── Strict input filters (block disallowed characters as the user types) ──────
+// These run on every keystroke so an invalid character never even appears.
+
+// Keep digits only.
+export function filterDigits(value: string): string {
+  return value.replace(/\D/g, "");
+}
+// Money: digits, a decimal point, and grouping commas only — no letters/words.
+export function filterMoney(value: string): string {
+  return value.replace(/[^0-9.,]/g, "");
+}
+// Financial year: digits and a single dash, capped at "2023-24" length.
+export function filterFinancialYear(value: string): string {
+  return value.replace(/[^0-9-]/g, "").slice(0, 7);
+}
+
+// ── Strict validators (return a warning, or null when valid/empty) ────────────
+
+// Financial year format e.g. "2023-24" (optional — checked only when present).
+const FY_RE = /^\d{4}-\d{2}$/;
+export function validateFinancialYear(value: string): FieldError {
+  const v = value.trim();
+  if (!v) return null;
+  return FY_RE.test(v) ? null : "Use a financial year like 2023-24";
+}
+
+// Monetary amount — digits with optional grouping commas / decimal (optional).
+export function validateAmount(value: string): FieldError {
+  const v = value.trim();
+  if (!v) return null;
+  return /^\d+(\.\d+)?$/.test(v.replace(/,/g, ""))
+    ? null
+    : "Enter a valid amount (numbers only)";
+}
+
+// Bank account number — 6–18 digits (optional).
+export function validateAccountNo(value: string): FieldError {
+  const v = value.trim();
+  if (!v) return null;
+  return /^\d{6,18}$/.test(v) ? null : "Account number must be 6–18 digits";
+}
+
 // Service-activity checklist (replaces the old free-form service categories).
 // "Other" reveals a manual-details field; persisted as a VendorService row.
 export const SERVICE_ACTIVITIES = ["EPC", "BOS", "I&C", "Other"] as const;

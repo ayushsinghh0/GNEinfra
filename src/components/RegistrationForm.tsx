@@ -26,6 +26,12 @@ import {
   validatePan,
   validateIfsc,
   validatePin,
+  validateAccountNo,
+  validateFinancialYear,
+  validateAmount,
+  filterDigits,
+  filterMoney,
+  filterFinancialYear,
   MAX_LEN,
   SERVICE_ACTIVITIES,
   OEM_DEALER,
@@ -61,12 +67,6 @@ const emptyProduct = (): ProductRow => ({ name: "", brand: "", model: "" });
 const emptyExperience = (): ExperienceRow => ({ financialYear: "", clientProject: "", scope: "", value: "" });
 const emptyPO = (): POrow => ({ poNumber: "", client: "", value: "", poDate: "" });
 const emptyTurnover = (): TurnoverRow => ({ financialYear: "", amount: "" });
-
-// PAN is now required in the new 6-step flow.
-function validatePanRequired(v: string): FieldError {
-  if (!v.trim()) return "PAN is required";
-  return validatePan(v);
-}
 
 // Every scalar text/date field on the form. File inputs stay native (see below).
 type FormState = {
@@ -155,8 +155,17 @@ const VALIDATORS: Partial<Record<FieldName, (v: string) => FieldError>> = {
   email: validateEmail,
   pinCode: validatePin,
   gstNo: validateGst,
-  panNo: validatePanRequired,
+  panNo: validatePan,
   ifscCode: validateIfsc,
+  bankAccountNo: validateAccountNo,
+};
+
+// Fields that filter keystrokes so a disallowed character never appears.
+const FIELD_FILTERS: Partial<Record<FieldName, (s: string) => string>> = {
+  mobileNumber: filterDigits,
+  pinCode: filterDigits,
+  bankAccountNo: filterDigits,
+  yearsOfService: filterDigits,
 };
 
 type StepDef = {
@@ -236,6 +245,7 @@ const LAST = STEPS.length - 1;
 const DOC_STEP = STEPS.findIndex((s) => s.id === "documents");
 const OFFERINGS_STEP = STEPS.findIndex((s) => s.id === "offerings");
 const STATUTORY_STEP = STEPS.findIndex((s) => s.id === "statutory");
+const TRACK_STEP = STEPS.findIndex((s) => s.id === "track-record");
 
 // Max length per field, mirroring the server schema.
 const MAX_BY_FIELD: Partial<Record<FieldName, number>> = {
@@ -304,6 +314,7 @@ export default function RegistrationForm({
   const [turnovers, setTurnovers] = useState<TurnoverRow[]>([emptyTurnover()]);
 
   const [hasGst, setHasGst] = useState(false);
+  const [hasPan, setHasPan] = useState(false);
   const [fileNames, setFileNames] = useState<Record<string, string[]>>({});
   const [fileErrors, setFileErrors] = useState<Record<string, string>>({});
 
@@ -336,6 +347,7 @@ export default function RegistrationForm({
     let draft: {
       form?: Partial<FormState>;
       hasGst?: boolean;
+      hasPan?: boolean;
       offersService?: boolean;
       offersProduct?: boolean;
       serviceActivitiesArr?: string[];
@@ -355,6 +367,7 @@ export default function RegistrationForm({
     /* eslint-disable react-hooks/set-state-in-effect -- one-time client hydration + reveal */
     if (draft?.form) setForm((f) => ({ ...f, ...draft!.form }));
     setHasGst(draft?.hasGst ?? Boolean(draft?.form?.gstNo));
+    setHasPan(draft?.hasPan ?? Boolean(draft?.form?.panNo));
     if (draft?.offersService !== undefined) setOffersService(draft.offersService);
     if (draft?.offersProduct !== undefined) setOffersProduct(draft.offersProduct);
     if (Array.isArray(draft?.serviceActivitiesArr)) setServiceActivities(new Set(draft.serviceActivitiesArr));
@@ -381,6 +394,7 @@ export default function RegistrationForm({
         JSON.stringify({
           form,
           hasGst,
+          hasPan,
           offersService,
           offersProduct,
           serviceActivitiesArr: [...serviceActivities],
@@ -398,6 +412,7 @@ export default function RegistrationForm({
   }, [
     form,
     hasGst,
+    hasPan,
     offersService,
     offersProduct,
     serviceActivities,
@@ -428,10 +443,11 @@ export default function RegistrationForm({
   }, [terminal]);
 
   function setField(name: FieldName, value: string) {
-    setForm((f) => ({ ...f, [name]: value }));
+    const filtered = FIELD_FILTERS[name] ? FIELD_FILTERS[name]!(value) : value;
+    setForm((f) => ({ ...f, [name]: filtered }));
     if (errors[name] || touched[name]) {
       const v = VALIDATORS[name];
-      const msg = v ? v(value) : null;
+      const msg = v ? v(filtered) : null;
       setErrors((e) => {
         const next = { ...e };
         if (msg) next[name] = msg;
@@ -463,6 +479,19 @@ export default function RegistrationForm({
       if (msg) found[name] = msg;
     }
     return found;
+  }
+
+  // True if any FILLED track-record row field fails its strict format check
+  // (empty fields are fine — those rows are optional and dropped on submit).
+  function trackRecordHasErrors(): boolean {
+    const expBad = experiences.some(
+      (r) => validateFinancialYear(r.financialYear) || validateAmount(r.value)
+    );
+    const poBad = purchaseOrders.some((r) => validateAmount(r.value));
+    const toBad = turnovers.some(
+      (r) => validateFinancialYear(r.financialYear) || validateAmount(r.amount)
+    );
+    return expBad || poBad || toBad;
   }
 
   function onFilesSelected(name: string, files: File[]) {
@@ -497,6 +526,11 @@ export default function RegistrationForm({
     }
     // Offerings step: OEM/Dealer required when product vendor.
     if (step === OFFERINGS_STEP && offersProduct && !oemOrDealer) {
+      setStepError(true);
+      return;
+    }
+    // Track-record step: any filled year/amount must be valid.
+    if (step === TRACK_STEP && trackRecordHasErrors()) {
       setStepError(true);
       return;
     }
@@ -572,6 +606,15 @@ export default function RegistrationForm({
       if (step !== OFFERINGS_STEP) {
         setStep(OFFERINGS_STEP);
         setMaxStep((m) => Math.max(m, OFFERINGS_STEP));
+      }
+      return;
+    }
+    // Track-record rows must be valid (or empty).
+    if (trackRecordHasErrors()) {
+      setStepError(true);
+      if (step !== TRACK_STEP) {
+        setStep(TRACK_STEP);
+        setMaxStep((m) => Math.max(m, TRACK_STEP));
       }
       return;
     }
@@ -1157,12 +1200,13 @@ export default function RegistrationForm({
                       )}
                     </div>
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                      <UIField label="Financial Year">
+                      <UIField label="Financial Year" error={validateFinancialYear(row.financialYear) ?? undefined}>
                         <Input
                           value={row.financialYear}
-                          maxLength={MAX_LEN.text}
-                          placeholder="FY2023-24"
-                          onChange={(e) => updateExperience(i, "financialYear", e.target.value)}
+                          maxLength={7}
+                          inputMode="numeric"
+                          placeholder="2023-24"
+                          onChange={(e) => updateExperience(i, "financialYear", filterFinancialYear(e.target.value))}
                         />
                       </UIField>
                       <UIField label="Client / Project">
@@ -1179,11 +1223,13 @@ export default function RegistrationForm({
                           onChange={(e) => updateExperience(i, "scope", e.target.value)}
                         />
                       </UIField>
-                      <UIField label="Value (₹)">
+                      <UIField label="Value (₹)" error={validateAmount(row.value) ?? undefined}>
                         <Input
                           value={row.value}
                           maxLength={MAX_LEN.text}
-                          onChange={(e) => updateExperience(i, "value", e.target.value)}
+                          inputMode="decimal"
+                          placeholder="numbers only"
+                          onChange={(e) => updateExperience(i, "value", filterMoney(e.target.value))}
                         />
                       </UIField>
                     </div>
@@ -1246,11 +1292,13 @@ export default function RegistrationForm({
                           onChange={(e) => updatePO(i, "client", e.target.value)}
                         />
                       </UIField>
-                      <UIField label="Value (₹)">
+                      <UIField label="Value (₹)" error={validateAmount(row.value) ?? undefined}>
                         <Input
                           value={row.value}
                           maxLength={MAX_LEN.text}
-                          onChange={(e) => updatePO(i, "value", e.target.value)}
+                          inputMode="decimal"
+                          placeholder="numbers only"
+                          onChange={(e) => updatePO(i, "value", filterMoney(e.target.value))}
                         />
                       </UIField>
                       <UIField label="PO Date">
@@ -1306,19 +1354,22 @@ export default function RegistrationForm({
                       )}
                     </div>
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                      <UIField label="Financial Year">
+                      <UIField label="Financial Year" error={validateFinancialYear(row.financialYear) ?? undefined}>
                         <Input
                           value={row.financialYear}
-                          maxLength={MAX_LEN.text}
-                          placeholder="FY2023-24"
-                          onChange={(e) => updateTurnover(i, "financialYear", e.target.value)}
+                          maxLength={7}
+                          inputMode="numeric"
+                          placeholder="2023-24"
+                          onChange={(e) => updateTurnover(i, "financialYear", filterFinancialYear(e.target.value))}
                         />
                       </UIField>
-                      <UIField label="Amount (₹)">
+                      <UIField label="Amount (₹)" error={validateAmount(row.amount) ?? undefined}>
                         <Input
                           value={row.amount}
                           maxLength={MAX_LEN.text}
-                          onChange={(e) => updateTurnover(i, "amount", e.target.value)}
+                          inputMode="decimal"
+                          placeholder="numbers only"
+                          onChange={(e) => updateTurnover(i, "amount", filterMoney(e.target.value))}
                         />
                       </UIField>
                     </div>
@@ -1353,10 +1404,18 @@ export default function RegistrationForm({
                     if (!v) setField("gstNo", "");
                   }}
                 />
+                <Toggle
+                  label="PAN"
+                  checked={hasPan}
+                  onChange={(v) => {
+                    setHasPan(v);
+                    if (!v) setField("panNo", "");
+                  }}
+                />
               </div>
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 {hasGst && tf("gstNo", { hint: "15 characters", placeholder: "22AAAAA0000A1Z5" })}
-                {tf("panNo", { required: true, hint: "10 characters", placeholder: "ABCDE1234F" })}
+                {hasPan && tf("panNo", { hint: "10 characters", placeholder: "ABCDE1234F" })}
                 {tf("msmeNo", { hint: "if applicable" })}
               </div>
             </Section>

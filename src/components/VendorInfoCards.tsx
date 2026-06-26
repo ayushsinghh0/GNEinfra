@@ -92,12 +92,8 @@ const VALIDATORS: Partial<Record<FieldKey, (v: string) => FieldError>> = {
   mobileNumber: validateMobile,
   email: validateEmail,
   gstNo: validateGst,
-  // PAN is required in the admin edit form (unlike the vendor-facing wizard where
-  // it was behind a toggle). Check non-empty first, then validate the format.
-  panNo: (v) => {
-    if (!v.trim()) return "PAN is required";
-    return validatePan(v);
-  },
+  // PAN optional (matches the vendor wizard's "Has PAN" toggle); format checked when present.
+  panNo: validatePan,
   ifscCode: validateIfsc,
 };
 
@@ -106,7 +102,6 @@ const REQUIRED = new Set<FieldKey>([
   "contactPerson",
   "mobileNumber",
   "email",
-  "panNo",
 ]);
 
 const COMPANY: FieldKey[] = [

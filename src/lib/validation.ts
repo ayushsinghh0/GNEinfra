@@ -86,12 +86,13 @@ const baseRegistration = z.object({
     .optional()
     .transform((v) => (v ? v.toUpperCase() : undefined))
     .refine((v) => !v || GST_RE.test(v), "Enter a valid 15-character GST number"),
+  // PAN optional — gated by the form's "Has PAN" toggle; format checked when present.
   panNo: z
     .string()
     .trim()
-    .min(1, "PAN number is required")
-    .transform((v) => v.toUpperCase())
-    .refine((v) => PAN_RE.test(v), "Enter a valid 10-character PAN (e.g. ABCDE1234F)"),
+    .optional()
+    .transform((v) => (v ? v.toUpperCase() : undefined))
+    .refine((v) => !v || PAN_RE.test(v), "Enter a valid 10-character PAN (e.g. ABCDE1234F)"),
   exciseNo: optionalStr,
   tinNo: optionalStr,
   vatLstNo: optionalStr,
