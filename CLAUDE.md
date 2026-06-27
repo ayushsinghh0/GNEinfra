@@ -63,7 +63,7 @@ R2/MinIO-compatible via `S3_ENDPOINT`), or SMTP provider is a `.env` change only
   (fails closed — unset or < 16 chars disables login). `src/lib/rbac.ts` exports
   `getCurrentUser`/`requirePageRole` — these are the authority for every protected page and API
   route; call them instead of the retired `isAdminAuthed`. The first superadmin is bootstrapped
-  via `prisma db seed` using `SUPERADMIN_EMAIL`/`SUPERADMIN_PASSWORD` (idempotent). Note that
+  via `npm run db:seed` using `SUPERADMIN_EMAIL`/`SUPERADMIN_PASSWORD` (idempotent). Note that
   vendor-admin pages moved from `/admin/*` to `/scm/*`. ⚠️ **Gotcha:** the `Secure` cookie
   attribute means the app MUST be served over **HTTPS** in production or browsers silently drop
   the session cookie and login appears to fail.
