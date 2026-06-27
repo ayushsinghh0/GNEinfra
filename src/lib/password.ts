@@ -23,15 +23,22 @@ export async function hashPassword(plain: string): Promise<string> {
 }
 
 export async function verifyPassword(plain: string, stored: string): Promise<boolean> {
-  const parts = stored.split("$");
-  if (parts.length !== 6 || parts[0] !== "scrypt") return false;
-  const N0 = Number(parts[1]);
-  const r0 = Number(parts[2]);
-  const p0 = Number(parts[3]);
-  if (!N0 || !r0 || !p0) return false;
-  const salt = Buffer.from(parts[4], "base64");
-  const expected = Buffer.from(parts[5], "base64");
-  const derived = await scrypt(plain.normalize("NFKC"), salt, expected.length, { N: N0, r: r0, p: p0 });
-  if (derived.length !== expected.length) return false;
-  return timingSafeEqual(derived, expected);
+  try {
+    const parts = stored.split("$");
+    if (parts.length !== 6 || parts[0] !== "scrypt") return false;
+    const N0 = Number(parts[1]);
+    const r0 = Number(parts[2]);
+    const p0 = Number(parts[3]);
+    if (!N0 || !r0 || !p0) return false;
+    // Reject absurd cost params that would exceed scrypt's maxmem and throw.
+    if (128 * N0 * r0 > 64 * 1024 * 1024) return false;
+    const salt = Buffer.from(parts[4], "base64");
+    const expected = Buffer.from(parts[5], "base64");
+    if (expected.length === 0) return false;
+    const derived = await scrypt(plain.normalize("NFKC"), salt, expected.length, { N: N0, r: r0, p: p0 });
+    if (derived.length !== expected.length) return false;
+    return timingSafeEqual(derived, expected);
+  } catch {
+    return false;
+  }
 }
