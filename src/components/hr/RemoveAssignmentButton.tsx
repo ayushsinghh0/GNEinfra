@@ -12,8 +12,14 @@ export default function RemoveAssignmentButton({ assignmentId }: { assignmentId:
     if (!confirm("Remove this project assignment?")) return;
     setBusy(true);
     try {
-      await fetch(`/api/hr/assignments/${assignmentId}`, { method: "DELETE" });
+      const res = await fetch(`/api/hr/assignments/${assignmentId}`, { method: "DELETE" });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.error || "Could not remove the assignment");
+      }
       router.refresh();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Could not remove the assignment");
     } finally {
       setBusy(false);
     }
