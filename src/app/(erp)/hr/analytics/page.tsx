@@ -82,6 +82,51 @@ export default async function HrAnalyticsPage() {
   const onLeaveCount =
     attByStatus.find((r) => r.status === "LEAVE")?._count._all ?? 0;
 
+  // Project allocation
+  const projects = await prisma.project.findMany({
+    where: { status: "ACTIVE" },
+    select: {
+      id: true,
+      name: true,
+      _count: {
+        select: {
+          assignments: {
+            where: {
+              OR: [{ endDate: null }, { endDate: { gte: todayUTC } }],
+            },
+          },
+        },
+      },
+    },
+    orderBy: { name: "asc" },
+  });
+  const assignedEmployees = await prisma.projectAssignment.findMany({
+    where: { OR: [{ endDate: null }, { endDate: { gte: todayUTC } }] },
+    select: { employeeId: true },
+    distinct: ["employeeId"],
+  });
+  const benchCount = activeCount - assignedEmployees.length;
+
+  // Leave summary — this month + this year
+  const yStart = new Date(Date.UTC(today.getUTCFullYear(), 0, 1));
+  const mStart = new Date(
+    Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1)
+  );
+  const [leaveYear, sickYear, leaveMonth, sickMonth] = await Promise.all([
+    prisma.attendanceRecord.count({
+      where: { status: "LEAVE", date: { gte: yStart } },
+    }),
+    prisma.attendanceRecord.count({
+      where: { status: "SICK", date: { gte: yStart } },
+    }),
+    prisma.attendanceRecord.count({
+      where: { status: "LEAVE", date: { gte: mStart } },
+    }),
+    prisma.attendanceRecord.count({
+      where: { status: "SICK", date: { gte: mStart } },
+    }),
+  ]);
+
   // Sorted bar data for each breakdown
   type BarRow = { label: string; count: number };
   const sortDesc = (arr: BarRow[]) =>
@@ -106,6 +151,12 @@ export default async function HrAnalyticsPage() {
   const maxLoc = Math.max(1, ...locationBars.map((r) => r.count));
   const maxDes = Math.max(1, ...designationBars.map((r) => r.count));
   const maxCat = Math.max(1, ...categoryBars.map((r) => r.count));
+
+  const projectBars = projects.map((p) => ({
+    label: p.name,
+    count: p._count.assignments,
+  }));
+  const maxProject = Math.max(1, ...projectBars.map((r) => r.count));
 
   return (
     <>
@@ -235,6 +286,53 @@ export default async function HrAnalyticsPage() {
               )}
             </CardBody>
           </Card>
+        </div>
+
+        {/* Project allocation */}
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <StatCard label="On the bench" value={benchCount} tone="amber" />
+          </div>
+          <Card>
+            <CardHeader
+              title="Project allocation"
+              subtitle="Active assignments per project (today)"
+            />
+            <CardBody className="space-y-3">
+              {projectBars.length === 0 ? (
+                <p className="text-sm text-slate-500">No active projects.</p>
+              ) : (
+                projectBars.map((row) => (
+                  <div key={row.label}>
+                    <div className="mb-1 flex items-center justify-between text-xs">
+                      <span className="truncate text-slate-600">
+                        {row.label}
+                      </span>
+                      <span className="nums ml-2 font-medium text-slate-700">
+                        {row.count}
+                      </span>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                      <div
+                        className="h-2 rounded-full bg-gradient-to-r from-brand-500 to-brand-300"
+                        style={{
+                          width: `${(row.count / maxProject) * 100}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))
+              )}
+            </CardBody>
+          </Card>
+        </div>
+
+        {/* Leave summary */}
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <StatCard label="Leaves this month" value={leaveMonth} tone="amber" />
+          <StatCard label="Sick this month" value={sickMonth} tone="brand" />
+          <StatCard label="Leaves this year" value={leaveYear} tone="amber" />
+          <StatCard label="Sick this year" value={sickYear} tone="brand" />
         </div>
       </div>
     </>
