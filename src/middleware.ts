@@ -12,7 +12,7 @@ const buckets = new Map<string, Bucket>();
 
 // path prefix -> { limit per window, window ms }
 const RULES: { prefix: string; limit: number; windowMs: number }[] = [
-  { prefix: "/api/admin/login", limit: 10, windowMs: 60_000 },
+  { prefix: "/api/auth/login", limit: 10, windowMs: 60_000 },
   { prefix: "/api/register", limit: 20, windowMs: 60_000 },
   { prefix: "/api/reupload", limit: 20, windowMs: 60_000 },
   { prefix: "/api/invites", limit: 30, windowMs: 60_000 },
@@ -74,7 +74,7 @@ export function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    "/api/admin/login",
+    "/api/auth/login",
     "/api/register/:path*",
     "/api/reupload/:path*",
     "/api/invites/:path*",
