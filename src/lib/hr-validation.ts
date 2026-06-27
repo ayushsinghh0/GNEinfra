@@ -69,6 +69,10 @@ export const attendanceBulkSchema = z.object({
     day: z.coerce.number().int().min(1).max(31),
     status: z.enum(ATTENDANCE_STATUSES),
   })).max(5000),
+  clears: z.array(z.object({
+    employeeId: z.string().min(1),
+    day: z.coerce.number().int().min(1).max(31),
+  })).max(5000).optional(),
 });
 
 export const payrollSchema = z.object({

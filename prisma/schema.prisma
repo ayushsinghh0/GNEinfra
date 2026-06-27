@@ -343,7 +343,7 @@ model EmployeeAsset {
 model AttendanceRecord {
   id          String           @id @default(cuid())
   employeeId  String
-  employee    Employee         @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employee    Employee         @relation(fields: [employeeId], references: [id], onDelete: Restrict)
   date        DateTime         @db.Date
   status      AttendanceStatus
   note        String?
@@ -358,7 +358,7 @@ model AttendanceRecord {
 model PayrollRecord {
   id          String   @id @default(cuid())
   employeeId  String
-  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Restrict)
   periodYear  Int
   periodMonth Int
   code        String?

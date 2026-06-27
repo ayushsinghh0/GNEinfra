@@ -23,6 +23,7 @@ export default function AttendanceGrid({
 }) {
   const router = useRouter();
   const key = (emp: string, day: number) => `${emp}:${day}`;
+  const initialKeys = useState(() => new Set(initial.map((r) => key(r.employeeId, r.day))))[0];
   const [grid, setGrid] = useState<Record<string, Cell>>(() => {
     const g: Record<string, Cell> = {};
     for (const r of initial) g[key(r.employeeId, r.day)] = r.status;
@@ -46,10 +47,13 @@ export default function AttendanceGrid({
     const entries = Object.entries(grid)
       .filter(([, s]) => s !== "")
       .map(([k, s]) => { const [employeeId, day] = k.split(":"); return { employeeId, day: Number(day), status: s as AttendanceStatusValue }; });
+    const clears = [...initialKeys]
+      .filter((k) => (grid[k] ?? "") === "")
+      .map((k) => { const [employeeId, day] = k.split(":"); return { employeeId, day: Number(day) }; });
     try {
       const res = await fetch("/api/hr/attendance", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ year, month, entries }),
+        body: JSON.stringify({ year, month, entries, clears }),
       });
       if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || "Save failed");
       setDirty(false);

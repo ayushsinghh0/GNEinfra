@@ -63,8 +63,9 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     await prisma.employee.delete({ where: { id } });
     return NextResponse.json({ ok: true });
   } catch (e) {
-    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2025") {
-      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    if (e instanceof Prisma.PrismaClientKnownRequestError) {
+      if (e.code === "P2025") return NextResponse.json({ error: "Not found" }, { status: 404 });
+      if (e.code === "P2003") return NextResponse.json({ error: "Cannot delete an employee with attendance or payroll history. Set a leaving date to deactivate instead." }, { status: 409 });
     }
     return NextResponse.json({ error: "Could not delete." }, { status: 500 });
   }
