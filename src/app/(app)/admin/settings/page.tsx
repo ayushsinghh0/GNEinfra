@@ -1,4 +1,4 @@
-import { isAdminAuthed } from "@/lib/auth";
+import { requirePageRole, ADMIN_AREA } from "@/lib/rbac";
 import TestEmail from "@/components/TestEmail";
 import { PageHeader, Card, CardHeader, CardBody, cn } from "@/components/ui";
 import { Mail, Server, HardDrive } from "lucide-react";
@@ -28,7 +28,7 @@ function Row({ label, value, ok }: { label: string; value: string; ok?: boolean 
 }
 
 export default async function SettingsPage() {
-  if (!(await isAdminAuthed())) return null;
+  await requirePageRole(ADMIN_AREA);
 
   const smtpHost = process.env.SMTP_HOST || "(not set)";
   const mailFrom = process.env.MAIL_FROM || "(not set)";

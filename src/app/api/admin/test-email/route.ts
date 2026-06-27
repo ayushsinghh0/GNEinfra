@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isAdminAuthed } from "@/lib/auth";
+import { getCurrentUser, ADMIN_AREA } from "@/lib/rbac";
 import { sendMail } from "@/lib/mailer";
 import { testEmailSchema } from "@/lib/validation";
 
@@ -7,8 +7,9 @@ import { testEmailSchema } from "@/lib/validation";
 // Sends a test message through the configured SMTP so you can confirm email
 // works (and "see" it land) before going live.
 export async function POST(req: NextRequest) {
-  if (!(await isAdminAuthed())) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const user = await getCurrentUser();
+  if (!user || !ADMIN_AREA.includes(user.role)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: user ? 403 : 401 });
   }
   const parsed = testEmailSchema.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) {

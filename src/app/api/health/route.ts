@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { adminConfigured, isAdminAuthed } from "@/lib/auth";
+import { getCurrentUser, ADMIN_AREA } from "@/lib/rbac";
 
 export const dynamic = "force-dynamic";
 
 // GET /api/health — readiness probe. Anonymous callers (uptime monitors) get the
-// status boolean ONLY; deploy-config detail (whether admin login is configured,
-// SMTP/storage/cron) is disclosed to authenticated admins only, so the endpoint
-// can't be used to fingerprint the deployment or learn that login is disabled.
+// status boolean ONLY; deploy-config detail (SMTP/storage/cron) is disclosed to
+// authenticated admins only, so the endpoint can't be used to fingerprint the
+// deployment.
 export async function GET() {
   let db = false;
   try {
@@ -17,9 +17,10 @@ export async function GET() {
     db = false;
   }
 
-  const ok = db && adminConfigured();
+  const ok = db;
 
-  if (!(await isAdminAuthed())) {
+  const viewer = await getCurrentUser();
+  if (!viewer || !ADMIN_AREA.includes(viewer.role)) {
     return NextResponse.json({ ok }, { status: ok ? 200 : 503 });
   }
 
@@ -27,7 +28,7 @@ export async function GET() {
     {
       ok,
       db: db ? "up" : "down",
-      adminConfigured: adminConfigured(),
+      sessionConfigured: !!process.env.SESSION_SECRET,
       smtpConfigured: !!process.env.SMTP_HOST,
       storage: process.env.STORAGE_DRIVER || "local",
       cronConfigured: !!process.env.CRON_SECRET,
