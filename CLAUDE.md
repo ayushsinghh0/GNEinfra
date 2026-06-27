@@ -50,18 +50,23 @@ R2/MinIO-compatible via `S3_ENDPOINT`), or SMTP provider is a `.env` change only
 
 - **Routing**: App Router under `src/app/`. Public, token-gated flows: `/register/[token]`
   (vendor wizard, `src/components/RegistrationForm.tsx`) and `/reupload/[token]` (replace one
-  requested doc). Admin UI under `/admin/*` behind a single auth gate in
-  `src/app/admin/layout.tsx`. API route handlers under `src/app/api/*`.
+  requested doc). Staff workspace under `src/app/(erp)/` — SCM vendor pages under `/scm/*`,
+  system admin under `/admin/*`, shared shell at `/overview`. API route handlers under
+  `src/app/api/*`.
 - **Data layer**: Prisma (`src/lib/prisma.ts` singleton), schema `prisma/schema.prisma`. Field
   validation is **enforced at the application layer** via Zod in `src/lib/validation.ts` +
   shared primitives in `src/lib/vendor-validation.ts` (one source of truth so the client wizard
   and the server validate identically). **GST and PAN are OPTIONAL** (each behind a toggle in
   the form); format is checked only when a value is present. Country/PIN are optional too.
-- **Auth** (`src/lib/auth.ts`): one shared `ADMIN_PASSWORD`. **Fails closed** — unset, a known
-  placeholder, or < 8 chars ⇒ login impossible (not silently open). The session cookie stores an
-  HMAC of the password, never the password; compares are constant-time. ⚠️ **Gotcha:** in
-  production the cookie is `Secure`, so the app MUST be served over **HTTPS** or browsers
-  silently drop the login cookie and login *appears* to fail with a correct password.
+- **Auth** (`src/lib/session.ts` + `src/lib/rbac.ts`): per-user accounts with a `Role` enum
+  stored in the DB. `src/lib/session.ts` signs the `gne_session` cookie with `SESSION_SECRET`
+  (fails closed — unset or < 16 chars disables login). `src/lib/rbac.ts` exports
+  `getCurrentUser`/`requirePageRole` — these are the authority for every protected page and API
+  route; call them instead of the retired `isAdminAuthed`. The first superadmin is bootstrapped
+  via `prisma db seed` using `SUPERADMIN_EMAIL`/`SUPERADMIN_PASSWORD` (idempotent). Note that
+  vendor-admin pages moved from `/admin/*` to `/scm/*`. ⚠️ **Gotcha:** the `Secure` cookie
+  attribute means the app MUST be served over **HTTPS** in production or browsers silently drop
+  the session cookie and login appears to fail.
 - **Storage** (`src/lib/storage.ts`): pluggable `local`/`s3` driver. Uploads are gzip-compressed
   only when that's actually smaller (`src/lib/documents.ts` — JPEG/PDF KYC scans don't compress,
   so they store at full size). Files are purged (`src/lib/purge.ts`, run by `POST /api/cron/purge`,
@@ -71,7 +76,7 @@ R2/MinIO-compatible via `S3_ENDPOINT`), or SMTP provider is a `.env` change only
 - **Email** (`src/lib/mailer.ts`): Nodemailer over any SMTP; Mailpit captures dev mail. The
   register route sends mail **fire-and-forget** (not awaited) so SMTP latency doesn't throttle
   registration throughput.
-- **Rate limiting** (`src/middleware.ts`): in-memory limiter on `/api/admin/login`,
+- **Rate limiting** (`src/middleware.ts`): in-memory limiter on `/api/auth/login`,
   `/api/register`, `/api/reupload`, `/api/invites` (+ an early `413` on oversized upload bodies for
   register/reupload). Trusts the **rightmost** `x-forwarded-for` entry (the reverse proxy appends
   the real client IP) — assumes a single instance behind a trusted proxy. Rate-limit any NEW
@@ -83,10 +88,11 @@ R2/MinIO-compatible via `S3_ENDPOINT`), or SMTP provider is a `.env` change only
 ## Security baseline (don't regress)
 
 A full audit hardened this; preserve the invariants when adding code:
-- **Every route guards itself.** The `/admin` layout gate does NOT protect API route handlers or
-  RSC data fetching — each admin RSC page and each non-public `/api/*` route calls `isAdminAuthed()`
-  itself (KYC endpoints `documents/[id]`, `vendors/[id]/export`, the `print` page, etc. are all
-  gated → no IDOR). Any new route that touches vendor data must do the same.
+- **Every route guards itself.** Layout auth gates do NOT protect API route handlers or RSC data
+  fetching — each protected RSC page and each non-public `/api/*` route calls
+  `requirePageRole()`/`getCurrentUser()` itself (KYC endpoints `documents/[id]`,
+  `vendors/[id]/export`, the `print` page, etc. are all gated → no IDOR). Any new route that
+  touches vendor data must do the same.
 - **Never trust client-supplied MIME.** `src/lib/documents.ts` sniffs **magic bytes** and only
   accepts real PDF/PNG/JPEG/WEBP, storing the *detected* type; `gunzip` output is size-capped
   (zip-bomb guard). Keep `text/html`/`svg` out of the allow-list.
@@ -142,8 +148,9 @@ drifted one: `CREATE DATABASE gne_shots` → `DATABASE_URL=…/gne_shots npx pri
 ## Environment
 
 See `.env.example` (dev), `.env.production.example`, and `deploy/.env.server.example` (the
-EC2+Neon setup) for the full list. Key vars: `DATABASE_URL`, `ADMIN_PASSWORD` (8+ chars or login
-disabled), `APP_BASE_URL` (public HTTPS URL used in emailed links), the `SMTP_*` / `MAIL_FROM` /
+EC2+Neon setup) for the full list. Key vars: `DATABASE_URL`, `SESSION_SECRET` (16+ chars or login
+disabled), `SUPERADMIN_EMAIL`/`SUPERADMIN_PASSWORD` (seeded once via `npm run db:seed`),
+`APP_BASE_URL` (public HTTPS URL used in emailed links), the `SMTP_*` / `MAIL_FROM` /
 `PROCUREMENT_NOTIFY_EMAIL` set, `STORAGE_DRIVER` (+ S3 vars when `s3`), `DOC_PURGE_DAYS`,
 `DOC_MAX_AGE_DAYS`, `CRON_SECRET`.
 
