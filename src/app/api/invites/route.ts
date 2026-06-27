@@ -9,7 +9,7 @@ import { sendMail, inviteEmail, requirePublicBaseUrl } from "@/lib/mailer";
 // Creates an invite and emails the vendor a unique registration link.
 export async function POST(req: NextRequest) {
   const user = await getCurrentUser();
-  if (!user || !VENDOR_WRITE.includes(user.role)) {
+  if (!user || user.mustChangePassword || !VENDOR_WRITE.includes(user.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: user ? 403 : 401 });
   }
 

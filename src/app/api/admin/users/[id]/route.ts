@@ -8,7 +8,7 @@ const ROLES: Role[] = ["SUPERADMIN", "ADMIN", "MANAGER", "BD", "SCM", "PROJECT",
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const me = await getCurrentUser();
-  if (!me || !SUPERADMIN_ONLY.includes(me.role)) {
+  if (!me || me.mustChangePassword || !SUPERADMIN_ONLY.includes(me.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: me ? 403 : 401 });
   }
   const { id } = await params;

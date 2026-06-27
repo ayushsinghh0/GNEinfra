@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { requirePageRole, VENDOR_VIEW } from "@/lib/rbac";
+import { requirePageRole, VENDOR_VIEW, VENDOR_WRITE } from "@/lib/rbac";
 import { ComingSoon } from "@/components/ComingSoon";
 import { fmtDate } from "@/lib/format";
 import Badge from "@/components/Badge";
@@ -40,7 +40,7 @@ import {
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
-  await requirePageRole(VENDOR_VIEW);
+  const viewer = await requirePageRole(VENDOR_VIEW);
 
   const startOfMonth = new Date();
   startOfMonth.setDate(1);
@@ -159,7 +159,7 @@ export default async function DashboardPage() {
           </Card>
         </div>
 
-        <InviteForm />
+        {VENDOR_WRITE.includes(viewer.role) && <InviteForm />}
 
         <Card>
           <CardHeader

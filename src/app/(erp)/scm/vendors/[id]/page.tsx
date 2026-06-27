@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { requirePageRole, VENDOR_VIEW } from "@/lib/rbac";
+import { requirePageRole, VENDOR_VIEW, VENDOR_WRITE } from "@/lib/rbac";
 import { fmtDate } from "@/lib/format";
 import Badge from "@/components/Badge";
 import VendorStatusActions from "@/components/VendorStatusActions";
@@ -48,7 +48,8 @@ export default async function VendorDetail({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requirePageRole(VENDOR_VIEW);
+  const viewer = await requirePageRole(VENDOR_VIEW);
+  const canWrite = VENDOR_WRITE.includes(viewer.role);
 
   const { id } = await params;
   const v = await prisma.vendor.findUnique({
@@ -167,7 +168,7 @@ export default async function VendorDetail({
                 )}
               </dl>
               <div className="lg:pl-6">
-                <VendorStatusActions vendorId={v.id} status={v.status} vendorCode={v.vendorCode} />
+                {canWrite && <VendorStatusActions vendorId={v.id} status={v.status} vendorCode={v.vendorCode} />}
               </div>
             </div>
             {emailMismatch && (
@@ -183,7 +184,7 @@ export default async function VendorDetail({
         </Card>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <VendorInfoCards vendorId={v.id} initial={vendorFields} />
+          <VendorInfoCards vendorId={v.id} initial={vendorFields} canEdit={canWrite} />
 
           <Card>
             <CardHeader
@@ -219,7 +220,7 @@ export default async function VendorDetail({
                           </span>
                         ) : (
                           <div className="flex shrink-0 items-center gap-2">
-                            <DocumentRequestButton vendorId={v.id} documentId={d.id} />
+                            {canWrite && <DocumentRequestButton vendorId={v.id} documentId={d.id} />}
                             <a
                               href={`/api/documents/${d.id}`}
                               target="_blank"

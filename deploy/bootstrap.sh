@@ -61,6 +61,8 @@ echo "==> Building"
 npm ci
 npx prisma generate
 npx prisma migrate deploy   # applies migrations to the Neon DB in DATABASE_URL
+# seed/ensure the first superadmin (idempotent; needs SUPERADMIN_EMAIL/PASSWORD in env)
+npm run db:seed
 npm run build
 
 echo "==> Starting app under pm2 (ecosystem.config.js — memory-capped, auto-restart)"

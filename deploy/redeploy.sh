@@ -12,6 +12,8 @@ git pull origin "$BRANCH"
 npm ci
 npx prisma generate
 npx prisma migrate deploy
+# seed/ensure the first superadmin (idempotent; needs SUPERADMIN_EMAIL/PASSWORD in env)
+npm run db:seed
 npm run build
 pm2 startOrReload ecosystem.config.js --update-env
 pm2 save

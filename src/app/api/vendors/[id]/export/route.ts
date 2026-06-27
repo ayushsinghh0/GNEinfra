@@ -11,7 +11,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const user = await getCurrentUser();
-  if (!user || !VENDOR_VIEW.includes(user.role)) {
+  if (!user || user.mustChangePassword || !VENDOR_VIEW.includes(user.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: user ? 403 : 401 });
   }
 

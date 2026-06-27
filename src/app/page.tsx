@@ -28,7 +28,7 @@ export default function Home() {
 
             <span className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700">
               <Sun className="h-3.5 w-3.5" />
-              Solar EPC · Vendor Portal
+              Solar EPC · ERP
             </span>
 
             <h1 className="font-display mt-4 text-3xl font-extrabold tracking-[-0.02em] text-slate-900">

@@ -147,9 +147,11 @@ function ViewRow({ label, value }: { label: string; value: string }) {
 export default function VendorInfoCards({
   vendorId,
   initial,
+  canEdit = true,
 }: {
   vendorId: string;
   initial: VendorFields;
+  canEdit?: boolean;
 }) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
@@ -239,7 +241,7 @@ export default function VendorInfoCards({
     );
   }
 
-  const editControls = editing ? (
+  const editControls = !canEdit ? null : editing ? (
     <div className="flex items-center gap-2">
       <Button type="button" variant="primary" size="sm" disabled={saving || Object.keys(errors).length > 0} onClick={save}>
         <Check className="h-4 w-4" />

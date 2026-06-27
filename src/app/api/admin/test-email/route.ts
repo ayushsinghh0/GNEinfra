@@ -8,7 +8,7 @@ import { testEmailSchema } from "@/lib/validation";
 // works (and "see" it land) before going live.
 export async function POST(req: NextRequest) {
   const user = await getCurrentUser();
-  if (!user || !ADMIN_AREA.includes(user.role)) {
+  if (!user || user.mustChangePassword || !ADMIN_AREA.includes(user.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: user ? 403 : 401 });
   }
   const parsed = testEmailSchema.safeParse(await req.json().catch(() => ({})));

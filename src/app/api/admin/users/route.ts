@@ -8,7 +8,7 @@ const ROLES: Role[] = ["SUPERADMIN", "ADMIN", "MANAGER", "BD", "SCM", "PROJECT",
 
 export async function GET() {
   const me = await getCurrentUser();
-  if (!me || !SUPERADMIN_ONLY.includes(me.role)) {
+  if (!me || me.mustChangePassword || !SUPERADMIN_ONLY.includes(me.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: me ? 403 : 401 });
   }
   const users = await prisma.user.findMany({
@@ -20,7 +20,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const me = await getCurrentUser();
-  if (!me || !SUPERADMIN_ONLY.includes(me.role)) {
+  if (!me || me.mustChangePassword || !SUPERADMIN_ONLY.includes(me.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: me ? 403 : 401 });
   }
   const body = await req.json().catch(() => ({}));

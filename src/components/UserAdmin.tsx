@@ -42,6 +42,7 @@ export default function UserAdmin({ initialUsers, meId }: { initialUsers: Row[];
   }
 
   async function patch(id: string, payload: Record<string, unknown>) {
+    setError(null);
     setBusy(true);
     try {
       const res = await fetch(`/api/admin/users/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
@@ -65,7 +66,7 @@ export default function UserAdmin({ initialUsers, meId }: { initialUsers: Row[];
             <Field label="Name" htmlFor="u-name"><Input id="u-name" value={name} onChange={(e) => setName(e.target.value)} /></Field>
             <Field label="Email" htmlFor="u-email"><Input id="u-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} /></Field>
             <Field label="Role" htmlFor="u-role"><Select id="u-role" value={role} onChange={(e) => setRole(e.target.value)}>{ROLES.map((r) => <option key={r} value={r}>{r}</option>)}</Select></Field>
-            <Field label="Temp password" htmlFor="u-pass"><Input id="u-pass" value={tempPassword} onChange={(e) => setTempPassword(e.target.value)} /></Field>
+            <Field label="Temp password" htmlFor="u-pass"><Input id="u-pass" type="password" value={tempPassword} onChange={(e) => setTempPassword(e.target.value)} /></Field>
             <div className="flex items-end"><Button type="submit" disabled={busy} className="w-full">Create</Button></div>
           </form>
         </CardBody>

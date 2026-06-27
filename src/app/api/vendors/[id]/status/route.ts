@@ -57,7 +57,7 @@ async function approveAndAssignCode(id: string): Promise<VendorCodeResult> {
 // code keeps the existing code.
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const user = await getCurrentUser();
-  if (!user || !VENDOR_WRITE.includes(user.role)) {
+  if (!user || user.mustChangePassword || !VENDOR_WRITE.includes(user.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: user ? 403 : 401 });
   }
 
