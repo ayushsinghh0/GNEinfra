@@ -281,6 +281,7 @@ enum AttendanceStatus {
   PRESENT
   ABSENT
   LEAVE
+  SICK
   HALF_DAY
   HOLIDAY
   WEEK_OFF
@@ -309,9 +310,16 @@ model Employee {
   specialAllowance Int?
   conveyance       Int?
 
-  assets     EmployeeAsset[]
-  attendance AttendanceRecord[]
-  payrolls   PayrollRecord[]
+  casualLeaveQuota   Int     @default(12)
+  sickLeaveQuota     Int     @default(12)
+  bankAccountNo      String?
+  uan                String?
+  panNo              String?
+
+  assets             EmployeeAsset[]
+  attendance         AttendanceRecord[]
+  payrolls           PayrollRecord[]
+  projectAssignments ProjectAssignment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -386,4 +394,42 @@ model PayrollRecord {
 
   @@unique([employeeId, periodYear, periodMonth])
   @@index([periodYear, periodMonth])
+}
+
+enum ProjectStatus {
+  ACTIVE
+  ON_HOLD
+  COMPLETED
+}
+
+model Project {
+  id          String        @id @default(cuid())
+  name        String
+  code        String        @unique
+  client      String?
+  status      ProjectStatus @default(ACTIVE)
+  startDate   DateTime?
+  endDate     DateTime?
+  assignments ProjectAssignment[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([status])
+}
+
+model ProjectAssignment {
+  id            String    @id @default(cuid())
+  employeeId    String
+  employee      Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  projectId     String
+  project       Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  roleOnProject String?
+  allocationPct Int?
+  startDate     DateTime
+  endDate       DateTime?
+  createdAt     DateTime  @default(now())
+
+  @@unique([employeeId, projectId])
+  @@index([employeeId])
+  @@index([projectId])
 }
