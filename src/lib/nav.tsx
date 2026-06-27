@@ -97,13 +97,16 @@ export function navForRole(role: Role): NavSection[] {
   if (role === "BD" || role === "SCM" || role === "PROJECT" || role === "FINANCE" || role === "HR") {
     return [DEPT[role]];
   }
-  // Oversight: overview + every department + administration.
-  const admin: NavSection = {
-    heading: "Administration",
-    items: [
-      { label: "Settings", href: "/admin/settings", icon: Settings },
-      ...(role === "SUPERADMIN" ? [{ label: "Users", href: "/admin/users", icon: Users }] : []),
-    ],
-  };
-  return [OVERVIEW, BD, SCM, PROJECT, FINANCE, HR, admin];
+  // Oversight: overview + every department. Administration only for ADMIN/SUPERADMIN.
+  const sections: NavSection[] = [OVERVIEW, BD, SCM, PROJECT, FINANCE, HR];
+  if (role === "ADMIN" || role === "SUPERADMIN") {
+    sections.push({
+      heading: "Administration",
+      items: [
+        { label: "Settings", href: "/admin/settings", icon: Settings },
+        ...(role === "SUPERADMIN" ? [{ label: "Users", href: "/admin/users", icon: Users }] : []),
+      ],
+    });
+  }
+  return sections;
 }
