@@ -48,6 +48,11 @@ export default async function EditEmployeePage({
     lta: toMoneyStr(emp.lta),
     specialAllowance: toMoneyStr(emp.specialAllowance),
     conveyance: toMoneyStr(emp.conveyance),
+    casualLeaveQuota: String(emp.casualLeaveQuota),
+    sickLeaveQuota: String(emp.sickLeaveQuota),
+    bankAccountNo: emp.bankAccountNo ?? "",
+    uan: emp.uan ?? "",
+    panNo: emp.panNo ?? "",
   };
 
   return (

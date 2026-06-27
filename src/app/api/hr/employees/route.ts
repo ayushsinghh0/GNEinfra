@@ -37,6 +37,11 @@ export async function POST(req: NextRequest) {
         status: toDate(d.leavingDate) ? "INACTIVE" : "ACTIVE",
         totalCtc: d.totalCtc ?? null, salary: d.salary ?? null, lta: d.lta ?? null,
         specialAllowance: d.specialAllowance ?? null, conveyance: d.conveyance ?? null,
+        casualLeaveQuota: d.casualLeaveQuota,
+        sickLeaveQuota: d.sickLeaveQuota,
+        bankAccountNo: d.bankAccountNo || null,
+        uan: d.uan || null,
+        panNo: d.panNo || null,
       },
     });
     return NextResponse.json({ ok: true, employee });

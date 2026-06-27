@@ -11,6 +11,7 @@ const EMPTY: Values = {
   dateOfJoining: "", payrollType: "", mailId: "", emergencyNumber: "", bloodGroup: "",
   iCardNo: "", dob: "", offerLetterDate: "", leavingDate: "",
   totalCtc: "", salary: "", lta: "", specialAllowance: "", conveyance: "",
+  casualLeaveQuota: "12", sickLeaveQuota: "12", bankAccountNo: "", uan: "", panNo: "",
 };
 
 export default function EmployeeForm({ id, initial }: { id?: string; initial?: Values }) {
@@ -76,6 +77,11 @@ export default function EmployeeForm({ id, initial }: { id?: string; initial?: V
         {Txt("lta", "LTA (₹)")}
         {Txt("specialAllowance", "Special Allowance (₹)")}
         {Txt("conveyance", "Conveyance (₹)")}
+        {Txt("casualLeaveQuota", "Casual Leave Quota", false, "number")}
+        {Txt("sickLeaveQuota", "Sick Leave Quota", false, "number")}
+        {Txt("bankAccountNo", "Bank A/C No")}
+        {Txt("panNo", "PAN No")}
+        {Txt("uan", "UAN (PF)")}
       </div>
       <div className="flex gap-2">
         <Button type="submit" disabled={busy}>{busy ? "Saving…" : id ? "Save changes" : "Add employee"}</Button>
