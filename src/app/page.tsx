@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { btn } from "@/components/ui";
 import { SunGlow, Atmosphere, Blob, Wave } from "@/components/chrome";
 import { LogIn, ShieldCheck, ArrowRight, Sun } from "lucide-react";
@@ -21,8 +22,8 @@ export default function Home() {
           </div>
 
           <div className="px-8 pb-10 text-center">
-            <div className="mx-auto -mt-9 grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-b from-brand-500 to-brand-700 text-lg font-extrabold tracking-tight text-white shadow-[var(--shadow-cta)] ring-4 ring-white">
-              GNE
+            <div className="mx-auto -mt-9 grid h-16 w-28 place-items-center rounded-2xl bg-white px-4 shadow-[var(--shadow-cta)] ring-4 ring-white">
+              <Image src="/brand/gne-infra.png" alt="GNE Infra" width={96} height={28} className="h-7 w-auto" priority />
             </div>
 
             <span className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700">
@@ -31,17 +32,16 @@ export default function Home() {
             </span>
 
             <h1 className="font-display mt-4 text-3xl font-extrabold tracking-[-0.02em] text-slate-900">
-              GNE Vendor Portal
+              GNE ERP
             </h1>
             <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-slate-600">
-              GNE ERP — Phase 1. Vendors register and submit their details using the secure link
-              emailed to them by our procurement team.
+              Staff sign-in to the GNE ERP. Vendors: use the registration link in your invitation email.
             </p>
 
             <div className="mt-8 flex justify-center">
-              <Link href="/admin" className={`${btn("primary", "lg")} rounded-full`}>
+              <Link href="/login" className={`${btn("primary", "lg")} rounded-full`}>
                 <LogIn className="h-4 w-4" />
-                Admin Login
+                Staff Login
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
