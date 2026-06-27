@@ -63,10 +63,13 @@ const HR: NavSection = {
   heading: "Human Resources",
   items: [
     { label: "Dashboard", href: "/hr", icon: LayoutDashboard },
-    { label: "Manpower Planning", icon: Users, soon: true },
-    { label: "Recruitment", icon: UserRound, soon: true },
-    { label: "Attendance", icon: CalendarClock, soon: true },
-    { label: "Payroll", icon: BadgeIndianRupee, soon: true },
+    { label: "Employees", href: "/hr/employees", icon: Users },
+    { label: "Assets", href: "/hr/assets", icon: Boxes },
+    { label: "Attendance", href: "/hr/attendance", icon: CalendarClock },
+    { label: "Payout", href: "/hr/payout", icon: BadgeIndianRupee },
+    { label: "Analytics", href: "/hr/analytics", icon: ClipboardList },
+    { label: "Manpower Planning", icon: UserRound, soon: true },
+    { label: "Recruitment", icon: Briefcase, soon: true },
   ],
 };
 

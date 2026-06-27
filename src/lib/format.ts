@@ -18,3 +18,9 @@ export function fmtDateOnly(d: Date | null | undefined) {
     timeZone: "UTC",
   }).format(d);
 }
+
+// Whole rupees → "₹1,23,456" (Indian digit grouping). null/undefined → "—".
+export function fmtINR(n: number | null | undefined): string {
+  if (n === null || n === undefined) return "—";
+  return "₹" + new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(n);
+}

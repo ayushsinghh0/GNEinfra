@@ -18,6 +18,8 @@ export const ADMIN_AREA: Role[] = ["ADMIN", "SUPERADMIN"];
 export const SUPERADMIN_ONLY: Role[] = ["SUPERADMIN"];
 export const VENDOR_VIEW: Role[] = ["SCM", "MANAGER", "ADMIN", "SUPERADMIN"];
 export const VENDOR_WRITE: Role[] = ["SCM", "ADMIN", "SUPERADMIN"]; // manager is read-only
+export const HR_VIEW: Role[] = ["HR", "MANAGER", "ADMIN", "SUPERADMIN"];
+export const HR_WRITE: Role[] = ["HR", "ADMIN", "SUPERADMIN"]; // manager read-only
 
 // A line department's own role + the three oversight roles.
 export function deptArea(dept: Role): Role[] {
