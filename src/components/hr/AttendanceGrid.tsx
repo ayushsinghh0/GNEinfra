@@ -5,11 +5,12 @@ import { Button } from "@/components/ui";
 import { ATTENDANCE_STATUSES, type AttendanceStatusValue } from "@/lib/hr-validation";
 
 const CODE: Record<AttendanceStatusValue, string> = {
-  PRESENT: "P", ABSENT: "A", LEAVE: "L", HALF_DAY: "½", HOLIDAY: "H", WEEK_OFF: "W",
+  PRESENT: "P", ABSENT: "A", LEAVE: "L", SICK: "S", HALF_DAY: "½", HOLIDAY: "H", WEEK_OFF: "W",
 };
 const COLOR: Record<AttendanceStatusValue, string> = {
   PRESENT: "bg-emerald-100 text-emerald-700", ABSENT: "bg-rose-100 text-rose-700",
-  LEAVE: "bg-amber-100 text-amber-700", HALF_DAY: "bg-blue-100 text-blue-700",
+  LEAVE: "bg-amber-100 text-amber-700", SICK: "bg-orange-100 text-orange-700",
+  HALF_DAY: "bg-blue-100 text-blue-700",
   HOLIDAY: "bg-slate-200 text-slate-600", WEEK_OFF: "bg-slate-100 text-slate-400",
 };
 type Emp = { id: string; empId: string; name: string };
@@ -70,7 +71,7 @@ export default function AttendanceGrid({
     <div className="space-y-4">
       {canWrite && (
         <div className="flex items-center justify-between">
-          <p className="text-xs text-slate-500">Click a cell to cycle: P → A → L → ½ → H → W → blank.</p>
+          <p className="text-xs text-slate-500">Click a cell to cycle: P → A → L → S → ½ → H → W → blank.</p>
           <Button onClick={save} disabled={!dirty || busy}>{busy ? "Saving…" : "Save attendance"}</Button>
         </div>
       )}

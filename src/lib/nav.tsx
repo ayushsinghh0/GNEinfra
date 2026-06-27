@@ -2,7 +2,7 @@ import type { Role } from "@prisma/client";
 import {
   LayoutDashboard, Building2, Mail, Settings, Users, Boxes, Wallet, UserRound,
   Briefcase, ClipboardList, FileText, ReceiptText, Truck, PackageCheck,
-  CalendarClock, HardHat, BadgeIndianRupee, type LucideIcon,
+  CalendarClock, HardHat, BadgeIndianRupee, FolderKanban, type LucideIcon,
 } from "lucide-react";
 
 export type NavItem = { label: string; href?: string; icon: LucideIcon; soon?: boolean };
@@ -66,6 +66,7 @@ const HR: NavSection = {
     { label: "Employees", href: "/hr/employees", icon: Users },
     { label: "Assets", href: "/hr/assets", icon: Boxes },
     { label: "Attendance", href: "/hr/attendance", icon: CalendarClock },
+    { label: "Projects", href: "/hr/projects", icon: FolderKanban },
     { label: "Payout", href: "/hr/payout", icon: BadgeIndianRupee },
     { label: "Analytics", href: "/hr/analytics", icon: ClipboardList },
     { label: "Manpower Planning", icon: UserRound, soon: true },

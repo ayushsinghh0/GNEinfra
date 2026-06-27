@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const EMP_CATEGORIES = ["On-Roll", "Contract", "Intern", "Consultant"] as const;
-export const ATTENDANCE_STATUSES = ["PRESENT", "ABSENT", "LEAVE", "HALF_DAY", "HOLIDAY", "WEEK_OFF"] as const;
+export const ATTENDANCE_STATUSES = ["PRESENT", "ABSENT", "LEAVE", "SICK", "HALF_DAY", "HOLIDAY", "WEEK_OFF"] as const;
 export type AttendanceStatusValue = (typeof ATTENDANCE_STATUSES)[number];
 
 export const MONTHS = [
@@ -25,6 +25,14 @@ const optDate = z.preprocess(
   z.string().optional()
 );
 
+export const PROJECT_STATUSES = ["ACTIVE", "ON_HOLD", "COMPLETED"] as const;
+
+// Annual leave quota: "" / null / undefined → 12; else a non-negative integer.
+const quota = z.preprocess(
+  (v) => (v === "" || v === null || v === undefined ? 12 : v),
+  z.coerce.number().int("Whole days only").min(0).max(366)
+);
+
 export const employeeSchema = z.object({
   empId: z.string().trim().min(1, "EMP ID is required").max(40),
   name: z.string().trim().min(1, "Name is required").max(200),
@@ -45,6 +53,11 @@ export const employeeSchema = z.object({
   lta: money,
   specialAllowance: money,
   conveyance: money,
+  casualLeaveQuota: quota,
+  sickLeaveQuota: quota,
+  bankAccountNo: z.string().trim().max(40).optional().or(z.literal("")),
+  uan: z.string().trim().max(20).optional().or(z.literal("")),
+  panNo: z.string().trim().max(10).optional().or(z.literal("")),
 });
 export type EmployeeInput = z.infer<typeof employeeSchema>;
 
@@ -89,6 +102,27 @@ export const payrollSchema = z.object({
   remarks: z.string().trim().max(500).optional().or(z.literal("")),
 });
 export type PayrollInput = z.infer<typeof payrollSchema>;
+
+export const projectSchema = z.object({
+  name: z.string().trim().min(1, "Name is required").max(160),
+  code: z.string().trim().min(1, "Code is required").max(40),
+  client: z.string().trim().max(160).optional().or(z.literal("")),
+  status: z.enum(PROJECT_STATUSES).default("ACTIVE"),
+  startDate: optDate,
+  endDate: optDate,
+});
+
+export const assignmentSchema = z.object({
+  employeeId: z.string().min(1, "Employee is required"),
+  projectId: z.string().min(1, "Project is required"),
+  roleOnProject: z.string().trim().max(120).optional().or(z.literal("")),
+  allocationPct: z.preprocess(
+    (v) => (v === "" || v === null || v === undefined ? undefined : v),
+    z.coerce.number().int().min(0).max(100).optional()
+  ),
+  startDate: z.string().min(1, "Start date is required"),
+  endDate: optDate,
+});
 
 // Server-authoritative totals — earnings sum, deductions sum, net payable.
 export function computePayrollTotals(p: {
