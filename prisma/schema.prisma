@@ -269,3 +269,121 @@ model DocumentRequest {
   @@index([vendorId])
   @@index([status])
 }
+
+// ── HR Module ─────────────────────────────────────────────────────────────────
+
+enum EmployeeStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LEAVE
+  HALF_DAY
+  HOLIDAY
+  WEEK_OFF
+}
+
+model Employee {
+  id               String         @id @default(cuid())
+  empId            String         @unique
+  name             String
+  designation      String
+  empCategory      String?
+  payrollType      String?
+  mailId           String?
+  location         String?
+  emergencyNumber  String?
+  bloodGroup       String?
+  iCardNo          String?
+  dob              DateTime?
+  dateOfJoining    DateTime
+  offerLetterDate  DateTime?
+  leavingDate      DateTime?
+  status           EmployeeStatus @default(ACTIVE)
+  totalCtc         Int?
+  salary           Int?
+  lta              Int?
+  specialAllowance Int?
+  conveyance       Int?
+
+  assets     EmployeeAsset[]
+  attendance AttendanceRecord[]
+  payrolls   PayrollRecord[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([location])
+  @@index([designation])
+}
+
+model EmployeeAsset {
+  id         String    @id @default(cuid())
+  employeeId String
+  employee   Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  hasLaptop  Boolean   @default(false)
+  lpSerialNo String?
+  makeModel  String?
+  lpCategory String?
+  oemName    String?
+  laptopBag  Boolean   @default(false)
+  mouse      Boolean   @default(false)
+  charger    Boolean   @default(false)
+  idCard     Boolean   @default(false)
+  allocatedAt DateTime  @default(now())
+  returnedAt  DateTime?
+
+  @@index([employeeId])
+}
+
+model AttendanceRecord {
+  id          String           @id @default(cuid())
+  employeeId  String
+  employee    Employee         @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  date        DateTime         @db.Date
+  status      AttendanceStatus
+  note        String?
+  enteredById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([employeeId, date])
+  @@index([date])
+}
+
+model PayrollRecord {
+  id          String   @id @default(cuid())
+  employeeId  String
+  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  periodYear  Int
+  periodMonth Int
+  code        String?
+  role        String?
+  designation String?
+  doj         DateTime?
+  ctc         Int?
+  basic         Int @default(0)
+  hra           Int @default(0)
+  cca           Int @default(0)
+  personalPay   Int @default(0)
+  conveyance    Int @default(0)
+  pla           Int @default(0)
+  medicalReimb  Int @default(0)
+  totalEarnings Int @default(0)
+  tds             Int @default(0)
+  loanAdv         Int @default(0)
+  epf             Int @default(0)
+  esi             Int @default(0)
+  totalDeductions Int @default(0)
+  payableAmount Int @default(0)
+  remarks       String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([employeeId, periodYear, periodMonth])
+  @@index([periodYear, periodMonth])
+}
