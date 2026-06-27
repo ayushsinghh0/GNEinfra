@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { isAdminAuthed } from "@/lib/auth";
+import { getCurrentUser, VENDOR_VIEW } from "@/lib/rbac";
 import { buildVendorWorkbook } from "@/lib/vendor-excel";
 
 export const dynamic = "force-dynamic";
@@ -10,8 +10,9 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  if (!(await isAdminAuthed())) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const user = await getCurrentUser();
+  if (!user || !VENDOR_VIEW.includes(user.role)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: user ? 403 : 401 });
   }
 
   const { id } = await params;

@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { isAdminAuthed } from "@/lib/auth";
+import { getCurrentUser, VENDOR_VIEW } from "@/lib/rbac";
 import { fmtDate, fmtDateOnly } from "@/lib/format";
 import PrintBar from "@/components/PrintBar";
 
@@ -38,8 +38,9 @@ export default async function VendorPrintPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  // Admin-only — this page lives outside the /admin layout so it prints clean.
-  if (!(await isAdminAuthed())) notFound();
+  // RBAC guard — this page lives outside the app layout so it prints clean.
+  const viewer = await getCurrentUser();
+  if (!viewer || !VENDOR_VIEW.includes(viewer.role)) notFound();
 
   const { id } = await params;
   const v = await prisma.vendor.findUnique({
@@ -53,7 +54,7 @@ export default async function VendorPrintPage({
 
   return (
     <main className="min-h-screen bg-white">
-      <PrintBar backHref={`/admin/vendors/${v.id}`} />
+      <PrintBar backHref={`/scm/vendors/${v.id}`} />
 
       <div className="mx-auto max-w-3xl px-10 py-8 print:px-0 print:py-0">
         {/* Letterhead */}

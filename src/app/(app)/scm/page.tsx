@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { isAdminAuthed } from "@/lib/auth";
+import { requirePageRole, VENDOR_VIEW } from "@/lib/rbac";
+import { ComingSoon } from "@/components/ComingSoon";
 import { fmtDate } from "@/lib/format";
 import Badge from "@/components/Badge";
 import InviteForm from "@/components/InviteForm";
@@ -17,6 +18,11 @@ import {
   Inbox,
   TrendingUp,
   PieChart,
+  ClipboardList,
+  FileText,
+  ReceiptText,
+  Truck,
+  Boxes,
 } from "lucide-react";
 import {
   StatCard,
@@ -34,9 +40,7 @@ import {
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
-  // Guard BEFORE any DB query: the layout shows the login screen, but Next still
-  // executes this component, so we must not fetch data when unauthenticated.
-  if (!(await isAdminAuthed())) return null;
+  await requirePageRole(VENDOR_VIEW);
 
   const startOfMonth = new Date();
   startOfMonth.setDate(1);
@@ -107,16 +111,16 @@ export default async function DashboardPage() {
       <div className="space-y-6 p-6 sm:p-8">
         {/* KPI bento */}
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
-          <Link href="/admin/vendors" className="block rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas">
+          <Link href="/scm/vendors" className="block rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas">
             <StatCard label="Total vendors" value={<CountUp value={total} />} tone="brand" spark={100} icon={<Building2 className="h-[18px] w-[18px]" />} />
           </Link>
-          <Link href="/admin/vendors?status=SUBMITTED" className="block rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas">
+          <Link href="/scm/vendors?status=SUBMITTED" className="block rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas">
             <StatCard label="Awaiting review" value={<CountUp value={awaiting} />} tone="amber" spark={pct(awaiting)} icon={<Clock className="h-[18px] w-[18px]" />} />
           </Link>
-          <Link href="/admin/vendors?status=APPROVED" className="block rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas">
+          <Link href="/scm/vendors?status=APPROVED" className="block rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas">
             <StatCard label="Approved" value={<CountUp value={approved} />} tone="emerald" spark={pct(approved)} icon={<CheckCircle className="h-[18px] w-[18px]" />} />
           </Link>
-          <Link href="/admin/invites" className="block rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas">
+          <Link href="/scm/invites" className="block rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas">
             <StatCard label="Pending invites" value={<CountUp value={pendingInvites} />} tone="blue" icon={<Mail className="h-[18px] w-[18px]" />} />
           </Link>
           <StatCard label="This month" value={<CountUp value={thisMonth} />} tone="slate" icon={<CalendarDays className="h-[18px] w-[18px]" />} />
@@ -162,7 +166,7 @@ export default async function DashboardPage() {
             title="Recent vendors"
             action={
               <Link
-                href="/admin/vendors"
+                href="/scm/vendors"
                 className="press inline-flex items-center gap-1 text-sm font-medium text-brand-700 transition-colors hover:text-brand"
               >
                 View all
@@ -195,7 +199,7 @@ export default async function DashboardPage() {
                       <tr key={v.id} className={trCls}>
                         <td className={tdCls}>
                           <Link
-                            href={`/admin/vendors/${v.id}`}
+                            href={`/scm/vendors/${v.id}`}
                             className="font-medium text-slate-900 transition-colors hover:text-brand-700"
                           >
                             {v.companyName}
@@ -224,6 +228,14 @@ export default async function DashboardPage() {
             </CardBody>
           )}
         </Card>
+
+        <ComingSoon items={[
+          { label: "Purchase Requisition", icon: ClipboardList, desc: "Raise and track material requisitions." },
+          { label: "RFQ", icon: FileText, desc: "Request quotations from vendors." },
+          { label: "Purchase Order", icon: ReceiptText, desc: "Issue and manage purchase orders." },
+          { label: "GRN", icon: Truck, desc: "Goods receipt against POs." },
+          { label: "Inventory", icon: Boxes, desc: "Materials receipt, store and issue." },
+        ]} />
       </div>
     </>
   );

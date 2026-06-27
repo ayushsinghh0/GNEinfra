@@ -30,7 +30,7 @@ export default function VendorSearch() {
     if (nextQ.trim()) sp.set("q", nextQ.trim());
     if (nextStatus) sp.set("status", nextStatus);
     const qs = sp.toString();
-    router.push(qs ? `/admin/vendors?${qs}` : "/admin/vendors");
+    router.push(qs ? `/scm/vendors?${qs}` : "/scm/vendors");
   }
 
   function onSubmit(e: FormEvent) {

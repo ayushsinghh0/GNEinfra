@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { isAdminAuthed } from "@/lib/auth";
+import { getCurrentUser, VENDOR_VIEW } from "@/lib/rbac";
 import { readDocument } from "@/lib/documents";
 
 // Days after the FIRST download before the file is purged from storage.
@@ -19,8 +19,9 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  if (!(await isAdminAuthed())) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const user = await getCurrentUser();
+  if (!user || !VENDOR_VIEW.includes(user.role)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: user ? 403 : 401 });
   }
   const { id } = await params;
   const isDownload = req.nextUrl.searchParams.get("download") === "1";

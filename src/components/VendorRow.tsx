@@ -25,7 +25,7 @@ export type VendorRowData = {
 // horizontal scrolling.
 export default function VendorRow({ v }: { v: VendorRowData }) {
   const router = useRouter();
-  const href = `/admin/vendors/${v.id}`;
+  const href = `/scm/vendors/${v.id}`;
 
   return (
     <tr

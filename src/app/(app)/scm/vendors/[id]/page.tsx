@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { isAdminAuthed } from "@/lib/auth";
+import { requirePageRole, VENDOR_VIEW } from "@/lib/rbac";
 import { fmtDate } from "@/lib/format";
 import Badge from "@/components/Badge";
 import VendorStatusActions from "@/components/VendorStatusActions";
@@ -48,7 +48,7 @@ export default async function VendorDetail({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  if (!(await isAdminAuthed())) return null;
+  await requirePageRole(VENDOR_VIEW);
 
   const { id } = await params;
   const v = await prisma.vendor.findUnique({
@@ -99,7 +99,7 @@ export default async function VendorDetail({
   return (
     <>
       <PageHeader title="Vendor Details">
-        <Link href="/admin/vendors" className={btn("secondary", "sm")}>
+        <Link href="/scm/vendors" className={btn("secondary", "sm")}>
           <ArrowLeft className="h-4 w-4" />
           Vendors
         </Link>

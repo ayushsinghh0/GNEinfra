@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { isAdminAuthed } from "@/lib/auth";
+import { getCurrentUser, VENDOR_WRITE } from "@/lib/rbac";
 import { newDocumentRequestToken } from "@/lib/tokens";
 import { sendMail, documentReuploadEmail } from "@/lib/mailer";
 import { docLabel } from "@/lib/doc-labels";
@@ -13,8 +13,9 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  if (!(await isAdminAuthed())) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const user = await getCurrentUser();
+  if (!user || !VENDOR_WRITE.includes(user.role)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: user ? 403 : 401 });
   }
 
   const { id: vendorId } = await params;

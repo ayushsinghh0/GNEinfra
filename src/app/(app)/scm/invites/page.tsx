@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Mail, ChevronRight } from "lucide-react";
 import { prisma } from "@/lib/prisma";
-import { isAdminAuthed } from "@/lib/auth";
+import { requirePageRole, VENDOR_VIEW } from "@/lib/rbac";
 import { fmtDate } from "@/lib/format";
 import Badge from "@/components/Badge";
 import InviteForm from "@/components/InviteForm";
@@ -19,7 +19,7 @@ import {
 export const dynamic = "force-dynamic";
 
 export default async function InvitesPage() {
-  if (!(await isAdminAuthed())) return null;
+  await requirePageRole(VENDOR_VIEW);
 
   const invites = await prisma.vendorInvite.findMany({
     orderBy: { sentAt: "desc" },
@@ -80,7 +80,7 @@ export default async function InvitesPage() {
                     <td className={tdCls}>
                       {inv.vendor ? (
                         <Link
-                          href={`/admin/vendors/${inv.vendor.id}`}
+                          href={`/scm/vendors/${inv.vendor.id}`}
                           className="inline-flex items-center gap-1 font-medium text-brand-700 transition-colors hover:text-brand"
                         >
                           {inv.vendor.companyName}

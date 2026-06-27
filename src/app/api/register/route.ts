@@ -317,7 +317,7 @@ export async function POST(req: NextRequest) {
         email: d.email,
         gstNo: d.gstNo ?? "—",
         panNo: d.panNo ?? "—",
-        adminLink: `${base}/admin/vendors/${vendor.id}`,
+        adminLink: `${base}/scm/vendors/${vendor.id}`,
       });
       // Internal team mail — no unsubscribe header needed.
       await sendMail({

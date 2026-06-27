@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { isAdminAuthed } from "@/lib/auth";
+import { getCurrentUser, VENDOR_WRITE } from "@/lib/rbac";
 import { inviteSchema } from "@/lib/validation";
 import { newInviteToken } from "@/lib/tokens";
 import { sendMail, inviteEmail, requirePublicBaseUrl } from "@/lib/mailer";
@@ -8,8 +8,9 @@ import { sendMail, inviteEmail, requirePublicBaseUrl } from "@/lib/mailer";
 // POST /api/invites  (admin only)
 // Creates an invite and emails the vendor a unique registration link.
 export async function POST(req: NextRequest) {
-  if (!(await isAdminAuthed())) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const user = await getCurrentUser();
+  if (!user || !VENDOR_WRITE.includes(user.role)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: user ? 403 : 401 });
   }
 
   const body = await req.json().catch(() => null);

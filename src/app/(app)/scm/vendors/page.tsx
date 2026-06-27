@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { Prisma } from "@prisma/client";
 import { Building2 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
-import { isAdminAuthed } from "@/lib/auth";
+import { requirePageRole, VENDOR_VIEW } from "@/lib/rbac";
 import { fmtDate } from "@/lib/format";
 import VendorSearch from "@/components/VendorSearch";
 import VendorRow from "@/components/VendorRow";
@@ -17,7 +17,7 @@ export default async function VendorsPage({
 }: {
   searchParams: Promise<{ q?: string; status?: string }>;
 }) {
-  if (!(await isAdminAuthed())) return null;
+  await requirePageRole(VENDOR_VIEW);
 
   const { q, status } = await searchParams;
 
