@@ -92,6 +92,7 @@ export default async function HrAnalyticsPage() {
         select: {
           assignments: {
             where: {
+              employee: { status: "ACTIVE" },
               OR: [{ endDate: null }, { endDate: { gte: todayUTC } }],
             },
           },
@@ -101,7 +102,7 @@ export default async function HrAnalyticsPage() {
     orderBy: { name: "asc" },
   });
   const assignedEmployees = await prisma.projectAssignment.findMany({
-    where: { OR: [{ endDate: null }, { endDate: { gte: todayUTC } }] },
+    where: { employee: { status: "ACTIVE" }, OR: [{ endDate: null }, { endDate: { gte: todayUTC } }] },
     select: { employeeId: true },
     distinct: ["employeeId"],
   });
@@ -112,18 +113,20 @@ export default async function HrAnalyticsPage() {
   const mStart = new Date(
     Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1)
   );
+  const yEnd = new Date(Date.UTC(today.getUTCFullYear() + 1, 0, 1));
+  const mEnd = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() + 1, 1));
   const [leaveYear, sickYear, leaveMonth, sickMonth] = await Promise.all([
     prisma.attendanceRecord.count({
-      where: { status: "LEAVE", date: { gte: yStart } },
+      where: { status: "LEAVE", date: { gte: yStart, lt: yEnd } },
     }),
     prisma.attendanceRecord.count({
-      where: { status: "SICK", date: { gte: yStart } },
+      where: { status: "SICK", date: { gte: yStart, lt: yEnd } },
     }),
     prisma.attendanceRecord.count({
-      where: { status: "LEAVE", date: { gte: mStart } },
+      where: { status: "LEAVE", date: { gte: mStart, lt: mEnd } },
     }),
     prisma.attendanceRecord.count({
-      where: { status: "SICK", date: { gte: mStart } },
+      where: { status: "SICK", date: { gte: mStart, lt: mEnd } },
     }),
   ]);
 
