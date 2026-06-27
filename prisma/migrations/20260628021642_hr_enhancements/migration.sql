@@ -2,7 +2,7 @@
 CREATE TYPE "ProjectStatus" AS ENUM ('ACTIVE', 'ON_HOLD', 'COMPLETED');
 
 -- AlterEnum
-ALTER TYPE "AttendanceStatus" ADD VALUE 'SICK';
+ALTER TYPE "AttendanceStatus" ADD VALUE 'SICK' AFTER 'LEAVE';
 
 -- AlterTable
 ALTER TABLE "Employee" ADD COLUMN     "bankAccountNo" TEXT,
