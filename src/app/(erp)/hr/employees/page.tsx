@@ -55,6 +55,13 @@ export default async function EmployeesPage({
   return (
     <>
       <PageHeader title="Employees" subtitle={`${employees.length} result(s)`}>
+        <a
+          href="/api/hr/employees/export"
+          className={btn("ghost", "sm")}
+          download
+        >
+          Export XLSX
+        </a>
         {canWrite && (
           <Link href="/hr/employees/new" className={btn("primary", "sm")}>
             + Add employee

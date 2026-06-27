@@ -61,6 +61,13 @@ export default async function AttendancePage({
   return (
     <>
       <PageHeader title="Attendance" subtitle={monthLabel}>
+        <a
+          href={`/api/hr/attendance/export?year=${y}&month=${m}`}
+          className="inline-flex h-8 items-center gap-1 rounded-xl px-3 text-sm font-medium text-slate-600 ring-1 ring-inset ring-slate-200 hover:bg-slate-50"
+          download
+        >
+          Export XLSX
+        </a>
         <Link
           href={`/hr/attendance?year=${prevYear}&month=${prevMonth}`}
           className="inline-flex h-8 w-8 items-center justify-center rounded-xl text-slate-500 ring-1 ring-inset ring-slate-200 hover:bg-slate-50"
