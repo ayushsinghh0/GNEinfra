@@ -63,12 +63,18 @@ export default async function HrAnalyticsPage() {
   // payroll series (6) → forecast 3
   const payrollSeries = await Promise.all(periods.map((p) =>
     prisma.payrollRecord.aggregate({ where: { periodYear: p.year, periodMonth: p.month }, _sum: { payableAmount: true } }).then((r) => r._sum.payableAmount ?? 0)));
-  const payrollForecast = linearForecast(payrollSeries, 3);
+  // Trailing zero months (e.g. an unprocessed current month) are "not yet actual" — anchor on the last month with payroll.
+  let lastActual = payrollSeries.length - 1;
+  while (lastActual > 0 && payrollSeries[lastActual] === 0) lastActual--;
+  const payrollActuals = payrollSeries.slice(0, lastActual + 1);
+  const forecastLabels = [...periods.slice(lastActual + 1).map((p) => p.label), ...fLabels];
+  const payrollForecast = linearForecast(payrollActuals, forecastLabels.length);
   const payrollChart = [
-    ...periods.map((p, i) => ({ label: p.label, value: payrollSeries[i], forecast: false })),
-    ...payrollForecast.map((v, i) => ({ label: fLabels[i], value: v, forecast: true })),
+    ...payrollActuals.map((v, i) => ({ label: periods[i].label, value: v, forecast: false })),
+    ...payrollForecast.map((v, i) => ({ label: forecastLabels[i], value: v, forecast: true })),
   ];
-  const costDelta = pctDelta(payrollSeries[5], payrollSeries[4]);
+  const costAnchor = payrollSeries[lastActual];
+  const costDelta = pctDelta(costAnchor, lastActual > 0 ? payrollSeries[lastActual - 1] : 0);
 
   // headcount at each month-end (6) → forecast 1
   const headcountSeries = await Promise.all(periods.map((p) =>
@@ -77,6 +83,8 @@ export default async function HrAnalyticsPage() {
     ...periods.map((p, i) => ({ label: p.label, value: headcountSeries[i], forecast: false })),
     { label: fLabels[0], value: linearForecast(headcountSeries, 1)[0], forecast: true },
   ];
+  // Real headcount delta: this month-end vs last month-end (headcountSeries[5] vs [4]).
+  const headcountDelta = pctDelta(headcountSeries[5], headcountSeries[4]);
 
   // attendance rate per month (6)
   const attRateSeries = await Promise.all(periods.map(async (p) => {
@@ -89,13 +97,12 @@ export default async function HrAnalyticsPage() {
   const attRateDelta = pctDelta(attRateSeries[5], attRateSeries[4]);
 
   // today's leave + joiners/leavers + attrition delta
-  const [onLeaveToday, joinersCur, leaversCur, leaversPrev] = await Promise.all([
+  const [onLeaveToday, , leaversCur, leaversPrev] = await Promise.all([
     prisma.attendanceRecord.count({ where: { status: { in: ["LEAVE", "SICK"] }, date: todayUTC } }),
     prisma.employee.count({ where: { dateOfJoining: { gte: cur.start, lt: cur.end } } }),
     prisma.employee.count({ where: { leavingDate: { gte: cur.start, lt: cur.end } } }),
     prisma.employee.count({ where: { leavingDate: { gte: prev.start, lt: prev.end } } }),
   ]);
-  const netHeadcountChange = joinersCur - leaversCur;
   const attritionDelta = pctDelta(leaversCur, leaversPrev);
 
   // tenure (years) over active
@@ -145,9 +152,9 @@ export default async function HrAnalyticsPage() {
         {/* KPI bento with deltas */}
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
           <StatCard tone="brand" icon={<Users className="h-4 w-4" />} label="Active headcount"
-            value={<span className="flex flex-wrap items-baseline gap-2"><span>{activeCount}</span><DeltaBadge value={netHeadcountChange === 0 ? 0 : (netHeadcountChange > 0 ? 100 : -100)} /></span>} />
-          <StatCard tone="emerald" icon={<Wallet className="h-4 w-4" />} label="Payroll this month"
-            value={<span className="flex flex-wrap items-baseline gap-2"><span>{fmtINR(payrollSeries[5])}</span><DeltaBadge value={costDelta} /></span>} />
+            value={<span className="flex flex-wrap items-baseline gap-2"><span>{activeCount}</span><DeltaBadge value={headcountDelta} /></span>} />
+          <StatCard tone="emerald" icon={<Wallet className="h-4 w-4" />} label={`Payroll · ${periods[lastActual].label}`}
+            value={<span className="flex flex-wrap items-baseline gap-2"><span>{fmtINR(costAnchor)}</span><DeltaBadge value={costDelta} /></span>} />
           <StatCard tone="blue" icon={<CalendarCheck className="h-4 w-4" />} label="Attendance rate (MTD)"
             value={<span className="flex flex-wrap items-baseline gap-2"><span>{attRateSeries[5]}%</span><DeltaBadge value={attRateDelta} /></span>} />
           <StatCard tone="amber" icon={<Clock className="h-4 w-4" />} label="On leave today" value={onLeaveToday} />
@@ -159,14 +166,14 @@ export default async function HrAnalyticsPage() {
         {/* Hero: payroll forecast */}
         <Card>
           <CardHeader title="Payroll cost — actual & forecast" subtitle="Last 6 months (solid) · next 3 months projected (dashed, trend)" />
-          <CardBody><ForecastArea data={payrollChart} /></CardBody>
+          <CardBody><ForecastArea data={payrollChart} idPrefix="pay" /></CardBody>
         </Card>
 
         {/* Workforce trends */}
         <div className="grid gap-6 lg:grid-cols-2">
           <Card>
             <CardHeader title="Headcount trend" subtitle="Active staff at each month-end · next month projected" />
-            <CardBody><ForecastArea data={headcountChart} /></CardBody>
+            <CardBody><ForecastArea data={headcountChart} idPrefix="head" /></CardBody>
           </Card>
           <Card>
             <CardHeader title="Attendance rate" subtitle="Monthly present-equivalent %, last 6 months" />

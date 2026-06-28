@@ -100,9 +100,10 @@ export function AreaChart({
 
 /* ── Trend + forecast area (actuals solid, forecast dashed) ─────────────── */
 export function ForecastArea({
-  data,
+  data, idPrefix = "fc",
 }: {
   data: { label: string; value: number; forecast?: boolean }[];
+  idPrefix?: string;
 }) {
   const W = 560, H = 220;
   const pad = { l: 12, r: 12, t: 20, b: 28 };
@@ -117,7 +118,7 @@ export function ForecastArea({
   }));
   const fi = pts.findIndex((p) => p.forecast);
   const actual = fi === -1 ? pts : pts.slice(0, fi);
-  const forecast = fi === -1 ? [] : pts.slice(fi - 1); // start at last actual to connect
+  const forecast = fi === -1 ? [] : pts.slice(Math.max(0, fi - 1)); // start at last actual to connect
   const actualLine = smoothPath(actual);
   const actualArea = actual.length
     ? `${actualLine} L${actual[actual.length - 1].x},${baseY} L${actual[0].x},${baseY} Z`
@@ -127,11 +128,11 @@ export function ForecastArea({
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="h-52 w-full" role="img" aria-label="Trend with forecast">
       <defs>
-        <linearGradient id="fcFill" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id={`${idPrefix}Fill`} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#14b8a6" stopOpacity="0.26" />
           <stop offset="100%" stopColor="#14b8a6" stopOpacity="0" />
         </linearGradient>
-        <linearGradient id="fcLine" x1="0" y1="0" x2="1" y2="0">
+        <linearGradient id={`${idPrefix}Line`} x1="0" y1="0" x2="1" y2="0">
           <stop offset="0%" stopColor="#0d9488" />
           <stop offset="100%" stopColor="#2dd4bf" />
         </linearGradient>
@@ -140,9 +141,9 @@ export function ForecastArea({
         <line key={i} x1={pad.l} y1={y} x2={W - pad.r} y2={y} stroke="#eef2f6" strokeWidth="1" />
       ))}
       <line x1={pad.l} y1={baseY} x2={W - pad.r} y2={baseY} stroke="#e2e8f0" strokeWidth="1" />
-      {actualArea && <path className="animate-fade-up" d={actualArea} fill="url(#fcFill)" />}
+      {actualArea && <path className="animate-fade-up" d={actualArea} fill={`url(#${idPrefix}Fill)`} />}
       {actualLine && (
-        <path d={actualLine} fill="none" stroke="url(#fcLine)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        <path d={actualLine} fill="none" stroke={`url(#${idPrefix}Line)`} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
       )}
       {forecastLine && (
         <path d={forecastLine} fill="none" stroke="#94a3b8" strokeWidth="2.5" strokeDasharray="5 4" strokeLinecap="round" strokeLinejoin="round" />
