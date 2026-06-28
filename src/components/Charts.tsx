@@ -98,6 +98,92 @@ export function AreaChart({
   );
 }
 
+/* ── Trend + forecast area (actuals solid, forecast dashed) ─────────────── */
+export function ForecastArea({
+  data,
+}: {
+  data: { label: string; value: number; forecast?: boolean }[];
+}) {
+  const W = 560, H = 220;
+  const pad = { l: 12, r: 12, t: 20, b: 28 };
+  const innerW = W - pad.l - pad.r;
+  const innerH = H - pad.t - pad.b;
+  const max = Math.max(1, ...data.map((d) => d.value));
+  const baseY = pad.t + innerH;
+  const pts = data.map((d, i) => ({
+    x: pad.l + (data.length <= 1 ? innerW / 2 : (i / (data.length - 1)) * innerW),
+    y: pad.t + innerH - (d.value / max) * innerH,
+    label: d.label, value: d.value, forecast: !!d.forecast,
+  }));
+  const fi = pts.findIndex((p) => p.forecast);
+  const actual = fi === -1 ? pts : pts.slice(0, fi);
+  const forecast = fi === -1 ? [] : pts.slice(fi - 1); // start at last actual to connect
+  const actualLine = smoothPath(actual);
+  const actualArea = actual.length
+    ? `${actualLine} L${actual[actual.length - 1].x},${baseY} L${actual[0].x},${baseY} Z`
+    : "";
+  const forecastLine = smoothPath(forecast);
+  const grids = [0, 0.25, 0.5, 0.75].map((f) => pad.t + innerH * f);
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="h-52 w-full" role="img" aria-label="Trend with forecast">
+      <defs>
+        <linearGradient id="fcFill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#14b8a6" stopOpacity="0.26" />
+          <stop offset="100%" stopColor="#14b8a6" stopOpacity="0" />
+        </linearGradient>
+        <linearGradient id="fcLine" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="#0d9488" />
+          <stop offset="100%" stopColor="#2dd4bf" />
+        </linearGradient>
+      </defs>
+      {grids.map((y, i) => (
+        <line key={i} x1={pad.l} y1={y} x2={W - pad.r} y2={y} stroke="#eef2f6" strokeWidth="1" />
+      ))}
+      <line x1={pad.l} y1={baseY} x2={W - pad.r} y2={baseY} stroke="#e2e8f0" strokeWidth="1" />
+      {actualArea && <path className="animate-fade-up" d={actualArea} fill="url(#fcFill)" />}
+      {actualLine && (
+        <path d={actualLine} fill="none" stroke="url(#fcLine)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      )}
+      {forecastLine && (
+        <path d={forecastLine} fill="none" stroke="#94a3b8" strokeWidth="2.5" strokeDasharray="5 4" strokeLinecap="round" strokeLinejoin="round" />
+      )}
+      {fi > 0 && (
+        <line x1={pts[fi - 1].x} y1={pad.t} x2={pts[fi - 1].x} y2={baseY} stroke="#cbd5e1" strokeWidth="1" strokeDasharray="3 3" />
+      )}
+      {pts.map((p, i) => (
+        <g key={i}>
+          <circle cx={p.x} cy={p.y} r="3" fill="#fff" stroke={p.forecast ? "#94a3b8" : "#0d9488"} strokeWidth="2" />
+          <text x={p.x} y={H - 8} textAnchor="middle" fontSize="11" fill={p.forecast ? "#94a3b8" : "#64748b"}>
+            {p.label}
+          </text>
+        </g>
+      ))}
+    </svg>
+  );
+}
+
+/* ── Delta badge (period-over-period change) ────────────────────────────── */
+export function DeltaBadge({ value, invert }: { value: number | null; invert?: boolean }) {
+  if (value === null || !Number.isFinite(value)) {
+    return (
+      <span className="inline-flex items-center rounded-md bg-slate-100 px-1.5 py-0.5 text-[11px] font-semibold text-slate-400">
+        —
+      </span>
+    );
+  }
+  const rounded = Math.round(value);
+  const up = value >= 0;
+  const good = invert ? !up : up;
+  const cls =
+    rounded === 0 ? "bg-slate-100 text-slate-500" : good ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600";
+  const arrow = rounded === 0 ? "" : up ? "▲" : "▼";
+  return (
+    <span className={`inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[11px] font-semibold ${cls}`}>
+      {arrow} {up ? "+" : ""}{rounded}%
+    </span>
+  );
+}
+
 /* ── Status donut ───────────────────────────────────────────────────────── */
 const STATUS_COLOR: Record<string, string> = {
   SUBMITTED: "#3b82f6",
