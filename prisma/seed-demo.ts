@@ -11,7 +11,7 @@ import { hashPassword } from "../src/lib/password";
 
 const prisma = new PrismaClient();
 
-const DEMO_PASSWORD = "Gne@2026";
+const DEMO_PASSWORD = "gnedemo123";
 
 const ROLE_USERS: { name: string; email: string; role: Role }[] = [
   { name: "Sahil Superadmin", email: "superadmin@gne.test", role: "SUPERADMIN" },
