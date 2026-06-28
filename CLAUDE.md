@@ -11,17 +11,24 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-GNE ERP **Vendor Registration**. An admin emails a vendor a unique link; the vendor fills a
-multi-step form + uploads KYC documents (GST cert, PAN, cancelled cheque, …); data lands in
-Postgres; confirmation + procurement-notification emails go out; admin reviews/approves at
-`/admin/vendors/<id>` (approval assigns a `vendorCode` like `GNE-V-0001`). It's the supplier
-master that later ERP modules (procurement, etc.) will reference.
+GNE ERP — a **multi-role staff platform** for a solar-EPC business. Staff sign in (per-user
+accounts, 8 roles) and land in their **department workspace**: **BD · SCM · Project · Finance · HR**
+(five line departments) plus three connected oversight tiers — **Manager** (read + sign-off,
+cross-department), **Admin** (read/write all departments), **Superadmin** (everything incl. user
+management). Line departments are siloed; only the oversight roles cross boundaries.
 
-> **Active branch is `vendor-only`** — this is what's built and deployed. It was deliberately
-> stripped down to *only* vendor registration. A larger Phase-2 "Project Management" section
-> (projects, BOQ, DPR, procurement, Excel I/O, `exceljs`) still exists on **`main`** as
-> historical/reference code — pull from there if rebuilding those modules. Don't reintroduce it
-> on `vendor-only` unless asked.
+Two verticals are built; the rest are role-scoped "coming soon" shells:
+- **SCM** owns the **vendor/supplier master** — the original vendor-registration flow (admin emails
+  a vendor a token link → multi-step form + KYC uploads → review/approve → `vendorCode` like
+  `GNE-V-0001`), re-homed under `/scm/*`.
+- **HR** is fully built (`/hr/*`) — employee master, asset register, monthly attendance grid,
+  payroll + printable salary slips, projects + concurrent assignments, leave balances, and a
+  predictive analytics dashboard.
+
+> **Branches:** `multi-role-erp` (this branch) carries the full multi-role ERP + HR module.
+> `vendor-only` is the older, **currently-deployed** branch (vendor registration only) — the live
+> site at `erp.ayushraj.site` still runs it; this branch is not yet deployed. `main` holds historical
+> Phase-2 reference code (BOQ/DPR/procurement/Excel I/O). Don't reintroduce Phase-2 here unless asked.
 
 ## Commands
 
@@ -33,6 +40,8 @@ npm run lint         # eslint
 
 npm run db:migrate   # create + apply a migration in dev (prisma migrate dev)
 npm run db:deploy    # apply existing migrations (production / CI)
+npm run db:seed      # bootstrap the first superadmin from SUPERADMIN_EMAIL/PASSWORD (idempotent)
+npm run db:seed:demo # DEV/TEST ONLY: one login per role + sample HR/vendor data (prisma/seed-demo.ts)
 npm run db:studio    # browse data in Prisma Studio
 npx prisma generate  # regenerate the Prisma client after editing schema.prisma
 ```
@@ -49,10 +58,13 @@ type cache can fail the build referencing routes that no longer exist — `rm -r
 R2/MinIO-compatible via `S3_ENDPOINT`), or SMTP provider is a `.env` change only. Keep it that way.
 
 - **Routing**: App Router under `src/app/`. Public, token-gated flows: `/register/[token]`
-  (vendor wizard, `src/components/RegistrationForm.tsx`) and `/reupload/[token]` (replace one
-  requested doc). Staff workspace under `src/app/(erp)/` — SCM vendor pages under `/scm/*`,
-  system admin under `/admin/*`, shared shell at `/overview`. API route handlers under
-  `src/app/api/*`.
+  (vendor wizard, `src/components/RegistrationForm.tsx`) and `/reupload/[token]`. Staff sign in at
+  `/login`; the authenticated shell is the `src/app/(erp)/` route group with a **role-driven sidebar**
+  (`src/lib/nav.tsx`) — department homes `/bd` `/scm` `/project` `/finance` `/hr`, oversight landing
+  `/overview`, system admin `/admin/{users,settings}`. SCM vendor pages are `/scm/*`; HR pages are
+  `/hr/{employees,assets,attendance,payout,projects,analytics}`. Print pages (vendor record, salary
+  slip) live OUTSIDE the shell in a `(print)` route group so they print clean. API handlers under
+  `src/app/api/*` (`/api/hr/*`, `/api/vendors/*`, `/api/admin/users/*`, `/api/auth/*`, …).
 - **Data layer**: Prisma (`src/lib/prisma.ts` singleton), schema `prisma/schema.prisma`. Field
   validation is **enforced at the application layer** via Zod in `src/lib/validation.ts` +
   shared primitives in `src/lib/vendor-validation.ts` (one source of truth so the client wizard
@@ -67,6 +79,13 @@ R2/MinIO-compatible via `S3_ENDPOINT`), or SMTP provider is a `.env` change only
   vendor-admin pages moved from `/admin/*` to `/scm/*`. ⚠️ **Gotcha:** the `Secure` cookie
   attribute means the app MUST be served over **HTTPS** in production or browsers silently drop
   the session cookie and login appears to fail.
+- **RBAC & money conventions**: `src/lib/rbac.ts` exports per-area role sets — `VENDOR_VIEW`/
+  `VENDOR_WRITE`, `HR_VIEW`/`HR_WRITE`, `OVERSIGHT`, `ADMIN_AREA`, `SUPERADMIN_ONLY`. The pattern
+  everywhere: **managers are read-only** — a department's view sets include `MANAGER` but its write
+  sets do NOT, enforced in BOTH the UI (a `canWrite` flag hides mutate controls) AND every mutating
+  API. Guards also reject `mustChangePassword` users. **Money is integer rupees** (no Prisma
+  `Decimal`); payslip totals are recomputed server-side (`computePayrollTotals`). HR Zod lives in
+  `src/lib/hr-validation.ts`; HR compute helpers in `src/lib/hr-leave.ts` / `src/lib/hr-forecast.ts`.
 - **Storage** (`src/lib/storage.ts`): pluggable `local`/`s3` driver. Uploads are gzip-compressed
   only when that's actually smaller (`src/lib/documents.ts` — JPEG/PDF KYC scans don't compress,
   so they store at full size). Files are purged (`src/lib/purge.ts`, run by `POST /api/cron/purge`,
@@ -91,8 +110,8 @@ A full audit hardened this; preserve the invariants when adding code:
 - **Every route guards itself.** Layout auth gates do NOT protect API route handlers or RSC data
   fetching — each protected RSC page and each non-public `/api/*` route calls
   `requirePageRole()`/`getCurrentUser()` itself (KYC endpoints `documents/[id]`,
-  `vendors/[id]/export`, the `print` page, etc. are all gated → no IDOR). Any new route that
-  touches vendor data must do the same.
+  `vendors/[id]/export`, the `print` page, all `/api/hr/*` routes, etc. are gated → no IDOR). Any
+  new route that touches vendor or HR data must do the same — and exclude `MANAGER` from mutations.
 - **Never trust client-supplied MIME.** `src/lib/documents.ts` sniffs **magic bytes** and only
   accepts real PDF/PNG/JPEG/WEBP, storing the *detected* type; `gunzip` output is size-capped
   (zip-bomb guard). Keep `text/html`/`svg` out of the allow-list.
@@ -122,28 +141,34 @@ Premium-**light** design language. Don't hand-roll one-off styles — compose th
   **never behind form fields or data tables** (daylight legibility). Gate **all** motion on
   `prefers-reduced-motion` (extend the block in `globals.css` when adding animations), transparency
   on `prefers-reduced-transparency`, and bleeding-edge CSS behind `@supports`. **No chart/animation
-  libraries** — charts are bespoke SVG+CSS (`src/components/Charts.tsx` `AreaChart`/`Donut`); keep
-  it that way. Tabular `.nums` on codes/money/dates; 16px inputs (no iOS zoom); 44px tap targets;
+  libraries** — charts are bespoke SVG+CSS (`src/components/Charts.tsx`: `AreaChart`/`Donut`/
+  `ForecastArea`/`DeltaBadge`); "predictive" analytics use least-squares trend extrapolation
+  (`src/lib/hr-forecast.ts`), not an ML library. Keep it that way. Tabular `.nums` on codes/money/dates; 16px inputs (no iOS zoom); 44px tap targets;
   `:focus-visible` rings. Full rationale: `docs/superpowers/specs/2026-06-22-vendor-portal-ui-redesign-design.md`.
 
 ## Database & migrations
 
-Postgres via Prisma. Core models: `Vendor` (mirrors the registration form),
-`VendorService` (repeatable service-category + item rows — replaced the old `VendorProject`),
-`VendorDocument` (uploads), `VendorInvite`, `DocumentRequest`. Status flow
-`INVITED → SUBMITTED → UNDER_REVIEW → APPROVED/REJECTED`.
+Postgres via Prisma (`prisma/schema.prisma`). Model groups:
+- **Auth:** `User` (per-user accounts) + `Role` enum (`SUPERADMIN ADMIN MANAGER BD SCM PROJECT FINANCE HR`).
+- **Vendor/SCM:** `Vendor` (registration form) + `VendorService`/`VendorProduct`/`VendorExperience`/
+  `VendorPurchaseOrder`/`VendorTurnover`, `VendorDocument`, `VendorInvite`, `DocumentRequest`.
+  Status flow `INVITED → SUBMITTED → UNDER_REVIEW → APPROVED/REJECTED`.
+- **HR:** `Employee` (the Man-EMID master + leave quotas + bank/PAN/UAN), `EmployeeAsset`,
+  `AttendanceRecord` (`AttendanceStatus` = PRESENT/ABSENT/LEAVE/SICK/HALF_DAY/HOLIDAY/WEEK_OFF;
+  unique per employee+day, stored at **UTC midnight**), `PayrollRecord` (monthly, integer-rupee
+  earnings/deductions with server-computed totals), `Project` + `ProjectAssignment` (concurrent
+  per-employee assignments). `AttendanceRecord`/`PayrollRecord` use `onDelete: Restrict` so deleting
+  an employee can't wipe payroll/attendance history.
 
-⚠️ **Migration discipline:** the single baseline (`prisma/migrations/0_init`) has been *rebased*
-several times because the live DB held no real data yet. **Once real vendor data exists, stop
-doing that** — every schema change must be an additive `prisma migrate dev` migration; never
-reset/squash a DB with real data.
+⚠️ **Migrations are additive.** Each schema change is a tracked `prisma migrate dev` migration — or,
+when no DB is reachable, authored **offline** via `prisma migrate diff --from-schema-datamodel <old>
+--to-schema-datamodel <new> --script` into a new `prisma/migrations/<ts>_<name>/migration.sql`
+(`prisma generate` runs offline too). Never reset/squash a DB with real data; production **Neon**
+holds the live data. (Postgres enum `ADD VALUE` needs `AFTER 'x'` to control ordering.)
 
-⚠️ **Local dev DB may be schema-drifted.** The docker `gne_erp` DB can lag `schema.prisma`
-(e.g. missing `VendorService` / `Vendor.country`), which makes `migrate deploy` error
-(`type already exists`) and 500s the admin Vendor pages — the public/vendor screens still work.
-To run/screenshot the admin UI, create a fresh DB and migrate into it rather than touching the
-drifted one: `CREATE DATABASE gne_shots` → `DATABASE_URL=…/gne_shots npx prisma migrate deploy`
-→ point the dev server at it. Production **Neon** is correct/unaffected.
+⚠️ **Local dev DB can be schema-drifted.** The old docker `gne_erp` DB predates the auth/HR tables,
+so the new app 500s against it. Create a **fresh** DB and `migrate deploy` into it (e.g. `gne_e2e`),
+point `DATABASE_URL` there, then `npm run db:seed` + `npm run db:seed:demo`. Production Neon is correct.
 
 ## Environment
 
