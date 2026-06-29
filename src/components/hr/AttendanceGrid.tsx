@@ -236,7 +236,7 @@ export default function AttendanceGrid({
               type="button"
               onClick={() => jumpTo(emp.id)}
               title={emp.name}
-              className="press shrink-0 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600 transition-colors hover:border-brand-300 hover:bg-brand-50 hover:text-brand-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
+              className="press shrink-0 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600 motion-safe:transition-colors hover:border-brand-300 hover:bg-brand-50 hover:text-brand-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
             >
               <span className="nums text-slate-400">{emp.empId}</span> {emp.name.split(" ")[0]}
             </button>
@@ -267,7 +267,7 @@ export default function AttendanceGrid({
                 key={emp.id}
                 ref={(el) => { rowRefs.current.set(emp.id, el); }}
                 className={cn(
-                  "border-b border-slate-100 last:border-0 transition-colors",
+                  "border-b border-slate-100 last:border-0 motion-safe:transition-colors",
                   flashId === emp.id ? "bg-brand-50" : "hover:bg-slate-50/40"
                 )}
               >
