@@ -52,7 +52,7 @@ export default function MonthPicker({
         className="press inline-flex h-8 items-center gap-1.5 rounded-xl px-3 text-sm font-medium text-slate-700 ring-1 ring-inset ring-slate-200 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
       >
         <span className="nums">{MONTHS[month - 1]} {year}</span>
-        <ChevronDown className={cn("h-4 w-4 text-slate-400 transition-transform", open && "rotate-180")} />
+        <ChevronDown className={cn("h-4 w-4 text-slate-400 motion-safe:transition-transform", open && "rotate-180")} />
       </button>
 
       {open && (
@@ -66,7 +66,7 @@ export default function MonthPicker({
               type="button"
               onClick={() => setViewYear((y) => Math.max(2000, y - 1))}
               aria-label="Previous year"
-              className="press grid h-7 w-7 place-items-center rounded-lg text-slate-500 ring-1 ring-inset ring-slate-200 hover:bg-slate-50"
+              className="press grid h-7 w-7 place-items-center rounded-lg text-slate-500 ring-1 ring-inset ring-slate-200 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
@@ -75,7 +75,7 @@ export default function MonthPicker({
               type="button"
               onClick={() => setViewYear((y) => Math.min(2100, y + 1))}
               aria-label="Next year"
-              className="press grid h-7 w-7 place-items-center rounded-lg text-slate-500 ring-1 ring-inset ring-slate-200 hover:bg-slate-50"
+              className="press grid h-7 w-7 place-items-center rounded-lg text-slate-500 ring-1 ring-inset ring-slate-200 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
             >
               <ChevronRight className="h-4 w-4" />
             </button>
@@ -91,7 +91,7 @@ export default function MonthPicker({
                   onClick={() => go(viewYear, m)}
                   aria-current={isCurrent ? "true" : undefined}
                   className={cn(
-                    "press rounded-lg py-1.5 text-sm font-medium transition-colors",
+                    "press rounded-lg py-1.5 text-sm font-medium motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30",
                     isCurrent
                       ? "bg-brand-50 text-brand-800 ring-1 ring-inset ring-brand-200"
                       : "text-slate-600 hover:bg-slate-50"
