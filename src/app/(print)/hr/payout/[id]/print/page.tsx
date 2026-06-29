@@ -6,6 +6,7 @@ import { fmtDate, fmtDateOnly, fmtINR } from "@/lib/format";
 import { MONTHS } from "@/lib/hr-validation";
 import { amountInWords } from "@/lib/number-to-words";
 import PrintBar from "@/components/PrintBar";
+import { COMPANY } from "@/lib/company";
 
 export const dynamic = "force-dynamic";
 
@@ -64,7 +65,7 @@ export default async function PayslipPrintPage({
   const paidDays = daysInMonth - lopDays;
 
   const monthName = MONTHS[record.periodMonth - 1];
-  const hasBankInfo = emp.bankAccountNo || emp.panNo || emp.uan;
+  const hasBankInfo = emp.bankAccountNo || emp.bankName || emp.ifsc || emp.panNo || emp.uan || emp.esicNo;
 
   return (
     <main className="min-h-screen bg-white">
@@ -77,7 +78,7 @@ export default async function PayslipPrintPage({
           <div className="flex items-center gap-4">
             <Image
               src="/brand/gne-infra.png"
-              alt="GNE Infra"
+              alt={COMPANY.name}
               width={120}
               height={34}
               className="h-9 w-auto"
@@ -85,10 +86,13 @@ export default async function PayslipPrintPage({
             />
             <div>
               <div className="text-base font-bold leading-tight tracking-tight text-slate-900">
-                Salary Slip
+                {COMPANY.name}
               </div>
-              <div className="text-[11px] uppercase tracking-wide text-slate-500">
-                Human Resources · Payroll
+              {COMPANY.addressLines.map((l) => (
+                <div key={l} className="text-[10px] leading-tight text-slate-500">{l}</div>
+              ))}
+              <div className="mt-0.5 text-[10px] text-slate-400">
+                {[COMPANY.cin && `CIN ${COMPANY.cin}`, COMPANY.gstin && `GSTIN ${COMPANY.gstin}`, COMPANY.pan && `PAN ${COMPANY.pan}`].filter(Boolean).join("  ·  ")}
               </div>
             </div>
           </div>
@@ -114,6 +118,8 @@ export default async function PayslipPrintPage({
             </div>
             <InfoRow label="EMP ID"          value={emp.empId} />
             <InfoRow label="Date of Joining" value={fmtDateOnly(emp.dateOfJoining)} />
+            <InfoRow label="Category"        value={emp.empCategory} />
+            <InfoRow label="Location"        value={emp.location} />
           </div>
 
           {/* Right: bank & statutory — only shown fields that have values */}
@@ -123,9 +129,12 @@ export default async function PayslipPrintPage({
             </div>
             {hasBankInfo ? (
               <>
-                <InfoRow label="Bank A/C" value={emp.bankAccountNo} />
-                <InfoRow label="PAN"      value={emp.panNo} />
-                <InfoRow label="UAN"      value={emp.uan} />
+                <InfoRow label="Bank A/C"  value={emp.bankAccountNo} />
+                <InfoRow label="Bank Name" value={emp.bankName} />
+                <InfoRow label="IFSC"      value={emp.ifsc} />
+                <InfoRow label="PAN"       value={emp.panNo} />
+                <InfoRow label="UAN"       value={emp.uan} />
+                <InfoRow label="ESIC No"   value={emp.esicNo} />
               </>
             ) : (
               <span className="text-[12px] text-slate-400">No bank / statutory info on file</span>
@@ -169,6 +178,8 @@ export default async function PayslipPrintPage({
                 <ERow label="CCA"            value={fmtINR(record.cca)} />
                 <ERow label="Personal Pay"   value={fmtINR(record.personalPay)} />
                 <ERow label="Conveyance"     value={fmtINR(record.conveyance)} />
+                <ERow label="LTA"            value={fmtINR(record.lta)} />
+                <ERow label="Special Allow." value={fmtINR(record.specialAllowance)} />
                 <ERow label="PLA"            value={fmtINR(record.pla)} />
                 <ERow label="Medical Reimb." value={fmtINR(record.medicalReimb)} />
               </tbody>
