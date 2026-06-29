@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarCheck2, Eraser, Search, Sparkles, Users } from "lucide-react";
+import { CalendarCheck2, Eraser, Search, Users } from "lucide-react";
 import { Button, StatCard, cn } from "@/components/ui";
 import { ATTENDANCE_STATUSES, type AttendanceStatusValue } from "@/lib/hr-validation";
 
@@ -56,6 +56,18 @@ export default function AttendanceGrid({
   const [busy, setBusy] = useState(false);
   const dragRef = useRef<Cell | null>(null);
 
+  const rowRefs = useRef<Map<string, HTMLTableRowElement | null>>(new Map());
+  const [flashId, setFlashId] = useState<string | null>(null);
+
+  function jumpTo(id: string) {
+    const el = rowRefs.current.get(id);
+    if (!el) return;
+    const reduce = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    el.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" });
+    setFlashId(id);
+    window.setTimeout(() => setFlashId((cur) => (cur === id ? null : cur)), 1600);
+  }
+
   // Day metadata (weekday / weekend / today) — UTC to match stored dates.
   const days = useMemo(() => {
     const now = new Date();
@@ -105,16 +117,6 @@ export default function AttendanceGrid({
     write(empId, day, dragRef.current);
   }
 
-  function autofill(ids: string[]) {
-    setGrid((g) => {
-      const next = { ...g };
-      for (const id of ids) for (const { d, weekend } of days) {
-        const k = key(id, d);
-        if ((next[k] ?? "") === "") next[k] = weekend ? "WEEK_OFF" : "PRESENT";
-      }
-      return next;
-    });
-  }
   const discard = () => setGrid(initialGrid);
 
   async function save() {
@@ -215,11 +217,6 @@ export default function AttendanceGrid({
                 className="h-9 w-44 rounded-xl border border-slate-200 bg-white pl-8 pr-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-brand focus:ring-[3px] focus:ring-brand/20"
               />
             </div>
-            {canWrite && (
-              <Button variant="secondary" size="sm" onClick={() => autofill(filtered.map((e) => e.id))} title="Fill empty cells: weekdays Present, weekends Week-off">
-                <Sparkles className="h-3.5 w-3.5" /> Autofill
-              </Button>
-            )}
           </div>
         </div>
 
@@ -229,6 +226,23 @@ export default function AttendanceGrid({
           </p>
         )}
       </div>
+
+      {/* Jump pills — click to scroll straight to an employee's row */}
+      {filtered.length > 1 && (
+        <div className="sticky top-16 z-10 -mx-1 flex gap-1.5 overflow-x-auto rounded-2xl bg-white/90 px-1 py-2 shadow-[var(--shadow-card)] backdrop-blur">
+          {filtered.map((emp) => (
+            <button
+              key={emp.id}
+              type="button"
+              onClick={() => jumpTo(emp.id)}
+              title={emp.name}
+              className="press shrink-0 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600 transition-colors hover:border-brand-300 hover:bg-brand-50 hover:text-brand-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
+            >
+              <span className="nums text-slate-400">{emp.empId}</span> {emp.name.split(" ")[0]}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Grid */}
       <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-[var(--shadow-card)]">
@@ -249,21 +263,16 @@ export default function AttendanceGrid({
           </thead>
           <tbody>
             {filtered.map((emp) => (
-              <tr key={emp.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/40">
+              <tr
+                key={emp.id}
+                ref={(el) => { rowRefs.current.set(emp.id, el); }}
+                className={cn(
+                  "border-b border-slate-100 last:border-0 transition-colors",
+                  flashId === emp.id ? "bg-brand-50" : "hover:bg-slate-50/40"
+                )}
+              >
                 <td className="sticky left-0 z-10 bg-white px-4 py-1.5 font-medium text-slate-800 whitespace-nowrap group-hover:bg-slate-50">
-                  <div className="flex items-center gap-2">
-                    {canWrite && (
-                      <button
-                        type="button"
-                        onClick={() => autofill([emp.id])}
-                        title="Autofill this row"
-                        className="press grid h-5 w-5 place-items-center rounded text-slate-300 hover:bg-brand-50 hover:text-brand-600"
-                      >
-                        <Sparkles className="h-3 w-3" />
-                      </button>
-                    )}
-                    <span><span className="nums text-slate-400">{emp.empId}</span> {emp.name}</span>
-                  </div>
+                  <span><span className="nums text-slate-400">{emp.empId}</span> {emp.name}</span>
                 </td>
                 {days.map(({ d, weekend }) => {
                   const s = grid[key(emp.id, d)] ?? "";
