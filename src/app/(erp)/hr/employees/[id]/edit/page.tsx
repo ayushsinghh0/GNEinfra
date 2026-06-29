@@ -51,8 +51,11 @@ export default async function EditEmployeePage({
     casualLeaveQuota: String(emp.casualLeaveQuota),
     sickLeaveQuota: String(emp.sickLeaveQuota),
     bankAccountNo: emp.bankAccountNo ?? "",
+    bankName: emp.bankName ?? "",
+    ifsc: emp.ifsc ?? "",
     uan: emp.uan ?? "",
     panNo: emp.panNo ?? "",
+    esicNo: emp.esicNo ?? "",
   };
 
   return (

@@ -130,8 +130,11 @@ export default async function EmployeeDetailPage({
               <Row label="Offer Letter Date" value={fmtDateOnly(emp.offerLetterDate)} />
               <Row label="Leaving Date" value={fmtDateOnly(emp.leavingDate)} />
               <Row label="Bank A/C No" value={emp.bankAccountNo} />
+              <Row label="Bank Name" value={emp.bankName} />
+              <Row label="IFSC" value={emp.ifsc} />
               <Row label="PAN" value={emp.panNo} />
               <Row label="UAN" value={emp.uan} />
+              <Row label="ESIC No" value={emp.esicNo} />
             </div>
           </CardBody>
         </Card>

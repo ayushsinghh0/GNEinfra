@@ -1,17 +1,28 @@
 "use client";
-import { useState, FormEvent } from "react";
+import { useState, FormEvent, ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Field, Input, Select } from "@/components/ui";
 import { EMP_CATEGORIES } from "@/lib/hr-validation";
 import { AlertCircle } from "lucide-react";
 
 type Values = Record<string, string>;
+
+function Section({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <fieldset className="rounded-2xl border border-slate-200 p-4 sm:p-5">
+      <legend className="px-1.5 text-[13px] font-semibold text-slate-700">{title}</legend>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">{children}</div>
+    </fieldset>
+  );
+}
+
 const EMPTY: Values = {
   empId: "", name: "", designation: "", empCategory: "On-Roll", location: "",
   dateOfJoining: "", payrollType: "", mailId: "", emergencyNumber: "", bloodGroup: "",
   iCardNo: "", dob: "", offerLetterDate: "", leavingDate: "",
   totalCtc: "", salary: "", lta: "", specialAllowance: "", conveyance: "",
-  casualLeaveQuota: "12", sickLeaveQuota: "12", bankAccountNo: "", uan: "", panNo: "",
+  casualLeaveQuota: "12", sickLeaveQuota: "12",
+  bankAccountNo: "", bankName: "", ifsc: "", uan: "", panNo: "", esicNo: "",
 };
 
 export default function EmployeeForm({ id, initial }: { id?: string; initial?: Values }) {
@@ -47,13 +58,14 @@ export default function EmployeeForm({ id, initial }: { id?: string; initial?: V
   );
 
   return (
-    <form onSubmit={submit} className="space-y-6">
+    <form onSubmit={submit} className="space-y-5">
       {error && (
         <div role="alert" className="flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-sm text-rose-700">
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" /><span>{error}</span>
         </div>
       )}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+
+      <Section title="Identity & Role">
         {Txt("empId", "EMP ID", true)}
         {Txt("name", "Name", true)}
         {Txt("designation", "Designation", true)}
@@ -65,24 +77,36 @@ export default function EmployeeForm({ id, initial }: { id?: string; initial?: V
         {Txt("location", "Location", true)}
         {Txt("dateOfJoining", "Date of Joining", true, "date")}
         {Txt("payrollType", "Payroll")}
+        {Txt("iCardNo", "I-Card No")}
+      </Section>
+
+      <Section title="Contact & Personal">
         {Txt("mailId", "Mail Id", false, "email")}
         {Txt("emergencyNumber", "Emergency Number")}
         {Txt("bloodGroup", "Blood Group")}
-        {Txt("iCardNo", "I-Card No")}
         {Txt("dob", "DOB", false, "date")}
         {Txt("offerLetterDate", "Offer Letter Date", false, "date")}
         {Txt("leavingDate", "Leaving Date", false, "date")}
+      </Section>
+
+      <Section title="Compensation">
         {Txt("totalCtc", "Total CTC (₹)")}
         {Txt("salary", "Salary (₹)")}
         {Txt("lta", "LTA (₹)")}
         {Txt("specialAllowance", "Special Allowance (₹)")}
         {Txt("conveyance", "Conveyance (₹)")}
-        {Txt("casualLeaveQuota", "Casual Leave Quota", false, "number")}
-        {Txt("sickLeaveQuota", "Sick Leave Quota", false, "number")}
+      </Section>
+
+      <Section title="Statutory & Leave">
         {Txt("bankAccountNo", "Bank A/C No")}
+        {Txt("bankName", "Bank Name")}
+        {Txt("ifsc", "IFSC")}
         {Txt("panNo", "PAN No")}
         {Txt("uan", "UAN (PF)")}
-      </div>
+        {Txt("esicNo", "ESIC No")}
+        {Txt("casualLeaveQuota", "Casual Leave Quota", false, "number")}
+        {Txt("sickLeaveQuota", "Sick Leave Quota", false, "number")}
+      </Section>
       <div className="flex gap-2">
         <Button type="submit" disabled={busy}>{busy ? "Saving…" : id ? "Save changes" : "Add employee"}</Button>
         <Button type="button" variant="secondary" onClick={() => router.back()}>Cancel</Button>

@@ -44,8 +44,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         casualLeaveQuota: d.casualLeaveQuota,
         sickLeaveQuota: d.sickLeaveQuota,
         bankAccountNo: d.bankAccountNo || null,
+        bankName: d.bankName || null,
+        ifsc: d.ifsc || null,
         uan: d.uan || null,
         panNo: d.panNo || null,
+        esicNo: d.esicNo || null,
       },
     });
     return NextResponse.json({ ok: true, employee });
