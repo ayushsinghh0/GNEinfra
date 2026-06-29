@@ -20,6 +20,8 @@ export type PayrollRow = {
   cca: number;
   personalPay: number;
   conveyance: number;
+  lta: number;
+  specialAllowance: number;
   pla: number;
   medicalReimb: number;
   tds: number;
@@ -30,7 +32,7 @@ export type PayrollRow = {
 };
 
 type NumericKey =
-  | "basic" | "hra" | "cca" | "personalPay" | "conveyance" | "pla" | "medicalReimb"
+  | "basic" | "hra" | "cca" | "personalPay" | "conveyance" | "lta" | "specialAllowance" | "pla" | "medicalReimb"
   | "tds" | "loanAdv" | "epf" | "esi";
 
 type RowState = PayrollRow & { saving: boolean; savedId: string | null; dirty: boolean; error: string | null };
@@ -41,6 +43,8 @@ const EARNINGS: { key: NumericKey; label: string }[] = [
   { key: "cca", label: "CCA" },
   { key: "personalPay", label: "Personal Pay" },
   { key: "conveyance", label: "Conveyance" },
+  { key: "lta", label: "LTA" },
+  { key: "specialAllowance", label: "Special Allowance" },
   { key: "pla", label: "PLA" },
   { key: "medicalReimb", label: "Medical reimb." },
 ];
@@ -102,7 +106,8 @@ export default function PayrollEditor({
           employeeId: r.emp.id, year, month,
           code: r.code, role: r.role, designation: r.designation, ctc: r.ctc,
           basic: r.basic, hra: r.hra, cca: r.cca, personalPay: r.personalPay,
-          conveyance: r.conveyance, pla: r.pla, medicalReimb: r.medicalReimb,
+          conveyance: r.conveyance, lta: r.lta, specialAllowance: r.specialAllowance,
+          pla: r.pla, medicalReimb: r.medicalReimb,
           tds: r.tds, loanAdv: r.loanAdv, epf: r.epf, esi: r.esi, remarks: r.remarks,
         }),
       });
