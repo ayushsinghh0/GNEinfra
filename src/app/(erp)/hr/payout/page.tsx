@@ -5,6 +5,7 @@ import { requirePageRole, HR_VIEW, HR_WRITE } from "@/lib/rbac";
 import { MONTHS } from "@/lib/hr-validation";
 import { PageHeader, EmptyState } from "@/components/ui";
 import PayrollEditor, { type PayrollRow } from "@/components/hr/PayrollEditor";
+import MonthPicker from "@/components/hr/MonthPicker";
 
 export const dynamic = "force-dynamic";
 
@@ -155,9 +156,7 @@ export default async function PayoutPage({
         >
           <ChevronLeft className="h-4 w-4" />
         </Link>
-        <span className="nums text-sm font-medium text-slate-700 min-w-[7rem] text-center">
-          {monthLabel}
-        </span>
+        <MonthPicker year={year} month={month} basePath="/hr/payout" />
         <Link
           href={`/hr/payout?year=${nextYear}&month=${nextMonth}`}
           className="inline-flex h-8 w-8 items-center justify-center rounded-xl text-slate-500 ring-1 ring-inset ring-slate-200 hover:bg-slate-50"
