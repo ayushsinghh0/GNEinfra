@@ -56,8 +56,11 @@ export const employeeSchema = z.object({
   casualLeaveQuota: quota,
   sickLeaveQuota: quota,
   bankAccountNo: z.string().trim().max(40).optional().or(z.literal("")),
+  bankName: z.string().trim().max(120).optional().or(z.literal("")),
+  ifsc: z.string().trim().max(11).optional().or(z.literal("")),
   uan: z.string().trim().max(20).optional().or(z.literal("")),
   panNo: z.string().trim().max(10).optional().or(z.literal("")),
+  esicNo: z.string().trim().max(20).optional().or(z.literal("")),
 });
 export type EmployeeInput = z.infer<typeof employeeSchema>;
 
@@ -97,7 +100,7 @@ export const payrollSchema = z.object({
   designation: z.string().trim().max(120).optional().or(z.literal("")),
   ctc: money,
   basic: money0, hra: money0, cca: money0, personalPay: money0,
-  conveyance: money0, pla: money0, medicalReimb: money0,
+  conveyance: money0, lta: money0, specialAllowance: money0, pla: money0, medicalReimb: money0,
   tds: money0, loanAdv: money0, epf: money0, esi: money0,
   remarks: z.string().trim().max(500).optional().or(z.literal("")),
 });
@@ -127,10 +130,12 @@ export const assignmentSchema = z.object({
 // Server-authoritative totals — earnings sum, deductions sum, net payable.
 export function computePayrollTotals(p: {
   basic: number; hra: number; cca: number; personalPay: number;
-  conveyance: number; pla: number; medicalReimb: number;
+  conveyance: number; lta: number; specialAllowance: number; pla: number; medicalReimb: number;
   tds: number; loanAdv: number; epf: number; esi: number;
 }) {
-  const totalEarnings = p.basic + p.hra + p.cca + p.personalPay + p.conveyance + p.pla + p.medicalReimb;
+  const totalEarnings =
+    p.basic + p.hra + p.cca + p.personalPay + p.conveyance +
+    p.lta + p.specialAllowance + p.pla + p.medicalReimb;
   const totalDeductions = p.tds + p.loanAdv + p.epf + p.esi;
   return { totalEarnings, totalDeductions, payableAmount: totalEarnings - totalDeductions };
 }

@@ -313,8 +313,11 @@ model Employee {
   casualLeaveQuota   Int     @default(12)
   sickLeaveQuota     Int     @default(12)
   bankAccountNo      String?
+  bankName           String?
+  ifsc               String?
   uan                String?
   panNo              String?
+  esicNo             String?
 
   assets             EmployeeAsset[]
   attendance         AttendanceRecord[]
@@ -379,6 +382,8 @@ model PayrollRecord {
   cca           Int @default(0)
   personalPay   Int @default(0)
   conveyance    Int @default(0)
+  lta              Int @default(0)
+  specialAllowance Int @default(0)
   pla           Int @default(0)
   medicalReimb  Int @default(0)
   totalEarnings Int @default(0)
