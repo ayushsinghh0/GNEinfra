@@ -26,7 +26,7 @@ export default async function PayoutPage({
   const nextMonth = month === 12 ? 1 : month + 1;
   const nextYear = month === 12 ? year + 1 : year;
 
-  const [employees, payrolls] = await Promise.all([
+  const [employees, payrolls, prevPayrolls] = await Promise.all([
     prisma.employee.findMany({
       where: { status: "ACTIVE" },
       select: {
@@ -63,9 +63,25 @@ export default async function PayoutPage({
         remarks: true,
       },
     }),
+    prisma.payrollRecord.findMany({
+      where: { periodYear: prevYear, periodMonth: prevMonth },
+      select: {
+        employeeId: true,
+        basic: true, hra: true, cca: true, personalPay: true,
+        conveyance: true, pla: true, medicalReimb: true,
+        tds: true, loanAdv: true, epf: true, esi: true,
+      },
+    }),
   ]);
 
   const payrollMap = new Map(payrolls.map((p) => [p.employeeId, p]));
+
+  // Previous month's figures, for the editor's "Copy last month" shortcut.
+  const lastMonth: Record<string, Omit<(typeof prevPayrolls)[number], "employeeId">> = {};
+  for (const p of prevPayrolls) {
+    const { employeeId, ...rest } = p;
+    lastMonth[employeeId] = rest;
+  }
 
   const rows: PayrollRow[] = employees.map((emp) => {
     const rec = payrollMap.get(emp.id);
@@ -153,7 +169,7 @@ export default async function PayoutPage({
             description="Add employees to start processing payroll."
           />
         ) : (
-          <PayrollEditor rows={rows} year={year} month={month} canWrite={canWrite} />
+          <PayrollEditor rows={rows} year={year} month={month} canWrite={canWrite} lastMonth={lastMonth} />
         )}
       </div>
     </>

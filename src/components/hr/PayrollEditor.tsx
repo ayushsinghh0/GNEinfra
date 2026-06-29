@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { type ReactNode, useMemo, useState } from "react";
 import Link from "next/link";
-import { Printer } from "lucide-react";
+import { BadgeIndianRupee, ChevronRight, Copy, Printer, Search, Wand2 } from "lucide-react";
 import { computePayrollTotals } from "@/lib/hr-validation";
 import { fmtINR } from "@/lib/format";
+import { Button, StatCard, cn } from "@/components/ui";
+import SlideOver from "@/components/SlideOver";
 
 export type PayrollRow = {
   emp: { id: string; empId: string; name: string };
@@ -27,210 +29,350 @@ export type PayrollRow = {
   remarks: string;
 };
 
-type RowState = PayrollRow & {
-  saving: boolean;
-  savedId: string | null;
-  error: string | null;
-};
-
-const EARNINGS_FIELDS = [
-  { key: "basic" as const, label: "Basic" },
-  { key: "hra" as const, label: "HRA" },
-  { key: "cca" as const, label: "CCA" },
-  { key: "personalPay" as const, label: "Pers.Pay" },
-  { key: "conveyance" as const, label: "Conv" },
-  { key: "pla" as const, label: "PLA" },
-  { key: "medicalReimb" as const, label: "Med" },
-];
-
-const DEDUCTION_FIELDS = [
-  { key: "tds" as const, label: "TDS" },
-  { key: "loanAdv" as const, label: "Loan" },
-  { key: "epf" as const, label: "EPF" },
-  { key: "esi" as const, label: "ESI" },
-];
-
 type NumericKey =
   | "basic" | "hra" | "cca" | "personalPay" | "conveyance" | "pla" | "medicalReimb"
   | "tds" | "loanAdv" | "epf" | "esi";
+
+type RowState = PayrollRow & { saving: boolean; savedId: string | null; dirty: boolean; error: string | null };
+
+const EARNINGS: { key: NumericKey; label: string }[] = [
+  { key: "basic", label: "Basic" },
+  { key: "hra", label: "HRA" },
+  { key: "cca", label: "CCA" },
+  { key: "personalPay", label: "Personal Pay" },
+  { key: "conveyance", label: "Conveyance" },
+  { key: "pla", label: "PLA" },
+  { key: "medicalReimb", label: "Medical reimb." },
+];
+const DEDUCTIONS: { key: NumericKey; label: string }[] = [
+  { key: "tds", label: "TDS" },
+  { key: "loanAdv", label: "Loan / Advance" },
+  { key: "epf", label: "EPF" },
+  { key: "esi", label: "ESI" },
+];
+
+// Standard monthly-gross split — mirrors the payroll seeding rules.
+function splitFromGross(gross: number): Partial<Record<NumericKey, number>> {
+  const g = Math.max(0, Math.round(gross));
+  const basic = Math.round(g * 0.5);
+  const hra = Math.round(g * 0.2);
+  const cca = Math.round(g * 0.05);
+  const conveyance = 1600;
+  const medicalReimb = 1250;
+  const pla = Math.round(g * 0.05);
+  const personalPay = Math.max(0, g - basic - hra - cca - conveyance - medicalReimb - pla);
+  const epf = Math.round(basic * 0.12);
+  const esi = g > 0 && g < 21000 ? Math.round(g * 0.0075) : 0;
+  return { basic, hra, cca, conveyance, medicalReimb, pla, personalPay, epf, esi };
+}
 
 export default function PayrollEditor({
   rows: initial,
   year,
   month,
   canWrite,
+  lastMonth,
 }: {
   rows: PayrollRow[];
   year: number;
   month: number;
   canWrite: boolean;
+  lastMonth?: Record<string, Pick<PayrollRow, NumericKey>>;
 }) {
   const [rows, setRows] = useState<RowState[]>(
-    initial.map((r) => ({ ...r, saving: false, savedId: r.recordId, error: null }))
+    initial.map((r) => ({ ...r, saving: false, savedId: r.recordId, dirty: false, error: null }))
   );
+  const [openIdx, setOpenIdx] = useState<number | null>(null);
+  const [query, setQuery] = useState("");
 
-  function updateNum(idx: number, field: NumericKey, raw: number) {
-    const val = isNaN(raw) ? 0 : Math.max(0, raw);
-    setRows((prev) =>
-      prev.map((r, i) => (i === idx ? { ...r, [field]: val } : r))
-    );
+  function patch(idx: number, fields: Partial<RowState>, markDirty = true) {
+    setRows((prev) => prev.map((r, i) => (i === idx ? { ...r, ...fields, ...(markDirty ? { dirty: true } : {}) } : r)));
   }
+  const setNum = (idx: number, field: NumericKey, raw: number) =>
+    patch(idx, { [field]: Math.max(0, Math.floor(isNaN(raw) ? 0 : raw)) } as Partial<RowState>);
 
   async function save(idx: number) {
     const r = rows[idx];
-    setRows((prev) =>
-      prev.map((row, i) => (i === idx ? { ...row, saving: true, error: null } : row))
-    );
+    patch(idx, { saving: true, error: null }, false);
     try {
       const res = await fetch("/api/hr/payroll", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          employeeId: r.emp.id,
-          year,
-          month,
-          code: r.code,
-          role: r.role,
-          designation: r.designation,
-          ctc: r.ctc,
-          basic: r.basic,
-          hra: r.hra,
-          cca: r.cca,
-          personalPay: r.personalPay,
-          conveyance: r.conveyance,
-          pla: r.pla,
-          medicalReimb: r.medicalReimb,
-          tds: r.tds,
-          loanAdv: r.loanAdv,
-          epf: r.epf,
-          esi: r.esi,
-          remarks: r.remarks,
+          employeeId: r.emp.id, year, month,
+          code: r.code, role: r.role, designation: r.designation, ctc: r.ctc,
+          basic: r.basic, hra: r.hra, cca: r.cca, personalPay: r.personalPay,
+          conveyance: r.conveyance, pla: r.pla, medicalReimb: r.medicalReimb,
+          tds: r.tds, loanAdv: r.loanAdv, epf: r.epf, esi: r.esi, remarks: r.remarks,
         }),
       });
       const json = (await res.json()) as { record?: { id: string }; error?: string };
       if (!res.ok) throw new Error(json.error ?? "Save failed");
-      setRows((prev) =>
-        prev.map((row, i) =>
-          i === idx ? { ...row, saving: false, savedId: json.record!.id, error: null } : row
-        )
-      );
+      patch(idx, { saving: false, savedId: json.record!.id, dirty: false, error: null }, false);
     } catch (e) {
-      setRows((prev) =>
-        prev.map((row, i) =>
-          i === idx ? { ...row, saving: false, error: (e as Error).message } : row
-        )
-      );
+      patch(idx, { saving: false, error: (e as Error).message }, false);
     }
   }
 
+  const totals = useMemo(() => {
+    let payable = 0, earnings = 0, processed = 0;
+    for (const r of rows) {
+      const t = computePayrollTotals(r);
+      payable += t.payableAmount;
+      earnings += t.totalEarnings;
+      if (r.savedId) processed++;
+    }
+    return { payable, earnings, processed, pending: rows.length - processed };
+  }, [rows]);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return rows
+      .map((r, idx) => ({ r, idx }))
+      .filter(({ r }) => !q || r.emp.name.toLowerCase().includes(q) || r.emp.empId.toLowerCase().includes(q));
+  }, [rows, query]);
+
+  const active = openIdx === null ? null : rows[openIdx];
+
   return (
-    <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-[var(--shadow-card)]">
-      <table className="w-full min-w-[1440px] border-collapse text-[13px]">
-        <thead>
-          <tr className="border-b border-slate-200 bg-slate-50 text-left text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-            <th className="px-4 py-3 min-w-[180px]">Employee</th>
-            {EARNINGS_FIELDS.map((f) => (
-              <th key={f.key} className="px-2 py-3 min-w-[80px] text-right">{f.label}</th>
-            ))}
-            <th className="px-3 py-3 min-w-[90px] text-right text-teal-700">Earnings</th>
-            {DEDUCTION_FIELDS.map((f) => (
-              <th key={f.key} className="px-2 py-3 min-w-[80px] text-right">{f.label}</th>
-            ))}
-            <th className="px-3 py-3 min-w-[90px] text-right text-red-600">Deduct</th>
-            <th className="px-3 py-3 min-w-[90px] text-right text-teal-700">Payable</th>
-            <th className="px-4 py-3 min-w-[90px]"></th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-100">
-          {rows.map((r, idx) => {
-            const { totalEarnings, totalDeductions, payableAmount } = computePayrollTotals(r);
-            const printId = r.savedId;
+    <div className="space-y-5">
+      {/* Stat strip */}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <StatCard label="Total payout" value={fmtINR(totals.payable)} icon={<BadgeIndianRupee className="h-4 w-4" />} tone="brand" />
+        <StatCard label="Total earnings" value={fmtINR(totals.earnings)} tone="emerald" />
+        <StatCard label="Processed" value={`${totals.processed}/${rows.length}`} tone="blue" spark={rows.length ? (totals.processed / rows.length) * 100 : 0} />
+        <StatCard label="Pending" value={totals.pending} tone="amber" />
+      </div>
 
+      {/* Search */}
+      <div className="relative max-w-xs">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search employee…"
+          className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-brand focus:ring-[3px] focus:ring-brand/20"
+        />
+      </div>
+
+      {/* Employee list */}
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[var(--shadow-card)]">
+        <div className="hidden grid-cols-[1fr_auto_auto_auto_auto] gap-4 border-b border-slate-100 bg-slate-50/70 px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-slate-500 sm:grid">
+          <span>Employee</span>
+          <span className="text-right">CTC (annual)</span>
+          <span className="text-right">Net payable</span>
+          <span className="text-center">Status</span>
+          <span className="w-16 text-right">Slip</span>
+        </div>
+        <ul className="divide-y divide-slate-100">
+          {filtered.map(({ r, idx }) => {
+            const { payableAmount, totalEarnings } = computePayrollTotals(r);
+            const untouched = !r.savedId && !r.dirty && totalEarnings === 0;
             return (
-              <tr key={r.emp.id} className="group hover:bg-slate-50/60 align-middle">
-                {/* Employee */}
-                <td className="px-4 py-2">
-                  <div className="font-medium text-slate-900 leading-snug">{r.emp.name}</div>
-                  <div className="nums text-xs text-slate-400">{r.emp.empId}</div>
-                  {r.error && (
-                    <div className="mt-0.5 text-[11px] text-red-500">{r.error}</div>
+              <li key={r.emp.id} className="flex items-center gap-3 px-3 py-2 transition-colors hover:bg-brand-50/40 sm:px-5">
+                <button
+                  type="button"
+                  onClick={() => setOpenIdx(idx)}
+                  className="grid flex-1 grid-cols-[1fr_auto] items-center gap-4 rounded-xl py-1.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-brand/30 sm:grid-cols-[1fr_auto_auto_auto]"
+                >
+                  <span className="min-w-0">
+                    <span className="block truncate font-medium text-slate-900">{r.emp.name}</span>
+                    <span className="block truncate text-xs text-slate-400">
+                      <span className="nums">{r.emp.empId}</span> · {r.designation || "—"}
+                    </span>
+                  </span>
+                  <span className="nums hidden text-right text-sm text-slate-500 sm:block">{fmtINR(r.ctc)}</span>
+                  <span className={cn("nums text-right text-sm font-semibold", untouched ? "text-slate-300" : "text-teal-700")}>
+                    {untouched ? "—" : fmtINR(payableAmount)}
+                  </span>
+                  <span className="hidden justify-center sm:flex">
+                    <StatusBadge dirty={r.dirty} saved={!!r.savedId} />
+                  </span>
+                </button>
+                <div className="flex w-16 shrink-0 items-center justify-end gap-1">
+                  {r.savedId ? (
+                    <Link
+                      href={`/hr/payout/${r.savedId}/print`}
+                      target="_blank"
+                      aria-label={`Print payslip for ${r.emp.name}`}
+                      className="press grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+                    >
+                      <Printer className="h-4 w-4" />
+                    </Link>
+                  ) : (
+                    <span className="grid h-8 w-8 place-items-center text-slate-200"><Printer className="h-4 w-4" /></span>
                   )}
-                </td>
-
-                {/* Earnings inputs */}
-                {EARNINGS_FIELDS.map((f) => (
-                  <td key={f.key} className="px-2 py-2">
-                    <input
-                      type="number"
-                      min={0}
-                      step={1}
-                      value={r[f.key]}
-                      disabled={!canWrite}
-                      onChange={(e) => updateNum(idx, f.key, Number(e.target.value))}
-                      className="w-20 rounded-lg border border-slate-200 bg-white px-2 py-1 text-right text-sm nums focus:border-teal-400 focus:outline-none focus:ring-2 focus:ring-teal-400/20 disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed"
-                    />
-                  </td>
-                ))}
-
-                {/* Total Earnings (computed) */}
-                <td className="px-3 py-2 text-right">
-                  <span className="nums font-semibold text-teal-700">{fmtINR(totalEarnings)}</span>
-                </td>
-
-                {/* Deduction inputs */}
-                {DEDUCTION_FIELDS.map((f) => (
-                  <td key={f.key} className="px-2 py-2">
-                    <input
-                      type="number"
-                      min={0}
-                      step={1}
-                      value={r[f.key]}
-                      disabled={!canWrite}
-                      onChange={(e) => updateNum(idx, f.key, Number(e.target.value))}
-                      className="w-20 rounded-lg border border-slate-200 bg-white px-2 py-1 text-right text-sm nums focus:border-teal-400 focus:outline-none focus:ring-2 focus:ring-teal-400/20 disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed"
-                    />
-                  </td>
-                ))}
-
-                {/* Total Deductions (computed) */}
-                <td className="px-3 py-2 text-right">
-                  <span className="nums font-semibold text-red-600">{fmtINR(totalDeductions)}</span>
-                </td>
-
-                {/* Net Payable (computed) */}
-                <td className="px-3 py-2 text-right">
-                  <span className="nums font-bold text-teal-700">{fmtINR(payableAmount)}</span>
-                </td>
-
-                {/* Save + Print */}
-                <td className="px-4 py-2">
-                  <div className="flex items-center gap-2">
-                    {canWrite && (
-                      <button
-                        onClick={() => save(idx)}
-                        disabled={r.saving}
-                        className="inline-flex items-center gap-1 rounded-lg bg-teal-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                      >
-                        {r.saving ? "Saving…" : "Save"}
-                      </button>
-                    )}
-                    {printId && (
-                      <Link
-                        href={`/hr/payout/${printId}/print`}
-                        className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2 py-1.5 text-xs text-slate-600 hover:bg-slate-200 transition-colors"
-                        target="_blank"
-                        aria-label="Print payslip"
-                      >
-                        <Printer className="h-3.5 w-3.5" />
-                      </Link>
-                    )}
-                  </div>
-                </td>
-              </tr>
+                  <button type="button" onClick={() => setOpenIdx(idx)} aria-label="Edit" className="press grid h-8 w-8 place-items-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700">
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
+              </li>
             );
           })}
-        </tbody>
-      </table>
+        </ul>
+        {filtered.length === 0 && <p className="px-5 py-10 text-center text-sm text-slate-400">No employees match “{query}”.</p>}
+      </div>
+
+      {/* Editor slide-over */}
+      <SlideOver
+        open={active !== null}
+        onClose={() => setOpenIdx(null)}
+        icon={<BadgeIndianRupee className="h-5 w-5" />}
+        title={active?.emp.name ?? ""}
+        subtitle={active ? `${active.emp.empId} · ${active.designation || "—"}` : ""}
+        footer={
+          active && openIdx !== null ? (
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-sm">
+                <span className="text-slate-500">Net payable</span>{" "}
+                <span className="nums font-bold text-teal-700">{fmtINR(computePayrollTotals(active).payableAmount)}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                {active.savedId && (
+                  <Link href={`/hr/payout/${active.savedId}/print`} target="_blank" className="press inline-flex h-9 items-center gap-1.5 rounded-xl px-3 text-xs font-medium text-slate-600 ring-1 ring-inset ring-slate-200 hover:bg-slate-50">
+                    <Printer className="h-3.5 w-3.5" /> Print
+                  </Link>
+                )}
+                {canWrite && (
+                  <Button size="sm" onClick={() => save(openIdx)} disabled={active.saving || !active.dirty}>
+                    {active.saving ? "Saving…" : active.savedId ? "Save changes" : "Save payslip"}
+                  </Button>
+                )}
+              </div>
+            </div>
+          ) : null
+        }
+      >
+        {active && openIdx !== null && (
+          <EditorBody
+            key={active.emp.id}
+            row={active}
+            idx={openIdx}
+            canWrite={canWrite}
+            lastMonth={lastMonth?.[active.emp.id]}
+            onNum={setNum}
+            onMany={(idx, fields) => patch(idx, fields as Partial<RowState>)}
+          />
+        )}
+      </SlideOver>
+    </div>
+  );
+}
+
+function StatusBadge({ dirty, saved }: { dirty: boolean; saved: boolean }) {
+  if (dirty) return <span className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700 ring-1 ring-inset ring-amber-200">Unsaved</span>;
+  if (saved) return <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700 ring-1 ring-inset ring-emerald-200">Saved</span>;
+  return <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-500">Draft</span>;
+}
+
+function EditorBody({
+  row, idx, canWrite, lastMonth, onNum, onMany,
+}: {
+  row: RowState;
+  idx: number;
+  canWrite: boolean;
+  lastMonth?: Pick<PayrollRow, NumericKey>;
+  onNum: (idx: number, field: NumericKey, raw: number) => void;
+  onMany: (idx: number, fields: Partial<Record<NumericKey, number> & { remarks: string }>) => void;
+}) {
+  const { totalEarnings, totalDeductions, payableAmount } = computePayrollTotals(row);
+  const [gross, setGross] = useState(() => (row.ctc ? Math.round(row.ctc / 12) : totalEarnings || 0));
+
+  return (
+    <div className="space-y-6">
+      {row.error && <div className="rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-700 ring-1 ring-inset ring-rose-200">{row.error}</div>}
+
+      {/* Quick fill */}
+      {canWrite && (
+        <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3">
+          <div className="flex items-end gap-2">
+            <label className="flex-1">
+              <span className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-slate-500">Monthly gross</span>
+              <div className="relative">
+                <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-slate-400">₹</span>
+                <input
+                  type="number" min={0} value={gross}
+                  onChange={(e) => setGross(Math.max(0, Math.floor(Number(e.target.value) || 0)))}
+                  className="nums h-10 w-full rounded-xl border border-slate-200 bg-white pl-7 pr-3 text-right text-sm outline-none focus:border-brand focus:ring-[3px] focus:ring-brand/20"
+                />
+              </div>
+            </label>
+            <Button variant="secondary" size="md" onClick={() => onMany(idx, splitFromGross(gross))} title="Split into Basic/HRA/… and compute EPF/ESI">
+              <Wand2 className="h-4 w-4" /> Auto-split
+            </Button>
+          </div>
+          {lastMonth && (
+            <button
+              type="button"
+              onClick={() => onMany(idx, { ...lastMonth })}
+              className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-brand-700 hover:underline"
+            >
+              <Copy className="h-3.5 w-3.5" /> Copy last month’s figures
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Earnings */}
+      <Section title="Earnings" total={totalEarnings} tone="emerald">
+        {EARNINGS.map((f) => (
+          <MoneyRow key={f.key} label={f.label} value={row[f.key]} disabled={!canWrite} onChange={(v) => onNum(idx, f.key, v)} />
+        ))}
+      </Section>
+
+      {/* Deductions */}
+      <Section title="Deductions" total={totalDeductions} tone="rose">
+        {DEDUCTIONS.map((f) => (
+          <MoneyRow key={f.key} label={f.label} value={row[f.key]} disabled={!canWrite} onChange={(v) => onNum(idx, f.key, v)} />
+        ))}
+      </Section>
+
+      {/* Net */}
+      <div className="flex items-center justify-between rounded-xl bg-teal-50 px-4 py-3 ring-1 ring-inset ring-teal-100">
+        <span className="text-sm font-semibold text-teal-900">Net payable</span>
+        <span className="nums text-xl font-bold text-teal-700">{fmtINR(payableAmount)}</span>
+      </div>
+
+      {/* Remarks */}
+      <label className="block">
+        <span className="mb-1.5 block text-[13px] font-medium text-slate-700">Remarks</span>
+        <textarea
+          value={row.remarks}
+          disabled={!canWrite}
+          onChange={(e) => onMany(idx, { remarks: e.target.value })}
+          rows={2}
+          placeholder="Optional note for this payslip…"
+          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-brand focus:ring-[3px] focus:ring-brand/20 disabled:bg-slate-50"
+        />
+      </label>
+    </div>
+  );
+}
+
+function Section({ title, total, tone, children }: { title: string; total: number; tone: "emerald" | "rose"; children: ReactNode }) {
+  return (
+    <div>
+      <div className="mb-1 flex items-center justify-between">
+        <h3 className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{title}</h3>
+        <span className={cn("nums text-sm font-semibold", tone === "emerald" ? "text-emerald-700" : "text-rose-600")}>{fmtINR(total)}</span>
+      </div>
+      <div className="divide-y divide-slate-100 rounded-xl border border-slate-200 px-3">{children}</div>
+    </div>
+  );
+}
+
+function MoneyRow({ label, value, onChange, disabled }: { label: string; value: number; onChange: (v: number) => void; disabled?: boolean }) {
+  return (
+    <div className="flex items-center justify-between gap-3 py-2">
+      <span className="text-sm text-slate-600">{label}</span>
+      <div className="relative">
+        <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-slate-400">₹</span>
+        <input
+          type="number" min={0} step={1} value={value} disabled={disabled}
+          onChange={(e) => onChange(Math.floor(Number(e.target.value) || 0))}
+          className="nums h-9 w-36 rounded-lg border border-slate-200 bg-white pl-7 pr-2.5 text-right text-sm text-slate-900 outline-none focus:border-brand focus:ring-[3px] focus:ring-brand/20 disabled:bg-slate-50 disabled:text-slate-400"
+        />
+      </div>
     </div>
   );
 }
