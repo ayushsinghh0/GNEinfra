@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requirePageRole, HR_VIEW, HR_WRITE } from "@/lib/rbac";
 import { fmtDate } from "@/lib/format";
 import AssetForm from "@/components/hr/AssetForm";
+import AssetRowActions from "@/components/hr/AssetRowActions";
 import {
   PageHeader,
   Card,
@@ -23,13 +24,13 @@ export default async function AssetsPage() {
 
   const [assets, employees] = await Promise.all([
     prisma.employeeAsset.findMany({
-      include: { employee: { select: { empId: true, name: true } } },
+      include: { employee: { select: { id: true, empId: true, name: true, designation: true, mailId: true, location: true } } },
       orderBy: { allocatedAt: "desc" },
     }),
     canWrite
       ? prisma.employee.findMany({
           where: { status: "ACTIVE" },
-          select: { id: true, empId: true, name: true },
+          select: { id: true, empId: true, name: true, designation: true, mailId: true, location: true },
           orderBy: { name: "asc" },
         })
       : Promise.resolve([]),
@@ -58,10 +59,13 @@ export default async function AssetsPage() {
             />
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[1100px] text-sm">
+              <table className="w-full min-w-[1400px] text-sm">
                 <thead>
                   <tr className={theadRowCls}>
                     <th className={thCls}>Employee</th>
+                    <th className={thCls}>Position</th>
+                    <th className={thCls}>Mail ID</th>
+                    <th className={thCls}>Location</th>
                     <th className={thCls}>Laptop</th>
                     <th className={thCls}>Serial No</th>
                     <th className={thCls}>Make / Model</th>
@@ -72,6 +76,7 @@ export default async function AssetsPage() {
                     <th className={thCls}>OEM</th>
                     <th className={thCls}>Allocated</th>
                     <th className={thCls}>Returned</th>
+                    {canWrite && <th className={thCls}>Actions</th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -82,6 +87,9 @@ export default async function AssetsPage() {
                         {" · "}
                         <span className="font-medium text-slate-800">{a.employee.name}</span>
                       </td>
+                      <td className={tdCls}>{a.employee.designation ?? "—"}</td>
+                      <td className={tdCls}>{a.employee.mailId ?? "—"}</td>
+                      <td className={tdCls}>{a.employee.location ?? "—"}</td>
                       <td className={tdCls}>{a.hasLaptop ? "✓" : "—"}</td>
                       <td className={tdCls}>{a.lpSerialNo ?? "—"}</td>
                       <td className={tdCls}>{a.makeModel ?? "—"}</td>
@@ -90,12 +98,21 @@ export default async function AssetsPage() {
                       <td className={tdCls}>{a.charger ? "✓" : "—"}</td>
                       <td className={tdCls}>{a.idCard ? "✓" : "—"}</td>
                       <td className={tdCls}>{a.oemName ?? "—"}</td>
-                      <td className={tdCls}>
-                        <span className="nums">{fmtDate(a.allocatedAt) ?? "—"}</span>
-                      </td>
-                      <td className={tdCls}>
-                        <span className="nums">{fmtDate(a.returnedAt) ?? "—"}</span>
-                      </td>
+                      <td className={tdCls}><span className="nums">{fmtDate(a.allocatedAt) ?? "—"}</span></td>
+                      <td className={tdCls}><span className="nums">{fmtDate(a.returnedAt) ?? "—"}</span></td>
+                      {canWrite && (
+                        <td className={tdCls}>
+                          <AssetRowActions
+                            asset={{
+                              id: a.id, employeeId: a.employee.id,
+                              hasLaptop: a.hasLaptop, laptopBag: a.laptopBag, mouse: a.mouse, charger: a.charger, idCard: a.idCard,
+                              lpSerialNo: a.lpSerialNo ?? "", makeModel: a.makeModel ?? "", lpCategory: a.lpCategory ?? "", oemName: a.oemName ?? "",
+                              returnedAt: a.returnedAt ? a.returnedAt.toISOString().slice(0, 10) : "",
+                            }}
+                            employees={employees}
+                          />
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
