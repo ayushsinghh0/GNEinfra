@@ -66,6 +66,7 @@ export default async function PayslipPrintPage({
 
   const monthName = MONTHS[record.periodMonth - 1];
   const hasBankInfo = emp.bankAccountNo || emp.bankName || emp.ifsc || emp.panNo || emp.uan || emp.esicNo;
+  const companyMeta = [COMPANY.cin && `CIN ${COMPANY.cin}`, COMPANY.gstin && `GSTIN ${COMPANY.gstin}`, COMPANY.pan && `PAN ${COMPANY.pan}`].filter(Boolean).join("  ·  ");
 
   return (
     <main className="min-h-screen bg-white">
@@ -91,9 +92,7 @@ export default async function PayslipPrintPage({
               {COMPANY.addressLines.map((l) => (
                 <div key={l} className="text-[10px] leading-tight text-slate-500">{l}</div>
               ))}
-              <div className="mt-0.5 text-[10px] text-slate-400">
-                {[COMPANY.cin && `CIN ${COMPANY.cin}`, COMPANY.gstin && `GSTIN ${COMPANY.gstin}`, COMPANY.pan && `PAN ${COMPANY.pan}`].filter(Boolean).join("  ·  ")}
-              </div>
+              {companyMeta && <div className="mt-0.5 text-[10px] text-slate-400">{companyMeta}</div>}
             </div>
           </div>
           <div className="text-right">

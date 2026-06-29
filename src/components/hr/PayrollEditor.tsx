@@ -56,7 +56,9 @@ const DEDUCTIONS: { key: NumericKey; label: string }[] = [
 ];
 
 // Standard monthly-gross split — mirrors the payroll seeding rules.
-function splitFromGross(gross: number): Partial<Record<NumericKey, number>> {
+// existingLta / existingSpecialAllowance are already part of the gross, so
+// personalPay absorbs what remains after all fixed components are subtracted.
+function splitFromGross(gross: number, existingLta = 0, existingSpecialAllowance = 0): Partial<Record<NumericKey, number>> {
   const g = Math.max(0, Math.round(gross));
   const basic = Math.round(g * 0.5);
   const hra = Math.round(g * 0.2);
@@ -64,7 +66,7 @@ function splitFromGross(gross: number): Partial<Record<NumericKey, number>> {
   const conveyance = 1600;
   const medicalReimb = 1250;
   const pla = Math.round(g * 0.05);
-  const personalPay = Math.max(0, g - basic - hra - cca - conveyance - medicalReimb - pla);
+  const personalPay = Math.max(0, g - basic - hra - cca - conveyance - medicalReimb - pla - existingLta - existingSpecialAllowance);
   const epf = Math.round(basic * 0.12);
   const esi = g > 0 && g < 21000 ? Math.round(g * 0.0075) : 0;
   return { basic, hra, cca, conveyance, medicalReimb, pla, personalPay, epf, esi };
@@ -302,7 +304,7 @@ function EditorBody({
                 />
               </div>
             </label>
-            <Button variant="secondary" size="md" onClick={() => onMany(idx, splitFromGross(gross))} title="Split into Basic/HRA/… and compute EPF/ESI">
+            <Button variant="secondary" size="md" onClick={() => onMany(idx, splitFromGross(gross, row.lta, row.specialAllowance))} title="Split into Basic/HRA/… and compute EPF/ESI">
               <Wand2 className="h-4 w-4" /> Auto-split
             </Button>
           </div>
