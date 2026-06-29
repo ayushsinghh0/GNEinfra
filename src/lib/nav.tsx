@@ -68,7 +68,6 @@ const HR: NavSection = {
     { label: "Attendance", href: "/hr/attendance", icon: CalendarClock },
     { label: "Projects", href: "/hr/projects", icon: FolderKanban },
     { label: "Payout", href: "/hr/payout", icon: BadgeIndianRupee },
-    { label: "Analytics", href: "/hr/analytics", icon: ClipboardList },
     { label: "Manpower Planning", icon: UserRound, soon: true },
     { label: "Recruitment", icon: Briefcase, soon: true },
   ],
