@@ -62,7 +62,7 @@ R2/MinIO-compatible via `S3_ENDPOINT`), or SMTP provider is a `.env` change only
   `/login`; the authenticated shell is the `src/app/(erp)/` route group with a **role-driven sidebar**
   (`src/lib/nav.tsx`) — department homes `/bd` `/scm` `/project` `/finance` `/hr`, oversight landing
   `/overview`, system admin `/admin/{users,settings}`. SCM vendor pages are `/scm/*`; HR pages are
-  `/hr/{employees,assets,attendance,payout,projects,analytics}`. Print pages (vendor record, salary
+  `/hr/{employees,assets,attendance,payout,projects}`; the `/hr` dashboard carries the analytics (pill-driven trend board). Print pages (vendor record, salary
   slip) live OUTSIDE the shell in a `(print)` route group so they print clean. API handlers under
   `src/app/api/*` (`/api/hr/*`, `/api/vendors/*`, `/api/admin/users/*`, `/api/auth/*`, …).
 - **Data layer**: Prisma (`src/lib/prisma.ts` singleton), schema `prisma/schema.prisma`. Field
