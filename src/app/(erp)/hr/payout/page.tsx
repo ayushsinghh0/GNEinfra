@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight, BadgeIndianRupee } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { requirePageRole, HR_VIEW, HR_WRITE } from "@/lib/rbac";
-import { MONTHS } from "@/lib/hr-validation";
+import { MONTHS, type PayrollExtraLine } from "@/lib/hr-validation";
 import { PageHeader, EmptyState } from "@/components/ui";
 import PayrollEditor, { type PayrollRow } from "@/components/hr/PayrollEditor";
 import MonthPicker from "@/components/hr/MonthPicker";
@@ -64,6 +64,7 @@ export default async function PayoutPage({
         epf: true,
         esi: true,
         remarks: true,
+        extraLines: true,
       },
     }),
     prisma.payrollRecord.findMany({
@@ -110,6 +111,7 @@ export default async function PayoutPage({
         epf: rec.epf,
         esi: rec.esi,
         remarks: rec.remarks ?? "",
+        extraLines: (rec.extraLines as unknown as PayrollExtraLine[] | null) ?? [],
       };
     }
     // Prefill from employee master
@@ -134,6 +136,7 @@ export default async function PayoutPage({
       epf: 0,
       esi: 0,
       remarks: "",
+      extraLines: [],
     };
   });
 

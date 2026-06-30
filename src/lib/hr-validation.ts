@@ -91,6 +91,17 @@ export const attendanceBulkSchema = z.object({
   })).max(5000).optional(),
 });
 
+export const PAYROLL_LINE_KINDS = ["earning", "deduction"] as const;
+export type PayrollLineKind = (typeof PAYROLL_LINE_KINDS)[number];
+
+// A custom payslip line item: label + integer-rupee amount + earning/deduction.
+export const payrollLineSchema = z.object({
+  label: z.string().trim().min(1, "Label is required").max(60),
+  amount: money0,
+  kind: z.enum(PAYROLL_LINE_KINDS),
+});
+export type PayrollExtraLine = z.infer<typeof payrollLineSchema>;
+
 export const payrollSchema = z.object({
   employeeId: z.string().min(1),
   year: z.coerce.number().int().min(2000).max(2100),
@@ -103,6 +114,7 @@ export const payrollSchema = z.object({
   conveyance: money0, lta: money0, specialAllowance: money0, pla: money0, medicalReimb: money0,
   tds: money0, loanAdv: money0, epf: money0, esi: money0,
   remarks: z.string().trim().max(500).optional().or(z.literal("")),
+  extraLines: z.array(payrollLineSchema).max(20).optional(),
 });
 export type PayrollInput = z.infer<typeof payrollSchema>;
 
@@ -132,10 +144,14 @@ export function computePayrollTotals(p: {
   basic: number; hra: number; cca: number; personalPay: number;
   conveyance: number; lta: number; specialAllowance: number; pla: number; medicalReimb: number;
   tds: number; loanAdv: number; epf: number; esi: number;
+  extraLines?: { amount: number; kind: PayrollLineKind }[];
 }) {
+  const extra = p.extraLines ?? [];
+  const extraEarnings = extra.filter((l) => l.kind === "earning").reduce((s, l) => s + l.amount, 0);
+  const extraDeductions = extra.filter((l) => l.kind === "deduction").reduce((s, l) => s + l.amount, 0);
   const totalEarnings =
     p.basic + p.hra + p.cca + p.personalPay + p.conveyance +
-    p.lta + p.specialAllowance + p.pla + p.medicalReimb;
-  const totalDeductions = p.tds + p.loanAdv + p.epf + p.esi;
+    p.lta + p.specialAllowance + p.pla + p.medicalReimb + extraEarnings;
+  const totalDeductions = p.tds + p.loanAdv + p.epf + p.esi + extraDeductions;
   return { totalEarnings, totalDeductions, payableAmount: totalEarnings - totalDeductions };
 }

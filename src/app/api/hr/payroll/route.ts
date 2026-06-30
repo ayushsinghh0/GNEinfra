@@ -23,6 +23,7 @@ export async function POST(req: NextRequest) {
     tds: d.tds, loanAdv: d.loanAdv, epf: d.epf, esi: d.esi,
     totalEarnings: t.totalEarnings, totalDeductions: t.totalDeductions, payableAmount: t.payableAmount,
     remarks: d.remarks || null,
+    extraLines: d.extraLines ?? [],
   };
   try {
     const record = await prisma.payrollRecord.upsert({

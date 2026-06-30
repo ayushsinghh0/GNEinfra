@@ -66,6 +66,9 @@ export default async function PayslipPrintPage({
 
   const monthName = MONTHS[record.periodMonth - 1];
   const hasBankInfo = emp.bankAccountNo || emp.bankName || emp.ifsc || emp.panNo || emp.uan || emp.esicNo;
+  const extraLines = (record.extraLines as unknown as { label: string; amount: number; kind: "earning" | "deduction" }[] | null) ?? [];
+  const extraEarnings = extraLines.filter((l) => l.kind === "earning");
+  const extraDeductions = extraLines.filter((l) => l.kind === "deduction");
   const companyMeta = [COMPANY.cin && `CIN ${COMPANY.cin}`, COMPANY.gstin && `GSTIN ${COMPANY.gstin}`, COMPANY.pan && `PAN ${COMPANY.pan}`].filter(Boolean).join("  ·  ");
 
   return (
@@ -181,6 +184,9 @@ export default async function PayslipPrintPage({
                 <ERow label="Special Allow." value={fmtINR(record.specialAllowance)} />
                 <ERow label="PLA"            value={fmtINR(record.pla)} />
                 <ERow label="Medical Reimb." value={fmtINR(record.medicalReimb)} />
+                {extraEarnings.map((l, i) => (
+                  <ERow key={`ee-${i}`} label={l.label} value={fmtINR(l.amount)} />
+                ))}
               </tbody>
             </table>
             <div className="mt-3 flex justify-between border-t-2 border-slate-900 pt-2">
@@ -202,6 +208,9 @@ export default async function PayslipPrintPage({
                 <ERow label="Loan / Advance" value={fmtINR(record.loanAdv)} />
                 <ERow label="EPF"           value={fmtINR(record.epf)} />
                 <ERow label="ESI"           value={fmtINR(record.esi)} />
+                {extraDeductions.map((l, i) => (
+                  <ERow key={`ed-${i}`} label={l.label} value={fmtINR(l.amount)} />
+                ))}
               </tbody>
             </table>
             <div className="mt-3 flex justify-between border-t-2 border-slate-900 pt-2">

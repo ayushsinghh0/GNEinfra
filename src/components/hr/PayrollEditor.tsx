@@ -2,8 +2,8 @@
 
 import { type ReactNode, useMemo, useState } from "react";
 import Link from "next/link";
-import { BadgeIndianRupee, ChevronRight, Copy, Printer, Search, Wand2 } from "lucide-react";
-import { computePayrollTotals } from "@/lib/hr-validation";
+import { BadgeIndianRupee, ChevronRight, Copy, Plus, Printer, Search, Trash2, Wand2 } from "lucide-react";
+import { computePayrollTotals, type PayrollExtraLine, type PayrollLineKind } from "@/lib/hr-validation";
 import { fmtINR } from "@/lib/format";
 import { Button, StatCard, cn } from "@/components/ui";
 import SlideOver from "@/components/SlideOver";
@@ -29,6 +29,7 @@ export type PayrollRow = {
   epf: number;
   esi: number;
   remarks: string;
+  extraLines: PayrollExtraLine[];
 };
 
 type NumericKey =
@@ -111,6 +112,7 @@ export default function PayrollEditor({
           conveyance: r.conveyance, lta: r.lta, specialAllowance: r.specialAllowance,
           pla: r.pla, medicalReimb: r.medicalReimb,
           tds: r.tds, loanAdv: r.loanAdv, epf: r.epf, esi: r.esi, remarks: r.remarks,
+          extraLines: r.extraLines,
         }),
       });
       const json = (await res.json()) as { record?: { id: string }; error?: string };
@@ -259,6 +261,7 @@ export default function PayrollEditor({
             lastMonth={lastMonth?.[active.emp.id]}
             onNum={setNum}
             onMany={(idx, fields) => patch(idx, fields as Partial<RowState>)}
+            onExtra={(idx, lines) => patch(idx, { extraLines: lines })}
           />
         )}
       </SlideOver>
@@ -273,7 +276,7 @@ function StatusBadge({ dirty, saved }: { dirty: boolean; saved: boolean }) {
 }
 
 function EditorBody({
-  row, idx, canWrite, lastMonth, onNum, onMany,
+  row, idx, canWrite, lastMonth, onNum, onMany, onExtra,
 }: {
   row: RowState;
   idx: number;
@@ -281,6 +284,7 @@ function EditorBody({
   lastMonth?: Pick<PayrollRow, NumericKey>;
   onNum: (idx: number, field: NumericKey, raw: number) => void;
   onMany: (idx: number, fields: Partial<Record<NumericKey, number> & { remarks: string }>) => void;
+  onExtra: (idx: number, lines: PayrollExtraLine[]) => void;
 }) {
   const { totalEarnings, totalDeductions, payableAmount } = computePayrollTotals(row);
   const [gross, setGross] = useState(() => (row.ctc ? Math.round(row.ctc / 12) : totalEarnings || 0));
@@ -334,6 +338,9 @@ function EditorBody({
         ))}
       </Section>
 
+      {/* Custom line items */}
+      <ExtraLines idx={idx} lines={row.extraLines} canWrite={canWrite} onExtra={onExtra} />
+
       {/* Net */}
       <div className="flex items-center justify-between rounded-xl bg-teal-50 px-4 py-3 ring-1 ring-inset ring-teal-100">
         <span className="text-sm font-semibold text-teal-900">Net payable</span>
@@ -364,6 +371,74 @@ function Section({ title, total, tone, children }: { title: string; total: numbe
         <span className={cn("nums text-sm font-semibold", tone === "emerald" ? "text-emerald-700" : "text-rose-600")}>{fmtINR(total)}</span>
       </div>
       <div className="divide-y divide-slate-100 rounded-xl border border-slate-200 px-3">{children}</div>
+    </div>
+  );
+}
+
+function ExtraLines({
+  idx, lines, canWrite, onExtra,
+}: {
+  idx: number;
+  lines: PayrollExtraLine[];
+  canWrite: boolean;
+  onExtra: (idx: number, lines: PayrollExtraLine[]) => void;
+}) {
+  const update = (i: number, fields: Partial<PayrollExtraLine>) =>
+    onExtra(idx, lines.map((l, j) => (j === i ? { ...l, ...fields } : l)));
+  const add = () => onExtra(idx, [...lines, { label: "", amount: 0, kind: "earning" }]);
+  const remove = (i: number) => onExtra(idx, lines.filter((_, j) => j !== i));
+
+  return (
+    <div>
+      <div className="mb-1 flex items-center justify-between">
+        <h3 className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Custom items</h3>
+        {canWrite && (
+          <button type="button" onClick={add} className="press inline-flex items-center gap-1 text-xs font-medium text-brand-700 hover:underline">
+            <Plus className="h-3.5 w-3.5" /> Add line
+          </button>
+        )}
+      </div>
+      {lines.length === 0 ? (
+        <p className="rounded-xl border border-dashed border-slate-200 px-3 py-2.5 text-xs text-slate-400">
+          No custom lines. Add a bonus, arrears, or a one-off deduction — it prints on the slip.
+        </p>
+      ) : (
+        <div className="space-y-2">
+          {lines.map((l, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <input
+                value={l.label}
+                disabled={!canWrite}
+                onChange={(e) => update(i, { label: e.target.value })}
+                placeholder="Label (e.g. Bonus)"
+                className="h-9 flex-1 rounded-lg border border-slate-200 bg-white px-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-brand focus:ring-[3px] focus:ring-brand/20 disabled:bg-slate-50"
+              />
+              <select
+                value={l.kind}
+                disabled={!canWrite}
+                onChange={(e) => update(i, { kind: e.target.value as PayrollLineKind })}
+                className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-sm text-slate-700 outline-none focus:border-brand focus:ring-[3px] focus:ring-brand/20 disabled:bg-slate-50"
+              >
+                <option value="earning">Earning</option>
+                <option value="deduction">Deduction</option>
+              </select>
+              <div className="relative">
+                <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-sm text-slate-400">₹</span>
+                <input
+                  type="number" min={0} step={1} value={l.amount} disabled={!canWrite}
+                  onChange={(e) => update(i, { amount: Math.max(0, Math.floor(Number(e.target.value) || 0)) })}
+                  className="nums h-9 w-28 rounded-lg border border-slate-200 bg-white pl-6 pr-2 text-right text-sm text-slate-900 outline-none focus:border-brand focus:ring-[3px] focus:ring-brand/20 disabled:bg-slate-50"
+                />
+              </div>
+              {canWrite && (
+                <button type="button" onClick={() => remove(i)} aria-label="Remove line" className="press grid h-8 w-8 shrink-0 place-items-center rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-600">
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

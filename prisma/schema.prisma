@@ -394,6 +394,7 @@ model PayrollRecord {
   totalDeductions Int @default(0)
   payableAmount Int @default(0)
   remarks       String?
+  extraLines    Json?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
