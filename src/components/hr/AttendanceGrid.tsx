@@ -43,7 +43,9 @@ export default function AttendanceGrid({
   const router = useRouter();
   const key = (emp: string, day: number) => `${emp}:${day}`;
 
-  const initialKeys = useState(() => new Set(initial.map((r) => key(r.employeeId, r.day))))[0];
+  // Track the server snapshot (not a frozen mount-time copy) so a record created
+  // earlier this session can still be cleared after router.refresh() reloads it.
+  const initialKeys = useMemo(() => new Set(initial.map((r) => key(r.employeeId, r.day))), [initial]);
   const initialGrid = useMemo(() => {
     const g: Record<string, Cell> = {};
     for (const r of initial) g[key(r.employeeId, r.day)] = r.status;
@@ -56,17 +58,7 @@ export default function AttendanceGrid({
   const [busy, setBusy] = useState(false);
   const dragRef = useRef<Cell | null>(null);
 
-  const rowRefs = useRef<Map<string, HTMLTableRowElement | null>>(new Map());
-  const [flashId, setFlashId] = useState<string | null>(null);
-
-  function jumpTo(id: string) {
-    const el = rowRefs.current.get(id);
-    if (!el) return;
-    const reduce = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    el.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" });
-    setFlashId(id);
-    window.setTimeout(() => setFlashId((cur) => (cur === id ? null : cur)), 1600);
-  }
+  const [selectedEmp, setSelectedEmp] = useState<string | null>(null);
 
   // Day metadata (weekday / weekend / today) — UTC to match stored dates.
   const days = useMemo(() => {
@@ -138,11 +130,22 @@ export default function AttendanceGrid({
     finally { setBusy(false); }
   }
 
-  const filtered = useMemo(() => {
+  const pillEmployees = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return employees;
     return employees.filter((e) => e.name.toLowerCase().includes(q) || e.empId.toLowerCase().includes(q));
   }, [employees, query]);
+
+  // The grid shows only the selected employee (no scrolling) — but search takes
+  // precedence: if the query excludes the pinned employee, fall through to the
+  // search results (and the empty state) rather than stranding the selection.
+  const filtered = useMemo(() => {
+    if (selectedEmp) {
+      const one = pillEmployees.find((e) => e.id === selectedEmp);
+      if (one) return [one];
+    }
+    return pillEmployees;
+  }, [pillEmployees, selectedEmp]);
 
   // Totals across all employees for the stat strip.
   const totals = useMemo(() => {
@@ -227,20 +230,66 @@ export default function AttendanceGrid({
         )}
       </div>
 
-      {/* Jump pills — click to scroll straight to an employee's row */}
-      {filtered.length > 1 && (
+      {/* Filter pills — click an employee to view only their row (no scrolling).
+          Stays visible while an employee is pinned so the "All" reset never vanishes. */}
+      {(pillEmployees.length > 1 || selectedEmp) && (
         <div className="sticky top-16 z-10 -mx-1 flex gap-1.5 overflow-x-auto rounded-2xl bg-white/90 px-1 py-2 shadow-[var(--shadow-card)] backdrop-blur">
-          {filtered.map((emp) => (
-            <button
-              key={emp.id}
-              type="button"
-              onClick={() => jumpTo(emp.id)}
-              title={emp.name}
-              className="press shrink-0 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600 motion-safe:transition-colors hover:border-brand-300 hover:bg-brand-50 hover:text-brand-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
-            >
-              <span className="nums text-slate-400">{emp.empId}</span> {emp.name.split(" ")[0]}
-            </button>
-          ))}
+          <button
+            type="button"
+            onClick={() => setSelectedEmp(null)}
+            aria-pressed={selectedEmp === null}
+            className={cn(
+              "press shrink-0 rounded-full border px-3 py-1 text-xs font-medium motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40",
+              selectedEmp === null
+                ? "border-brand-300 bg-brand-50 text-brand-800 ring-1 ring-brand-200"
+                : "border-slate-200 bg-white text-slate-600 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-800"
+            )}
+          >
+            All <span className="nums">{employees.length}</span>
+          </button>
+          {pillEmployees.map((emp) => {
+            const active = selectedEmp === emp.id;
+            return (
+              <button
+                key={emp.id}
+                type="button"
+                onClick={() => setSelectedEmp(active ? null : emp.id)}
+                title={emp.name}
+                aria-pressed={active}
+                className={cn(
+                  "press shrink-0 rounded-full border px-3 py-1 text-xs font-medium motion-safe:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40",
+                  active
+                    ? "border-brand-300 bg-brand-50 text-brand-800 ring-1 ring-brand-200"
+                    : "border-slate-200 bg-white text-slate-600 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-800"
+                )}
+              >
+                <span className="nums text-slate-400">{emp.empId}</span> {emp.name.split(" ")[0]}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Per-employee summary — appears when the pinned employee is the one shown */}
+      {selectedEmp && filtered.length === 1 && filtered[0].id === selectedEmp && (
+        <div className="flex flex-wrap items-center gap-2 rounded-2xl bg-white p-4 shadow-[var(--shadow-card)]">
+          <span className="mr-1 text-sm font-semibold text-slate-800">
+            <span className="nums text-slate-400">{filtered[0].empId}</span> {filtered[0].name}
+          </span>
+          {ATTENDANCE_STATUSES.map((s) => {
+            const n = tally(filtered[0].id, s);
+            return (
+              <span
+                key={s}
+                className={cn(
+                  "inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium",
+                  n ? STATUS[s].cell : "bg-slate-50 text-slate-400"
+                )}
+              >
+                <span className="nums font-semibold">{n}</span> {STATUS[s].label}
+              </span>
+            );
+          })}
         </div>
       )}
 
@@ -265,16 +314,9 @@ export default function AttendanceGrid({
             {filtered.map((emp) => (
               <tr
                 key={emp.id}
-                ref={(el) => { rowRefs.current.set(emp.id, el); }}
-                className={cn(
-                  "border-b border-slate-100 last:border-0 motion-safe:transition-colors",
-                  flashId === emp.id ? "bg-brand-50" : "hover:bg-slate-50/40"
-                )}
+                className="border-b border-slate-100 last:border-0 hover:bg-slate-50/40 motion-safe:transition-colors"
               >
-                <td className={cn(
-                  "sticky left-0 z-10 px-4 py-1.5 font-medium text-slate-800 whitespace-nowrap",
-                  flashId === emp.id ? "bg-brand-50" : "bg-white group-hover:bg-slate-50"
-                )}>
+                <td className="sticky left-0 z-10 bg-white px-4 py-1.5 font-medium text-slate-800 whitespace-nowrap group-hover:bg-slate-50">
                   <span><span className="nums text-slate-400">{emp.empId}</span> {emp.name}</span>
                 </td>
                 {days.map(({ d, weekend }) => {

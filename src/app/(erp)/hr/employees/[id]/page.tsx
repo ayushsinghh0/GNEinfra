@@ -17,7 +17,8 @@ import { ArrowLeft, Laptop, CalendarDays, BadgeIndianRupee, FolderKanban } from 
 import { MONTHS } from "@/lib/hr-validation";
 import AssignProjectForm from "@/components/hr/AssignProjectForm";
 import RemoveAssignmentButton from "@/components/hr/RemoveAssignmentButton";
-import SectionNav from "@/components/SectionNav";
+import TabbedSections from "@/components/hr/TabbedSections";
+import EmployeeStatusAction from "@/components/hr/EmployeeStatusAction";
 
 export const dynamic = "force-dynamic";
 
@@ -91,26 +92,22 @@ export default async function EmployeeDetailPage({
           Back
         </Link>
         {canWrite && (
-          <Link href={`/hr/employees/${id}/edit`} className={btn("primary", "sm")}>
-            Edit
-          </Link>
+          <>
+            <EmployeeStatusAction employeeId={emp.id} status={emp.status} />
+            <Link href={`/hr/employees/${id}/edit`} className={btn("primary", "sm")}>
+              Edit
+            </Link>
+          </>
         )}
       </PageHeader>
 
       <div className="p-8 space-y-6">
-        <SectionNav
-          sections={[
-            { id: "sec-details", label: "Details" },
-            { id: "sec-comp", label: "Compensation" },
-            { id: "sec-assets", label: "Assets" },
-            { id: "sec-projects", label: "Projects" },
-            { id: "sec-attendance", label: "Attendance" },
-            { id: "sec-payslips", label: "Payslips" },
-            { id: "sec-recent", label: "Recent" },
-          ]}
-        />
-        {/* Core details */}
-        <div id="sec-details" className="scroll-mt-24">
+        <TabbedSections
+          tabs={[
+            {
+              id: "sec-details",
+              label: "Details",
+              panel: (
           <Card>
             <CardHeader
               title="Employee Details"
@@ -151,10 +148,12 @@ export default async function EmployeeDetailPage({
               </div>
             </CardBody>
           </Card>
-        </div>
-
-        {/* Compensation */}
-        <div id="sec-comp" className="scroll-mt-24">
+              ),
+            },
+            {
+              id: "sec-comp",
+              label: "Compensation",
+              panel: (
           <Card>
             <CardHeader title="Compensation" />
             <CardBody>
@@ -167,10 +166,12 @@ export default async function EmployeeDetailPage({
               </div>
             </CardBody>
           </Card>
-        </div>
-
-        {/* Assets */}
-        <div id="sec-assets" className="scroll-mt-24">
+              ),
+            },
+            {
+              id: "sec-assets",
+              label: "Assets",
+              panel: (
           <Card>
             <CardHeader
               title="Assets"
@@ -204,10 +205,12 @@ export default async function EmployeeDetailPage({
               </CardBody>
             )}
           </Card>
-        </div>
-
-        {/* Project Assignments */}
-        <div id="sec-projects" className="scroll-mt-24">
+              ),
+            },
+            {
+              id: "sec-projects",
+              label: "Projects",
+              panel: (
           <Card>
             <CardHeader
               title="Projects"
@@ -253,10 +256,12 @@ export default async function EmployeeDetailPage({
               </CardBody>
             )}
           </Card>
-        </div>
-
-        {/* Attendance Summary & Leave Balances */}
-        <div id="sec-attendance" className="scroll-mt-24">
+              ),
+            },
+            {
+              id: "sec-attendance",
+              label: "Attendance",
+              panel: (
           <Card>
             <CardHeader
               title="Attendance Summary & Leave Balances"
@@ -308,10 +313,12 @@ export default async function EmployeeDetailPage({
               </div>
             </CardBody>
           </Card>
-        </div>
-
-        {/* Payslips */}
-        <div id="sec-payslips" className="scroll-mt-24">
+              ),
+            },
+            {
+              id: "sec-payslips",
+              label: "Payslips",
+              panel: (
           <Card>
             <CardHeader
               title="Payslips"
@@ -345,10 +352,12 @@ export default async function EmployeeDetailPage({
               </CardBody>
             )}
           </Card>
-        </div>
-
-        {/* Recent attendance */}
-        <div id="sec-recent" className="scroll-mt-24">
+              ),
+            },
+            {
+              id: "sec-recent",
+              label: "Recent",
+              panel: (
           <Card>
             <CardHeader
               title="Recent Attendance"
@@ -382,7 +391,10 @@ export default async function EmployeeDetailPage({
               </CardBody>
             )}
           </Card>
-        </div>
+              ),
+            },
+          ]}
+        />
       </div>
     </>
   );

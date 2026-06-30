@@ -36,9 +36,6 @@ export default async function PayoutPage({
         name: true,
         designation: true,
         totalCtc: true,
-        salary: true,
-        conveyance: true,
-        lta: true, specialAllowance: true,
       },
       orderBy: { name: "asc" },
     }),
@@ -114,7 +111,8 @@ export default async function PayoutPage({
         extraLines: (rec.extraLines as unknown as PayrollExtraLine[] | null) ?? [],
       };
     }
-    // Prefill from employee master
+    // No saved record yet — open BLANK (no auto-fill). CTC is kept only so the
+    // optional "Auto-split" helper can default its gross; nothing fills the slip.
     return {
       emp: { id: emp.id, empId: emp.empId, name: emp.name },
       recordId: null,
@@ -122,13 +120,13 @@ export default async function PayoutPage({
       role: "",
       designation: emp.designation,
       ctc: emp.totalCtc ?? null,
-      basic: emp.salary ?? 0,
+      basic: 0,
       hra: 0,
       cca: 0,
       personalPay: 0,
-      conveyance: emp.conveyance ?? 0,
-      lta: emp.lta ?? 0,
-      specialAllowance: emp.specialAllowance ?? 0,
+      conveyance: 0,
+      lta: 0,
+      specialAllowance: 0,
       pla: 0,
       medicalReimb: 0,
       tds: 0,

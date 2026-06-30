@@ -9,6 +9,12 @@ export const MONTHS = [
   "July", "August", "September", "October", "November", "December",
 ] as const;
 
+// Mark-as-leaving / reactivate action (dedicated endpoint, not the edit form).
+export const employeeStatusSchema = z.object({
+  action: z.enum(["leave", "reactivate"]),
+  leavingDate: z.string().trim().optional().nullable(),
+});
+
 // Optional money field: "" / undefined → undefined; otherwise a non-negative integer (rupees).
 const money = z.preprocess(
   (v) => (v === "" || v === null || v === undefined ? undefined : v),

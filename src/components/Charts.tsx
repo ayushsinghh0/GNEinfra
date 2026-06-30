@@ -284,7 +284,7 @@ export function MonthlyBars({
               animationDelay: `${i * 60}ms`,
             }}
           />
-          <span className="text-[11px] text-slate-400">{d.label}</span>
+          <span className="w-full truncate text-center text-[11px] text-slate-400" title={d.label}>{d.label}</span>
         </div>
       ))}
     </div>

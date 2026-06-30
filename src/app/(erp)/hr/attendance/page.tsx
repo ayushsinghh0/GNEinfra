@@ -95,6 +95,7 @@ export default async function AttendancePage({
           />
         ) : (
           <AttendanceGrid
+            key={`${y}-${m}`}
             employees={employees}
             initial={initial}
             year={y}

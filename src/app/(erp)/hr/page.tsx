@@ -8,6 +8,7 @@ import { StatCard, Card, CardHeader, CardBody, ProgressBar } from "@/components/
 import { DeltaBadge } from "@/components/Charts";
 import { linearForecast, pctDelta } from "@/lib/hr-forecast";
 import TrendBoard, { type TrendSeries } from "@/components/hr/TrendBoard";
+import CompositionBoard from "@/components/hr/CompositionBoard";
 
 export const dynamic = "force-dynamic";
 
@@ -202,13 +203,13 @@ export default async function HrPage() {
           </Card>
         </div>
 
-        {/* Composition */}
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          <Card><CardHeader title="By location" subtitle="Active" /><CardBody><BarList rows={locationBars} empty="No data yet." /></CardBody></Card>
-          <Card><CardHeader title="By designation" subtitle="Active" /><CardBody><BarList rows={designationBars} empty="No data yet." /></CardBody></Card>
-          <Card><CardHeader title="By category" subtitle="Active" /><CardBody><BarList rows={categoryBars} empty="No data yet." /></CardBody></Card>
-          <Card><CardHeader title="By tenure" subtitle="Active" /><CardBody><BarList rows={tenureBars} empty="No data yet." /></CardBody></Card>
-        </div>
+        {/* Pill-driven workforce composition */}
+        <CompositionBoard
+          location={locationBars}
+          designation={designationBars}
+          category={categoryBars}
+          tenure={tenureBars}
+        />
 
         {/* Quick links */}
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">

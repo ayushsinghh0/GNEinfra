@@ -166,11 +166,13 @@ export default function PayrollEditor({
 
       {/* Employee list */}
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[var(--shadow-card)]">
-        <div className="hidden grid-cols-[1fr_auto_auto_auto_auto] gap-4 border-b border-slate-100 bg-slate-50/70 px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-slate-500 sm:grid">
-          <span>Employee</span>
-          <span className="text-right">CTC (annual)</span>
-          <span className="text-right">Net payable</span>
-          <span className="text-center">Status</span>
+        <div className="hidden items-center gap-3 border-b border-slate-100 bg-slate-50/70 px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-slate-500 sm:flex">
+          <div className="grid flex-1 grid-cols-[minmax(0,1fr)_7rem_8rem_6rem] gap-4">
+            <span>Employee</span>
+            <span className="text-right">CTC (annual)</span>
+            <span className="text-right">Net payable</span>
+            <span className="text-center">Status</span>
+          </div>
           <span className="w-16 text-right">Slip</span>
         </div>
         <ul className="divide-y divide-slate-100">
@@ -182,7 +184,7 @@ export default function PayrollEditor({
                 <button
                   type="button"
                   onClick={() => setOpenIdx(idx)}
-                  className="grid flex-1 grid-cols-[1fr_auto] items-center gap-4 rounded-xl py-1.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-brand/30 sm:grid-cols-[1fr_auto_auto_auto]"
+                  className="grid flex-1 grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-xl py-1.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-brand/30 sm:grid-cols-[minmax(0,1fr)_7rem_8rem_6rem]"
                 >
                   <span className="min-w-0">
                     <span className="block truncate font-medium text-slate-900">{r.emp.name}</span>
@@ -296,6 +298,7 @@ function EditorBody({
       {/* Quick fill */}
       {canWrite && (
         <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3">
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400">Quick fill — optional</p>
           <div className="flex items-end gap-2">
             <label className="flex-1">
               <span className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-slate-500">Monthly gross</span>

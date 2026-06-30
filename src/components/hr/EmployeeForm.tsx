@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { Button, Field, Input, Select } from "@/components/ui";
 import { EMP_CATEGORIES } from "@/lib/hr-validation";
 import { AlertCircle } from "lucide-react";
+import ConfirmDialog from "@/components/ConfirmDialog";
+import { toast } from "@/components/Toast";
 
 type Values = Record<string, string>;
 
@@ -30,11 +32,11 @@ export default function EmployeeForm({ id, initial }: { id?: string; initial?: V
   const [v, setV] = useState<Values>({ ...EMPTY, ...(initial ?? {}) });
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setV((s) => ({ ...s, [k]: e.target.value }));
 
-  async function submit(e: FormEvent) {
-    e.preventDefault();
+  async function doSave() {
     setError(null); setBusy(true);
     try {
       const res = await fetch(id ? `/api/hr/employees/${id}` : "/api/hr/employees", {
@@ -44,11 +46,22 @@ export default function EmployeeForm({ id, initial }: { id?: string; initial?: V
       });
       const d = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(d.error || "Could not save");
+      setConfirmOpen(false);
+      toast(id ? "Changes saved" : "Employee added");
       router.push(id ? `/hr/employees/${id}` : `/hr/employees/${d.employee.id}`);
       router.refresh();
     } catch (err) {
+      setConfirmOpen(false);
       setError(err instanceof Error ? err.message : "Could not save");
     } finally { setBusy(false); }
+  }
+
+  // Confirm before creating; edits save directly.
+  function submit(e: FormEvent) {
+    e.preventDefault();
+    setError(null);
+    if (!id) { setConfirmOpen(true); return; }
+    doSave();
   }
 
   const Txt = (k: string, label: string, req = false, type = "text") => (
@@ -111,6 +124,16 @@ export default function EmployeeForm({ id, initial }: { id?: string; initial?: V
         <Button type="submit" disabled={busy}>{busy ? "Saving…" : id ? "Save changes" : "Add employee"}</Button>
         <Button type="button" variant="secondary" onClick={() => router.back()}>Cancel</Button>
       </div>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        title="Add this employee?"
+        message={`This will create a new employee record${v.name ? ` for ${v.name}` : ""}.`}
+        confirmLabel="Add employee"
+        busy={busy}
+        onCancel={() => setConfirmOpen(false)}
+        onConfirm={doSave}
+      />
     </form>
   );
 }
