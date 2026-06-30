@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button, Eyebrow } from "@/components/ui";
 import { SunGlow, Atmosphere, Wave, Blob, SuccessCheck } from "@/components/chrome";
 import Dropzone from "@/components/Dropzone";
+import Image from "next/image";
 import { AlertCircle, ShieldCheck } from "lucide-react";
 
 // Mirror the server's accepted types + size cap (src/lib/documents.ts) so an
@@ -102,8 +103,8 @@ export default function ReuploadForm({
         <div className="relative h-24 bg-gradient-to-br from-brand-600 via-brand-700 to-brand-800">
           <SunGlow className="-top-10 right-8 h-32 w-32" animate />
           <Atmosphere dots grain />
-          <div className="absolute left-7 top-7 grid h-11 w-11 place-items-center rounded-2xl bg-white/15 text-sm font-extrabold tracking-tight text-white ring-1 ring-inset ring-white/25 backdrop-blur">
-            GNE
+          <div className="absolute left-7 top-7 flex h-11 items-center rounded-2xl bg-white px-3 ring-1 ring-inset ring-white/25 shadow-sm">
+            <Image src="/brand/gne-infra.png" alt="GNE Infra" width={120} height={30} className="h-6 w-auto" priority />
           </div>
           <Wave className="absolute inset-x-0 bottom-[-1px]" />
         </div>

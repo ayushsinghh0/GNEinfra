@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser, VENDOR_VIEW } from "@/lib/rbac";
 import { fmtDate, fmtDateOnly } from "@/lib/format";
@@ -60,8 +61,8 @@ export default async function VendorPrintPage({
         {/* Letterhead */}
         <div className="flex items-start justify-between border-b-2 border-slate-900 pb-4">
           <div className="flex items-center gap-3">
-            <div className="grid h-11 w-11 place-items-center rounded-lg bg-slate-900 text-sm font-bold text-white">
-              GNE
+            <div className="flex h-11 items-center">
+              <Image src="/brand/gne-infra.png" alt="GNE Infra" width={140} height={36} className="h-9 w-auto" priority />
             </div>
             <div>
               <div className="text-lg font-bold tracking-tight text-slate-900">

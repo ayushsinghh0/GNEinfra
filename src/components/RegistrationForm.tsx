@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
+import Image from "next/image";
 import { compressFormImages } from "@/lib/compress-image";
 import {
   Card,
@@ -1553,8 +1554,8 @@ function Rail({
       <Atmosphere dots grain />
 
       <div className="relative z-10 flex items-center gap-3">
-        <div className="grid h-11 w-11 place-items-center rounded-2xl bg-white/15 font-extrabold tracking-tight ring-1 ring-inset ring-white/25 backdrop-blur">
-          GNE
+        <div className="flex h-11 items-center rounded-2xl bg-white px-3 ring-1 ring-inset ring-white/25 shadow-sm">
+          <Image src="/brand/gne-infra.png" alt="GNE Infra" width={120} height={30} className="h-6 w-auto" priority />
         </div>
         <div className="min-w-0">
           <p className="text-sm font-semibold tracking-tight">Vendor Registration</p>
@@ -1653,8 +1654,8 @@ function MobileHeader({ step, complete }: { step: number; complete: boolean }) {
       <SunGlow className="-top-12 -right-8 h-36 w-36" />
       <Atmosphere dots grain />
       <div className="relative z-10 flex items-center gap-3">
-        <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white/15 text-xs font-extrabold tracking-tight ring-1 ring-inset ring-white/25">
-          GNE
+        <div className="flex h-9 shrink-0 items-center rounded-xl bg-white px-2 ring-1 ring-inset ring-white/25">
+          <Image src="/brand/gne-infra.png" alt="GNE Infra" width={100} height={25} className="h-5 w-auto" />
         </div>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold">Vendor Registration</p>

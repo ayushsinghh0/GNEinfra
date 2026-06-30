@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import Image from "next/image";
 import RegistrationForm from "@/components/RegistrationForm";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 
@@ -25,8 +26,8 @@ function Notice({
   return (
     <main className="flex-1 flex items-center justify-center p-6">
       <div className="max-w-lg w-full bg-white rounded-3xl shadow-[var(--shadow-pop)] p-10 text-center">
-        <div className="mx-auto mb-3 grid h-11 w-11 place-items-center rounded-xl bg-gradient-to-b from-brand-500 to-brand-700 text-white text-sm font-extrabold tracking-tight shadow-[var(--shadow-cta)]">
-          GNE
+        <div className="mx-auto mb-3 flex h-11 items-center justify-center">
+          <Image src="/brand/gne-infra.png" alt="GNE Infra" width={120} height={32} className="h-8 w-auto" priority />
         </div>
         <div className={`mx-auto mb-4 grid h-12 w-12 place-items-center rounded-2xl ${tones.ring}`}>
           {tones.icon}
