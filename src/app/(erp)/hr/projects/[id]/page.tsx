@@ -10,13 +10,14 @@ import {
   CardBody,
   Chip,
   btn,
-  EmptyState,
   thCls,
   theadRowCls,
   tdCls,
   trCls,
 } from "@/components/ui";
 import { ArrowLeft, Users } from "lucide-react";
+import AssignEmployeeForm from "@/components/hr/AssignEmployeeForm";
+import RemoveAssignmentButton from "@/components/hr/RemoveAssignmentButton";
 
 export const dynamic = "force-dynamic";
 
@@ -55,6 +56,17 @@ export default async function ProjectDetailPage({
     },
   });
   if (!project) notFound();
+
+  const assignedIds = new Set(project.assignments.map((a) => a.employeeId));
+  const assignableEmployees = canWrite
+    ? (
+        await prisma.employee.findMany({
+          where: { status: "ACTIVE" },
+          select: { id: true, empId: true, name: true },
+          orderBy: { name: "asc" },
+        })
+      ).filter((e) => !assignedIds.has(e.id))
+    : [];
 
   return (
     <>
@@ -95,65 +107,63 @@ export default async function ProjectDetailPage({
         <Card>
           <CardHeader
             title="Assigned Employees"
+            subtitle={`${project.assignments.length} assigned`}
             action={<Users className="h-4 w-4 text-slate-400" />}
           />
-          {project.assignments.length === 0 ? (
-            <EmptyState
-              icon={<Users className="h-5 w-5" />}
-              title="No employees assigned"
-              description="No employees have been assigned to this project yet."
-            />
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[600px] table-fixed text-sm">
-                <colgroup>
-                  <col className="w-[14%]" />
-                  <col className="w-[26%]" />
-                  <col className="w-[22%]" />
-                  <col className="w-[12%]" />
-                  <col className="w-[13%]" />
-                  <col className="w-[13%]" />
-                </colgroup>
-                <thead>
-                  <tr className={theadRowCls}>
-                    <th className={thCls}>EMP ID</th>
-                    <th className={thCls}>Name</th>
-                    <th className={thCls}>Role</th>
-                    <th className={thCls}>Alloc%</th>
-                    <th className={thCls}>Start</th>
-                    <th className={thCls}>End</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {project.assignments.map((a) => (
-                    <tr key={a.id} className={trCls}>
-                      <td className={tdCls}>
-                        <span className="nums font-mono text-xs text-slate-600">{a.employee.empId}</span>
-                      </td>
-                      <td className={tdCls}>
-                        <Link
-                          href={`/hr/employees/${a.employee.id}`}
-                          className="font-medium text-brand-700 hover:text-brand-900 hover:underline"
-                        >
-                          {a.employee.name}
-                        </Link>
-                      </td>
-                      <td className={tdCls}>{a.roleOnProject ?? "—"}</td>
-                      <td className={tdCls}>
-                        <span className="nums">{a.allocationPct != null ? `${a.allocationPct}%` : "—"}</span>
-                      </td>
-                      <td className={tdCls}>
-                        <span className="nums">{fmtDateOnly(a.startDate) ?? "—"}</span>
-                      </td>
-                      <td className={tdCls}>
-                        <span className="nums">{fmtDateOnly(a.endDate) ?? "—"}</span>
-                      </td>
+          <CardBody>
+            {project.assignments.length === 0 ? (
+              <p className="text-sm text-slate-400">No employees assigned to this project yet.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[600px] text-sm">
+                  <thead>
+                    <tr className={theadRowCls}>
+                      <th className={thCls}>EMP ID</th>
+                      <th className={thCls}>Name</th>
+                      <th className={thCls}>Role</th>
+                      <th className={thCls}>Alloc%</th>
+                      <th className={thCls}>Start</th>
+                      <th className={thCls}>End</th>
+                      {canWrite && <th className={thCls}>Actions</th>}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                  </thead>
+                  <tbody>
+                    {project.assignments.map((a) => (
+                      <tr key={a.id} className={trCls}>
+                        <td className={tdCls}>
+                          <span className="nums font-mono text-xs text-slate-600">{a.employee.empId}</span>
+                        </td>
+                        <td className={tdCls}>
+                          <Link
+                            href={`/hr/employees/${a.employee.id}`}
+                            className="font-medium text-brand-700 hover:text-brand-900 hover:underline"
+                          >
+                            {a.employee.name}
+                          </Link>
+                        </td>
+                        <td className={tdCls}>{a.roleOnProject ?? "—"}</td>
+                        <td className={tdCls}>
+                          <span className="nums">{a.allocationPct != null ? `${a.allocationPct}%` : "—"}</span>
+                        </td>
+                        <td className={tdCls}>
+                          <span className="nums">{fmtDateOnly(a.startDate) ?? "—"}</span>
+                        </td>
+                        <td className={tdCls}>
+                          <span className="nums">{fmtDateOnly(a.endDate) ?? "—"}</span>
+                        </td>
+                        {canWrite && (
+                          <td className={tdCls}>
+                            <RemoveAssignmentButton assignmentId={a.id} />
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            {canWrite && <AssignEmployeeForm projectId={project.id} employees={assignableEmployees} />}
+          </CardBody>
         </Card>
       </div>
     </>
