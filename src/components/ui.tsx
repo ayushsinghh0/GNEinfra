@@ -202,6 +202,86 @@ export function Chip({
   );
 }
 
+/* ── Avatar (initials monogram) ─────────────────────────────────────────── */
+// Deterministic brand-tinted monogram — no photo field exists. Tone classes are
+// static strings (Tailwind can't see interpolated class names).
+const AVATAR_TONES = [
+  "bg-brand-100 text-brand-700",
+  "bg-amber-100 text-amber-700",
+  "bg-blue-100 text-blue-700",
+  "bg-emerald-100 text-emerald-700",
+  "bg-violet-100 text-violet-700",
+  "bg-rose-100 text-rose-700",
+];
+const AVATAR_SIZE = { sm: "h-7 w-7 text-[11px]", md: "h-9 w-9 text-xs" } as const;
+
+function avatarInitials(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+function avatarTone(name: string) {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  return AVATAR_TONES[h % AVATAR_TONES.length];
+}
+
+export function Avatar({
+  name,
+  size = "md",
+  className,
+}: {
+  name: string;
+  size?: "sm" | "md";
+  className?: string;
+}) {
+  return (
+    <span
+      title={name}
+      className={cn(
+        "inline-grid shrink-0 place-items-center rounded-full font-semibold select-none",
+        AVATAR_SIZE[size],
+        avatarTone(name),
+        className
+      )}
+    >
+      {avatarInitials(name)}
+    </span>
+  );
+}
+
+export function AvatarStack({
+  names,
+  max = 5,
+  size = "md",
+}: {
+  names: string[];
+  max?: number;
+  size?: "sm" | "md";
+}) {
+  if (names.length === 0) return null;
+  const shown = names.slice(0, max);
+  const extra = names.length - shown.length;
+  return (
+    <div className="flex items-center -space-x-2">
+      {shown.map((n, i) => (
+        <Avatar key={`${n}-${i}`} name={n} size={size} className="ring-2 ring-white" />
+      ))}
+      {extra > 0 && (
+        <span
+          className={cn(
+            "inline-grid shrink-0 place-items-center rounded-full bg-slate-100 font-semibold text-slate-500 ring-2 ring-white",
+            AVATAR_SIZE[size]
+          )}
+        >
+          +{extra}
+        </span>
+      )}
+    </div>
+  );
+}
+
 /* ── Stat tile (dashboard) ──────────────────────────────────────────────── */
 const STAT_TONES: Record<string, { chip: string; spark: string }> = {
   brand: { chip: "bg-brand-50 text-brand-700", spark: "from-brand-500 to-brand-300" },

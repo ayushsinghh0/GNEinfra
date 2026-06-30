@@ -1,35 +1,39 @@
 import Link from "next/link";
-import { Briefcase } from "lucide-react";
+import { Briefcase, FolderKanban, CircleDot, Users, Gauge } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { requirePageRole, HR_VIEW, HR_WRITE } from "@/lib/rbac";
-import { fmtDateOnly } from "@/lib/format";
-import {
-  PageHeader,
-  Card,
-  EmptyState,
-  Chip,
-  thCls,
-  theadRowCls,
-  tdCls,
-  trCls,
-  btn,
-} from "@/components/ui";
+import { PageHeader, Card, StatCard, EmptyState, btn } from "@/components/ui";
+import { projectStats, statusCounts } from "@/lib/hr-projects";
+import ProjectFilters from "@/components/hr/ProjectFilters";
+import ProjectCard from "@/components/hr/ProjectCard";
 
 export const dynamic = "force-dynamic";
 
-function statusChipCls(status: string) {
-  if (status === "ACTIVE") return "bg-emerald-50 text-emerald-700";
-  if (status === "ON_HOLD") return "bg-amber-50 text-amber-700";
-  return "bg-slate-100 text-slate-500";
-}
+const VALID = new Set(["ACTIVE", "ON_HOLD", "COMPLETED"]);
 
-export default async function ProjectsPage() {
+export default async function ProjectsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ status?: string; q?: string }>;
+}) {
   const viewer = await requirePageRole(HR_VIEW);
   const canWrite = HR_WRITE.includes(viewer.role);
+  const { status, q } = await searchParams;
 
   const projects = await prisma.project.findMany({
     orderBy: { createdAt: "desc" },
-    include: { _count: { select: { assignments: true } } },
+    include: { assignments: { include: { employee: { select: { id: true, name: true } } } } },
+  });
+
+  const stats = projectStats(projects);
+  const counts = statusCounts(projects);
+
+  const statusFilter = status && VALID.has(status) ? status : "";
+  const term = (q ?? "").trim().toLowerCase();
+  const filtered = projects.filter((p) => {
+    if (statusFilter && p.status !== statusFilter) return false;
+    if (term && !`${p.name} ${p.code} ${p.client ?? ""}`.toLowerCase().includes(term)) return false;
+    return true;
   });
 
   return (
@@ -42,73 +46,52 @@ export default async function ProjectsPage() {
         )}
       </PageHeader>
 
-      <div className="p-8">
-        <Card className="overflow-hidden">
-          {projects.length === 0 ? (
+      <div className="p-8 space-y-6">
+        {projects.length === 0 ? (
+          <Card className="overflow-hidden">
             <EmptyState
               icon={<Briefcase className="h-6 w-6" />}
               title="No projects yet"
               description="Add your first project to get started."
             />
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[760px] table-fixed text-sm">
-                <colgroup>
-                  <col className="w-[12%]" />
-                  <col className="w-[24%]" />
-                  <col className="w-[18%]" />
-                  <col className="w-[14%]" />
-                  <col className="w-[10%]" />
-                  <col className="w-[11%]" />
-                  <col className="w-[11%]" />
-                </colgroup>
-                <thead>
-                  <tr className={theadRowCls}>
-                    <th className={thCls}>Code</th>
-                    <th className={thCls}>Name</th>
-                    <th className={thCls}>Client</th>
-                    <th className={thCls}>Status</th>
-                    <th className={thCls}>Assigned</th>
-                    <th className={thCls}>Start</th>
-                    <th className={thCls}>End</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {projects.map((p) => (
-                    <tr key={p.id} className={trCls}>
-                      <td className={tdCls}>
-                        <span className="nums font-mono text-xs text-slate-600">{p.code}</span>
-                      </td>
-                      <td className={tdCls}>
-                        <Link
-                          href={`/hr/projects/${p.id}`}
-                          className="font-medium text-brand-700 hover:text-brand-900 hover:underline"
-                        >
-                          {p.name}
-                        </Link>
-                      </td>
-                      <td className={tdCls}>{p.client ?? "—"}</td>
-                      <td className={tdCls}>
-                        <Chip className={statusChipCls(p.status)}>
-                          {p.status.replace(/_/g, " ")}
-                        </Chip>
-                      </td>
-                      <td className={tdCls}>
-                        <span className="nums">{p._count.assignments}</span>
-                      </td>
-                      <td className={tdCls}>
-                        <span className="nums">{fmtDateOnly(p.startDate) ?? "—"}</span>
-                      </td>
-                      <td className={tdCls}>
-                        <span className="nums">{fmtDateOnly(p.endDate) ?? "—"}</span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          </Card>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+              <StatCard label="Total projects" value={stats.total} tone="brand" icon={<FolderKanban className="h-4 w-4" />} />
+              <StatCard label="Active" value={stats.active} tone="emerald" icon={<CircleDot className="h-4 w-4" />} />
+              <StatCard label="People assigned" value={stats.peopleAssigned} tone="blue" icon={<Users className="h-4 w-4" />} />
+              <StatCard label="Avg team size" value={stats.avgTeam} tone="amber" icon={<Gauge className="h-4 w-4" />} />
             </div>
-          )}
-        </Card>
+
+            <Card>
+              <div className="p-4">
+                <ProjectFilters counts={counts} />
+              </div>
+            </Card>
+
+            {filtered.length === 0 ? (
+              <Card className="overflow-hidden">
+                <EmptyState
+                  icon={<Briefcase className="h-6 w-6" />}
+                  title="No projects match these filters"
+                  description="Try a different status or search term."
+                  action={
+                    <Link href="/hr/projects" className={btn("secondary", "sm")}>
+                      Clear filters
+                    </Link>
+                  }
+                />
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                {filtered.map((p) => (
+                  <ProjectCard key={p.id} project={p} />
+                ))}
+              </div>
+            )}
+          </>
+        )}
       </div>
     </>
   );
