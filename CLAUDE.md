@@ -25,10 +25,11 @@ Two verticals are built; the rest are role-scoped "coming soon" shells:
   payroll + printable salary slips, projects + concurrent assignments, leave balances, and a
   predictive analytics dashboard.
 
-> **Branches:** `multi-role-erp` (this branch) carries the full multi-role ERP + HR module.
-> `vendor-only` is the older, **currently-deployed** branch (vendor registration only) — the live
-> site at `erp.ayushraj.site` still runs it; this branch is not yet deployed. `main` holds historical
-> Phase-2 reference code (BOQ/DPR/procurement/Excel I/O). Don't reintroduce Phase-2 here unless asked.
+> **Branches:** `multi-role-erp` (this branch) carries the full multi-role ERP + HR module and is the
+> **currently-deployed / live** branch — the production site at `erp.ayushraj.site` runs it (cut over
+> from `vendor-only` on 2026-06-29). `vendor-only` is the older vendor-registration-only branch — no
+> longer live, kept as a rollback target. `main` holds historical Phase-2 reference code
+> (BOQ/DPR/procurement/Excel I/O). Don't reintroduce Phase-2 here unless asked.
 
 ## Commands
 
@@ -132,7 +133,11 @@ Premium-**light** design language. Don't hand-roll one-off styles — compose th
   `.gne-dots`, `.gne-grain`; `.nums` (tabular figures). Fonts: **Plus Jakarta Sans** (`font-sans`),
   **Sora** (`font-display`, headings only), Geist Mono (`font-mono`, for codes/IDs).
 - **Primitives** (`src/components/ui.tsx`): `Button`/`btn()`, `Card`, `Input`/`Field`, `StatCard`,
-  `PageHeader`, table helpers, `Skeleton`, `Eyebrow`. **Reusable chrome** (`src/components/chrome.tsx`):
+  `PageHeader`, `ProgressBar`, table helpers, `Skeleton`, `Eyebrow`. Interactive client widgets:
+  `Segmented` (pill/tab control), `SectionNav` (scroll-spy tabs), `src/components/hr/MonthPicker`,
+  `src/components/hr/TrendBoard` (pill-driven analytics). The GNE wordmark logo lives at
+  `public/brand/gne-infra.png` (via `next/image`) — use it for any brand mark, not a "GNE" text badge.
+  **Reusable chrome** (`src/components/chrome.tsx`):
   `BrandHero`, `Wave`, `Atmosphere`, `SunGlow`, `Blob`, `SuccessCheck`; plus `CountUp` and the
   drag-drop `Dropzone` (keeps a hidden `<input>` synced via DataTransfer so `FormData` +
   image compression still work).
@@ -153,12 +158,14 @@ Postgres via Prisma (`prisma/schema.prisma`). Model groups:
 - **Vendor/SCM:** `Vendor` (registration form) + `VendorService`/`VendorProduct`/`VendorExperience`/
   `VendorPurchaseOrder`/`VendorTurnover`, `VendorDocument`, `VendorInvite`, `DocumentRequest`.
   Status flow `INVITED → SUBMITTED → UNDER_REVIEW → APPROVED/REJECTED`.
-- **HR:** `Employee` (the Man-EMID master + leave quotas + bank/PAN/UAN), `EmployeeAsset`,
-  `AttendanceRecord` (`AttendanceStatus` = PRESENT/ABSENT/LEAVE/SICK/HALF_DAY/HOLIDAY/WEEK_OFF;
-  unique per employee+day, stored at **UTC midnight**), `PayrollRecord` (monthly, integer-rupee
-  earnings/deductions with server-computed totals), `Project` + `ProjectAssignment` (concurrent
-  per-employee assignments). `AttendanceRecord`/`PayrollRecord` use `onDelete: Restrict` so deleting
-  an employee can't wipe payroll/attendance history.
+- **HR:** `Employee` (the Man-EMID master + leave quotas + CTC/salary/LTA/special-allowance/conveyance
+  + bank A/C / bankName / IFSC / PAN / UAN / ESIC), `EmployeeAsset`, `AttendanceRecord`
+  (`AttendanceStatus` = PRESENT/ABSENT/LEAVE/SICK/HALF_DAY/HOLIDAY/WEEK_OFF; unique per employee+day,
+  stored at **UTC midnight**), `PayrollRecord` (monthly, integer-rupee earnings/deductions incl. LTA +
+  special allowance + an `extraLines` JSON of custom per-slip line items; totals server-computed via
+  `computePayrollTotals`), `Project` + `ProjectAssignment` (concurrent per-employee assignments —
+  assignable from EITHER the employee detail OR the project detail page). `AttendanceRecord`/
+  `PayrollRecord` use `onDelete: Restrict` so deleting an employee can't wipe payroll/attendance history.
 
 ⚠️ **Migrations are additive.** Each schema change is a tracked `prisma migrate dev` migration — or,
 when no DB is reachable, authored **offline** via `prisma migrate diff --from-schema-datamodel <old>
@@ -184,7 +191,11 @@ disabled), `SUPERADMIN_EMAIL`/`SUPERADMIN_PASSWORD` (seeded once via `npm run db
 Deployed cheaply: **single AWS EC2** (Ubuntu, pm2) + **Neon** free Postgres + **Caddy** for
 auto-HTTPS (`:80/:443 → :3000`). See `deploy/`:
 - `bootstrap.sh` — one-command fresh-box setup (installs Node/Caddy/pm2/cron, builds, configures).
-- `redeploy.sh` — `git pull → npm ci → migrate deploy → build → pm2 reload`.
+- `redeploy.sh` — `git pull → npm ci → migrate deploy → db:seed → build → pm2 reload`. ⚠️ It defaults
+  `BRANCH=vendor-only`; the box is now on `multi-role-erp`, so run `BRANCH=multi-role-erp ./deploy/redeploy.sh`.
+  ⚠️ On the tiny t3.micro `npm ci` can OOM-kill / fill the disk — for small pushes prefer `npm install`
+  (+ `npm cache clean --force`, and don't add big swapfiles — disk is ~85% full), and run the deploy
+  **detached** (`nohup … > ~/deploy.log &`, then poll the log) since SSH (port 22) throttles during the build.
 - `ecosystem.config.js` — pm2 config; runs the Next binary directly with a **heap cap +
   `max_memory_restart`** so a leak self-restarts instead of OOM-killing the small box.
 - `purge-cron.sh` (hourly) enforces the document TTL; `backup-db.sh` (every 6h) `pg_dump`s Neon
