@@ -53,14 +53,13 @@ export default async function HrPage() {
   const cur = periods[last], prev = periods[last - 1];
   const nextLabel = SHORT[(Mo % 12)]; // month after current
 
-  const [activeCount, byLocation, byDesignation, byEmpCategory, activeEmployees, attTodayG, payAggMonth] = await Promise.all([
+  const [activeCount, byLocation, byDesignation, byEmpCategory, activeEmployees, attTodayG] = await Promise.all([
     prisma.employee.count({ where: { status: "ACTIVE" } }),
     prisma.employee.groupBy({ by: ["location"], where: { status: "ACTIVE" }, _count: { _all: true } }),
     prisma.employee.groupBy({ by: ["designation"], where: { status: "ACTIVE" }, _count: { _all: true } }),
     prisma.employee.groupBy({ by: ["empCategory"], where: { status: "ACTIVE" }, _count: { _all: true } }),
     prisma.employee.findMany({ where: { status: "ACTIVE" }, select: { dateOfJoining: true, casualLeaveQuota: true, sickLeaveQuota: true } }),
     prisma.attendanceRecord.groupBy({ by: ["status"], where: { date: todayUTC }, _count: { _all: true } }),
-    prisma.payrollRecord.aggregate({ where: { periodYear: cur.year, periodMonth: cur.month }, _sum: { payableAmount: true } }),
   ]);
 
   // Payroll series (12) → anchor on last non-zero month, forecast the rest.
@@ -108,13 +107,11 @@ export default async function HrPage() {
     prisma.employee.count({ where: { leavingDate: { gte: prev.start, lt: prev.end } } }),
   ]);
   const attritionDelta = pctDelta(leaversCur, leaversPrev);
-  const netPayrollMonth = payAggMonth._sum.payableAmount ?? 0;
+  const netPayrollMonth = payrollSeries[last];
 
   // Tenure.
   const now = todayUTC.getTime();
   const tenures = activeEmployees.map((e) => (now - e.dateOfJoining.getTime()) / (365.25 * 24 * 3600 * 1000));
-  const avgTenure = tenures.length ? tenures.reduce((a, b) => a + b, 0) / tenures.length : 0;
-  void avgTenure; // used in composition section concept; kept for future use
   const tenureBars: Bar[] = [
     { label: "0–1 yr", count: tenures.filter((t) => t < 1).length },
     { label: "1–3 yrs", count: tenures.filter((t) => t >= 1 && t < 3).length },

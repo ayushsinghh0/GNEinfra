@@ -201,6 +201,8 @@ export async function buildPayrollWorkbook(
     "CCA",
     "Personal Pay",
     "Conveyance",
+    "LTA",
+    "Special Allowance",
     "PLA",
     "Medical Reimb",
     "Total Earnings",
@@ -223,6 +225,8 @@ export async function buildPayrollWorkbook(
     { width: 10 },  // CCA
     { width: 14 },  // Personal Pay
     { width: 13 },  // Conveyance
+    { width: 10 },  // LTA
+    { width: 18 },  // Special Allowance
     { width: 10 },  // PLA
     { width: 15 },  // Medical Reimb
     { width: 15 },  // Total Earnings
@@ -249,6 +253,8 @@ export async function buildPayrollWorkbook(
       r.cca,
       r.personalPay,
       r.conveyance,
+      r.lta,
+      r.specialAllowance,
       r.pla,
       r.medicalReimb,
       r.totalEarnings,

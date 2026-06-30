@@ -18,8 +18,10 @@ function smoothPath(pts: { x: number; y: number }[]) {
 
 export function AreaChart({
   data,
+  ariaLabel = "New vendor registrations over the last 6 months",
 }: {
   data: { label: string; value: number }[];
+  ariaLabel?: string;
 }) {
   const W = 560;
   const H = 210;
@@ -48,7 +50,7 @@ export function AreaChart({
       viewBox={`0 0 ${W} ${H}`}
       className="h-48 w-full"
       role="img"
-      aria-label="New vendor registrations over the last 6 months"
+      aria-label={ariaLabel}
     >
       <defs>
         <linearGradient id="areaFill" x1="0" y1="0" x2="0" y2="1">

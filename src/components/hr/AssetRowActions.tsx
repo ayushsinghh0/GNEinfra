@@ -15,6 +15,7 @@ export default function AssetRowActions({
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState(false);
+  const empName = employees.find((e) => e.id === asset.employeeId)?.name ?? asset.employeeId;
 
   async function patchReturned() {
     setBusy(true);
@@ -57,7 +58,7 @@ export default function AssetRowActions({
         <Trash2 className="h-4 w-4" />
       </button>
 
-      <SlideOver open={editing} onClose={() => setEditing(false)} title="Edit asset record" subtitle={asset.employeeId}>
+      <SlideOver open={editing} onClose={() => setEditing(false)} title="Edit asset record" subtitle={empName}>
         <AssetForm employees={employees} asset={asset} assetId={asset.id} onDone={() => setEditing(false)} />
       </SlideOver>
     </div>

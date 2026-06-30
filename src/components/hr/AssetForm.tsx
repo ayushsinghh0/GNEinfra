@@ -138,6 +138,11 @@ export default function AssetForm({
         <Button type="submit" disabled={busy}>
           {busy ? "Saving…" : assetId ? "Save changes" : "Add asset record"}
         </Button>
+        {onDone && (
+          <Button type="button" variant="secondary" disabled={busy} onClick={() => onDone()}>
+            Cancel
+          </Button>
+        )}
       </div>
     </form>
   );

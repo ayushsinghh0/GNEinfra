@@ -75,8 +75,8 @@ export default function TrendBoard({ series }: { series: TrendSeries }) {
         <Segmented<Metric> ariaLabel="Metric" value={metric} onChange={setMetric} options={METRICS} />
         {metric === "payroll" && <ForecastArea data={payroll} idPrefix="tb-pay" />}
         {metric === "headcount" && <ForecastArea data={headcount} idPrefix="tb-head" />}
-        {metric === "attendance" && <AreaChart data={attendance} />}
-        {metric === "leave" && <AreaChart data={leave} />}
+        {metric === "attendance" && <AreaChart data={attendance} ariaLabel="Monthly attendance rate" />}
+        {metric === "leave" && <AreaChart data={leave} ariaLabel="Leave and sick days taken per month" />}
         {metric === "projects" && (
           series.projects.length === 0 ? (
             <p className="py-8 text-center text-sm text-slate-500">No active projects.</p>

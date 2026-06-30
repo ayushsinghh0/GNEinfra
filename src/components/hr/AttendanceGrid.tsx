@@ -271,7 +271,10 @@ export default function AttendanceGrid({
                   flashId === emp.id ? "bg-brand-50" : "hover:bg-slate-50/40"
                 )}
               >
-                <td className="sticky left-0 z-10 bg-white px-4 py-1.5 font-medium text-slate-800 whitespace-nowrap group-hover:bg-slate-50">
+                <td className={cn(
+                  "sticky left-0 z-10 px-4 py-1.5 font-medium text-slate-800 whitespace-nowrap",
+                  flashId === emp.id ? "bg-brand-50" : "bg-white group-hover:bg-slate-50"
+                )}>
                   <span><span className="nums text-slate-400">{emp.empId}</span> {emp.name}</span>
                 </td>
                 {days.map(({ d, weekend }) => {
