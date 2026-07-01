@@ -135,6 +135,18 @@ body {
   .gne-grain { display: none; }
 }
 
+/* Pure-CSS scroll-shadow for the rare genuinely-wide grid (TableScroll). Fades
+   in from whichever edge still has clipped columns; background-attachment:
+   local ties the white fade to content scroll while the radial edge glows
+   stay fixed to the viewport. No JS. */
+.tablescroll {
+  background:
+    linear-gradient(to right, white 30%, rgba(255,255,255,0)) left / 40px 100% no-repeat local,
+    linear-gradient(to left, white 30%, rgba(255,255,255,0)) right / 40px 100% no-repeat local,
+    radial-gradient(farthest-side at 0 50%, rgba(15,23,42,0.12), transparent) left / 14px 100% no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%, rgba(15,23,42,0.12), transparent) right / 14px 100% no-repeat scroll;
+}
+
 /* Centralized, reduced-motion-gated interaction utilities. Press relies on the
    consumer's own transition (buttons carry transition-all); tappables without
    one should add transition-transform. */

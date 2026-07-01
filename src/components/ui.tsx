@@ -403,6 +403,32 @@ export function EmptyState({
   );
 }
 
+/* ── Error state (mirrors EmptyState, rose/danger icon tint) ────────────── */
+export function ErrorState({
+  icon,
+  title,
+  description,
+  action,
+}: {
+  icon?: React.ReactNode;
+  title: string;
+  description?: string;
+  action?: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col items-center justify-center text-center py-16 px-6">
+      {icon && (
+        <div className="mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-b from-rose-50 to-white text-rose-600 ring-1 ring-rose-200/60 shadow-sm">
+          {icon}
+        </div>
+      )}
+      <h3 className="text-sm font-semibold text-slate-800">{title}</h3>
+      {description && <p className="mt-1 text-sm text-slate-500 max-w-sm">{description}</p>}
+      {action && <div className="mt-5">{action}</div>}
+    </div>
+  );
+}
+
 /* ── Breadcrumbs ─────────────────────────────────────────────────────────── */
 export function Breadcrumbs({ items }: { items: { label: string; href?: string }[] }) {
   return (
