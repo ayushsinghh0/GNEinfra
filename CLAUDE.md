@@ -21,9 +21,10 @@ Two verticals are built; the rest are role-scoped "coming soon" shells:
 - **SCM** owns the **vendor/supplier master** — the original vendor-registration flow (admin emails
   a vendor a token link → multi-step form + KYC uploads → review/approve → `vendorCode` like
   `GNE-V-0001`), re-homed under `/scm/*`.
-- **HR** is fully built (`/hr/*`) — employee master, asset register, monthly attendance grid,
-  payroll + printable salary slips, projects + concurrent assignments, leave balances, and a
-  predictive analytics dashboard.
+- **HR** is fully built (`/hr/*`) — employee master, asset register, monthly attendance, payroll +
+  printable salary slips, projects + concurrent assignments, leave balances, and a predictive
+  analytics dashboard. It was reworked in the **"Connected" redesign** (branch `hr-connected-redesign`,
+  unmerged) so every record cross-links and no list scrolls sideways — see the dedicated section below.
 
 > **Branches:** `multi-role-erp` (this branch) carries the full multi-role ERP + HR module and is the
 > **currently-deployed / live** branch — the production site at `erp.ayushraj.site` runs it (cut over
@@ -63,7 +64,9 @@ R2/MinIO-compatible via `S3_ENDPOINT`), or SMTP provider is a `.env` change only
   `/login`; the authenticated shell is the `src/app/(erp)/` route group with a **role-driven sidebar**
   (`src/lib/nav.tsx`) — department homes `/bd` `/scm` `/project` `/finance` `/hr`, oversight landing
   `/overview`, system admin `/admin/{users,settings}`. SCM vendor pages are `/scm/*`; HR pages are
-  `/hr/{employees,assets,attendance,payout,projects}`; the `/hr` dashboard carries the analytics (pill-driven trend board). Print pages (vendor record, salary
+  `/hr/{employees,assets,attendance,payout,projects}` (employee detail is a `(hub)` route-group with
+  per-facet tabs — see the HR "Connected" redesign section); the `/hr` dashboard carries the analytics
+  (pill-driven trend board). Print pages (vendor record, salary
   slip) live OUTSIDE the shell in a `(print)` route group so they print clean. API handlers under
   `src/app/api/*` (`/api/hr/*`, `/api/vendors/*`, `/api/admin/users/*`, `/api/auth/*`, …).
 - **Data layer**: Prisma (`src/lib/prisma.ts` singleton), schema `prisma/schema.prisma`. Field
@@ -86,7 +89,8 @@ R2/MinIO-compatible via `S3_ENDPOINT`), or SMTP provider is a `.env` change only
   sets do NOT, enforced in BOTH the UI (a `canWrite` flag hides mutate controls) AND every mutating
   API. Guards also reject `mustChangePassword` users. **Money is integer rupees** (no Prisma
   `Decimal`); payslip totals are recomputed server-side (`computePayrollTotals`). HR Zod lives in
-  `src/lib/hr-validation.ts`; HR compute helpers in `src/lib/hr-leave.ts` / `src/lib/hr-forecast.ts`.
+  `src/lib/hr-validation.ts`; HR compute helpers in `src/lib/hr-leave.ts` / `src/lib/hr-forecast.ts` / `src/lib/hr-lop.ts`
+  (attendance-derived loss-of-pay) / `src/lib/hr-projects.ts`.
 - **Storage** (`src/lib/storage.ts`): pluggable `local`/`s3` driver. Uploads are gzip-compressed
   only when that's actually smaller (`src/lib/documents.ts` — JPEG/PDF KYC scans don't compress,
   so they store at full size). Files are purged (`src/lib/purge.ts`, run by `POST /api/cron/purge`,
@@ -150,6 +154,50 @@ Premium-**light** design language. Don't hand-roll one-off styles — compose th
   `ForecastArea`/`DeltaBadge`); "predictive" analytics use least-squares trend extrapolation
   (`src/lib/hr-forecast.ts`), not an ML library. Keep it that way. Tabular `.nums` on codes/money/dates; 16px inputs (no iOS zoom); 44px tap targets;
   `:focus-visible` rings. Full rationale: `docs/superpowers/specs/2026-06-22-vendor-portal-ui-redesign-design.md`.
+
+## HR module — "Connected" redesign
+
+The HR module was rebuilt so every record cross-links and no list scrolls sideways. **Compose these
+conventions — don't re-hand-roll tables/links/status colors.** Full design + task plans live in
+`docs/superpowers/specs/2026-07-01-hr-connected-redesign-design.md` and
+`docs/superpowers/plans/2026-07-01-hr-connected-redesign-phase1.md` (+ `…-phase2.md`).
+
+- **Employee-360 hub**: `/hr/employees/[id]` is a Next.js **`(hub)` route group**. `(hub)/layout.tsx`
+  renders a persistent identity header + snapshot chips + route-tabs (Overview / Attendance / Assets /
+  Projects / Payroll); each tab is its own `(hub)/<tab>/page.tsx` that summarizes and **deep-links**
+  into the full module scoped to that employee. The employee is loaded once via a React-`cache()`d
+  `getEmployee` in `(hub)/_data.ts` (layout + page dedupe). `/hr/employees/[id]/edit` sits OUTSIDE
+  `(hub)` so it escapes the hub chrome (no double header).
+- **Responsive tables**: every HR list uses **`DataTable`** (`src/components/DataTable.tsx` — a SERVER
+  component; `cell`/`href` are render functions passed from server pages). It does column-priority
+  hiding (`priority: md/lg/xl`) + a card fallback below `sm`, so nothing forces horizontal scroll.
+  Gotchas: a cell with its own link/action must wrap content in `relative z-10` (it sits above the
+  stretched row-link overlay); **any actions column MUST set `cardLabel`** or it disappears on mobile
+  cards. `TableScroll` is the sticky/scroll-shadow shell for the rare genuinely-wide grid.
+- **Cross-linking primitives** (added to `src/components/ui.tsx`): `EntityLink` (avatar + name + mono
+  code → detail route — use it for every employee/project/asset reference), `StatusChip` backed by the
+  shared status→tone registry `src/lib/hr-status.ts` (ONE color language for every enum: attendance /
+  employee / project / payroll / vendor — extend the registry, don't inline colors), `Breadcrumbs` +
+  `PageHeader`'s `breadcrumbs` slot, `KeyValue`/`DetailSection` (read-only detail views), `ErrorState`,
+  and a **linkable `StatCard`** (`href` → drill-through). Dashboard KPIs/bars deep-link via `BarList`.
+- **URL-as-filter-state** (`src/lib/hr-filters.ts`): list state (`q status category location employeeId
+  sort dir page`) lives in the query string; `parseListParams`/`buildQuery` read/serialize it, dropping
+  empties + defaults. **Every client filter control builds its URL via `buildQuery(basePath, patch)`**
+  so params compose and never get silently dropped. Employee-scoped module views (`?employeeId=`) show
+  a `ScopedFilterChip` and are the hub's deep-link targets (`/hr/attendance|assets|payout|projects?employeeId=…`).
+- **Attendance** is a **calendar heatmap** by default (`src/components/hr/AttendanceCalendar.tsx`) with
+  small-multiples for the org view; the old wide day-matrix is an opt-in "Table" toggle (in `TableScroll`).
+  The status color/code map is shared in `src/components/hr/attendance-status.ts`. The drag-to-paint
+  interaction and the `POST /api/hr/attendance {year,month,entries,clears}` save contract are unchanged —
+  preserve them. Cells key off `date.getUTCDate()` (attendance is stored at UTC midnight).
+- **Payroll LOP** (`src/lib/hr-lop.ts`): `attendanceLop(empId, year, month, casualQuota, sickQuota)`
+  derives per-month loss-of-pay days = absent + ½·half-day + leave/sick **over the annual quota**
+  (YTD-aware); rate = monthly gross ÷ days-in-month. The printed slip uses it; Phase 2 folds an editable
+  `"Loss of Pay"` deduction (via `PayrollRecord.extraLines`, no schema change) into the payout editor.
+- **Phase 2 (in progress)** adds bulk payroll (batch save-all/auto-split-all), saved-view pills, per-employee
+  allocation guardrails (≤100% across concurrent projects, server-enforced), and a **Cmd-K command palette**
+  (`/api/hr/search` returns a SHAPED payload — never raw Employee rows, which carry salary/bank/PAN).
+  **No schema migration** in either phase — LOP rides `extraLines`, allocation aggregates existing `allocationPct`.
 
 ## Database & migrations
 
