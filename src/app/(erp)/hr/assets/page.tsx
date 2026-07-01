@@ -132,6 +132,7 @@ export default async function AssetsPage({
     columns.push({
       key: "actions",
       header: "Actions",
+      cardLabel: "Actions",
       cell: (a) => (
         <span className="relative z-10">
           <AssetRowActions
