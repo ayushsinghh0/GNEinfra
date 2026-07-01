@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser, HR_VIEW } from "@/lib/rbac";
 import { fmtDate, fmtDateOnly, fmtINR } from "@/lib/format";
 import { MONTHS } from "@/lib/hr-validation";
+import { attendanceLop } from "@/lib/hr-lop";
 import { amountInWords } from "@/lib/number-to-words";
 import PrintBar from "@/components/PrintBar";
 import { COMPANY } from "@/lib/company";
@@ -51,18 +52,11 @@ export default async function PayslipPrintPage({
 
   const emp = record.employee;
 
-  // ── Paid-days computation from that month's attendance ────────────────────
-  const monthStart  = new Date(Date.UTC(record.periodYear, record.periodMonth - 1, 1));
-  const monthEnd    = new Date(Date.UTC(record.periodYear, record.periodMonth, 1));
-  const daysInMonth = new Date(Date.UTC(record.periodYear, record.periodMonth, 0)).getUTCDate();
-  const att = await prisma.attendanceRecord.groupBy({
-    by: ["status"],
-    where: { employeeId: record.employeeId, date: { gte: monthStart, lt: monthEnd } },
-    _count: { _all: true },
-  });
-  const cnt      = (s: string) => att.find((a) => a.status === s)?._count._all ?? 0;
-  const lopDays  = cnt("ABSENT") + 0.5 * cnt("HALF_DAY");
-  const paidDays = daysInMonth - lopDays;
+  // ── Paid-days computation from that month's attendance (shared LOP source —
+  // includes over-quota LEAVE/SICK on top of ABSENT/HALF_DAY; see src/lib/hr-lop.ts) ──
+  const { lopDays, paidDays, workingDays: daysInMonth } = await attendanceLop(
+    emp.id, record.periodYear, record.periodMonth, emp.casualLeaveQuota, emp.sickLeaveQuota
+  );
 
   const monthName = MONTHS[record.periodMonth - 1];
   const hasBankInfo = emp.bankAccountNo || emp.bankName || emp.ifsc || emp.panNo || emp.uan || emp.esicNo;
