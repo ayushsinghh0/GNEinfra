@@ -6,16 +6,14 @@ import { prisma } from "@/lib/prisma";
 import { requirePageRole, HR_VIEW, HR_WRITE } from "@/lib/rbac";
 import { fmtDateOnly } from "@/lib/format";
 import EmployeeSearch from "@/components/hr/EmployeeSearch";
+import { DataTable, type Column } from "@/components/DataTable";
 import {
   PageHeader,
   Card,
   CardBody,
   EmptyState,
-  Chip,
-  thCls,
-  theadRowCls,
-  tdCls,
-  trCls,
+  EntityLink,
+  StatusChip,
   btn,
 } from "@/components/ui";
 
@@ -52,9 +50,63 @@ export default async function EmployeesPage({
     orderBy: { createdAt: "desc" },
   });
 
+  type Emp = (typeof employees)[number];
+  const columns: Column<Emp>[] = [
+    {
+      key: "emp",
+      header: "Employee",
+      titleInCard: true,
+      cell: (e) => (
+        <span className="relative z-10">
+          <EntityLink href={`/hr/employees/${e.id}`} name={e.name} code={e.empId} />
+        </span>
+      ),
+    },
+    {
+      key: "designation",
+      header: "Designation",
+      cardLabel: "Designation",
+      cell: (e) => e.designation ?? "—",
+    },
+    {
+      key: "category",
+      header: "Category",
+      priority: "lg",
+      cardLabel: "Category",
+      cell: (e) => e.empCategory ?? "—",
+    },
+    {
+      key: "location",
+      header: "Location",
+      priority: "lg",
+      cardLabel: "Location",
+      cell: (e) => e.location ?? "—",
+    },
+    {
+      key: "doj",
+      header: "DOJ",
+      priority: "xl",
+      cardLabel: "DOJ",
+      cell: (e) => <span className="nums">{fmtDateOnly(e.dateOfJoining) ?? "—"}</span>,
+    },
+    {
+      key: "status",
+      header: "Status",
+      cell: (e) => (
+        <span className="relative z-10">
+          <StatusChip status={e.status} />
+        </span>
+      ),
+    },
+  ];
+
   return (
     <>
-      <PageHeader title="Employees" subtitle={`${employees.length} result(s)`}>
+      <PageHeader
+        title="Employees"
+        subtitle={`${employees.length} result(s)`}
+        breadcrumbs={[{ label: "HR", href: "/hr" }, { label: "Employees" }]}
+      >
         <a
           href="/api/hr/employees/export"
           className={btn("ghost", "sm")}
@@ -79,72 +131,19 @@ export default async function EmployeesPage({
         </Card>
 
         <Card className="overflow-hidden">
-          {employees.length === 0 ? (
-            <EmptyState
-              icon={<Users className="h-6 w-6" />}
-              title="No employees found"
-              description="No employees match your search. Try a different term or status filter."
-            />
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[860px] table-fixed text-sm">
-                <colgroup>
-                  <col className="w-[12%]" />
-                  <col className="w-[20%]" />
-                  <col className="w-[18%]" />
-                  <col className="w-[14%]" />
-                  <col className="w-[14%]" />
-                  <col className="w-[12%]" />
-                  <col className="w-[10%]" />
-                </colgroup>
-                <thead>
-                  <tr className={theadRowCls}>
-                    <th className={thCls}>EMP ID</th>
-                    <th className={thCls}>Name</th>
-                    <th className={thCls}>Designation</th>
-                    <th className={thCls}>Category</th>
-                    <th className={thCls}>Location</th>
-                    <th className={thCls}>DOJ</th>
-                    <th className={thCls}>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {employees.map((emp) => (
-                    <tr key={emp.id} className={trCls}>
-                      <td className={tdCls}>
-                        <span className="nums font-mono text-xs text-slate-600">{emp.empId}</span>
-                      </td>
-                      <td className={tdCls}>
-                        <Link
-                          href={`/hr/employees/${emp.id}`}
-                          className="font-medium text-brand-700 hover:text-brand-900 hover:underline"
-                        >
-                          {emp.name}
-                        </Link>
-                      </td>
-                      <td className={tdCls}>{emp.designation}</td>
-                      <td className={tdCls}>{emp.empCategory ?? "—"}</td>
-                      <td className={tdCls}>{emp.location ?? "—"}</td>
-                      <td className={tdCls}>
-                        <span className="nums">{fmtDateOnly(emp.dateOfJoining) ?? "—"}</span>
-                      </td>
-                      <td className={tdCls}>
-                        <Chip
-                          className={
-                            emp.status === "ACTIVE"
-                              ? "bg-emerald-50 text-emerald-700"
-                              : "bg-slate-100 text-slate-500"
-                          }
-                        >
-                          {emp.status}
-                        </Chip>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          <DataTable
+            rows={employees}
+            columns={columns}
+            rowKey={(e) => e.id}
+            href={(e) => `/hr/employees/${e.id}`}
+            empty={
+              <EmptyState
+                icon={<Users className="h-6 w-6" />}
+                title="No employees found"
+                description="No employees match your search. Try a different term or status filter."
+              />
+            }
+          />
         </Card>
       </div>
     </>
