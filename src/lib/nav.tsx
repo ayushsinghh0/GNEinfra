@@ -59,17 +59,23 @@ const FINANCE: NavSection = {
   ],
 };
 
+// Named consts so the grouped HR-role sections in navForRole() can reference the same NavItem
+// objects directly instead of doing a stringly-typed label lookup — a future rename/removal here
+// becomes a TypeScript error at the const use sites instead of a runtime throw in the Sidebar render.
+const HR_DASHBOARD: NavItem = { label: "Dashboard", href: "/hr", icon: LayoutDashboard };
+const HR_EMPLOYEES: NavItem = { label: "Employees", href: "/hr/employees", icon: Users };
+const HR_ASSETS: NavItem = { label: "Assets", href: "/hr/assets", icon: Boxes };
+const HR_ATTENDANCE: NavItem = { label: "Attendance", href: "/hr/attendance", icon: CalendarClock };
+const HR_PROJECTS: NavItem = { label: "Projects", href: "/hr/projects", icon: FolderKanban };
+const HR_PAYOUT: NavItem = { label: "Payout", href: "/hr/payout", icon: BadgeIndianRupee };
+const HR_MANPOWER: NavItem = { label: "Manpower Planning", icon: UserRound, soon: true };
+const HR_RECRUITMENT: NavItem = { label: "Recruitment", icon: Briefcase, soon: true };
+
 const HR: NavSection = {
   heading: "Human Resources",
   items: [
-    { label: "Dashboard", href: "/hr", icon: LayoutDashboard },
-    { label: "Employees", href: "/hr/employees", icon: Users },
-    { label: "Assets", href: "/hr/assets", icon: Boxes },
-    { label: "Attendance", href: "/hr/attendance", icon: CalendarClock },
-    { label: "Projects", href: "/hr/projects", icon: FolderKanban },
-    { label: "Payout", href: "/hr/payout", icon: BadgeIndianRupee },
-    { label: "Manpower Planning", icon: UserRound, soon: true },
-    { label: "Recruitment", icon: Briefcase, soon: true },
+    HR_DASHBOARD, HR_EMPLOYEES, HR_ASSETS, HR_ATTENDANCE,
+    HR_PROJECTS, HR_PAYOUT, HR_MANPOWER, HR_RECRUITMENT,
   ],
 };
 
@@ -98,17 +104,13 @@ export function deptLabel(role: Role): string {
 
 export function navForRole(role: Role): NavSection[] {
   if (role === "HR") {
-    // HR-role users get a grouped nav (same items as DEPT.HR, regrouped). Oversight roles
-    // (ADMIN/MANAGER/SUPERADMIN) keep the flat DEPT.HR section below to avoid a bloated sidebar.
-    const item = (label: string) => {
-      const found = HR.items.find((i) => i.label === label);
-      if (!found) throw new Error(`nav: HR item "${label}" not found`);
-      return found;
-    };
+    // HR-role users get a grouped nav (same items as DEPT.HR, regrouped, via the shared consts
+    // above). Oversight roles (ADMIN/MANAGER/SUPERADMIN) keep the flat DEPT.HR section below to
+    // avoid a bloated sidebar.
     return [
-      { heading: "Overview", items: [item("Dashboard")] },
-      { heading: "People", items: [item("Employees"), item("Attendance"), item("Payout")] },
-      { heading: "Resources", items: [item("Assets"), item("Projects"), item("Manpower Planning"), item("Recruitment")] },
+      { heading: "Overview", items: [HR_DASHBOARD] },
+      { heading: "People", items: [HR_EMPLOYEES, HR_ATTENDANCE, HR_PAYOUT] },
+      { heading: "Resources", items: [HR_ASSETS, HR_PROJECTS, HR_MANPOWER, HR_RECRUITMENT] },
     ];
   }
   if (role === "BD" || role === "SCM" || role === "PROJECT" || role === "FINANCE") {
