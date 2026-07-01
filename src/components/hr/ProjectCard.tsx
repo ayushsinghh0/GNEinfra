@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { ProjectStatus } from "@prisma/client";
 import { fmtDateOnly } from "@/lib/format";
-import { Card, Chip, AvatarStack, ProgressBar } from "@/components/ui";
+import { Card, StatusChip, AvatarStack, ProgressBar } from "@/components/ui";
 import { projectTimeline } from "@/lib/hr-projects";
 
 type CardProject = {
@@ -15,28 +15,27 @@ type CardProject = {
   assignments: { employee: { name: string } }[];
 };
 
-function statusChipCls(status: string) {
-  if (status === "ACTIVE") return "bg-emerald-50 text-emerald-700";
-  if (status === "ON_HOLD") return "bg-amber-50 text-amber-700";
-  return "bg-slate-100 text-slate-500";
-}
-
 export default function ProjectCard({ project }: { project: CardProject }) {
   const tl = projectTimeline(project.status, project.startDate, project.endDate);
   const names = project.assignments.map((a) => a.employee.name);
   const n = names.length;
   return (
-    <Card className="lift flex flex-col p-5">
-      <div className="flex items-center justify-between gap-2">
-        <span className="nums font-mono text-xs text-slate-500">{project.code}</span>
-        <Chip className={statusChipCls(project.status)}>{project.status.replace(/_/g, " ")}</Chip>
-      </div>
+    <Card className="lift relative flex flex-col p-5">
+      {/* Stretched-link: the whole card is the click target (code/client/timeline
+          included), not just the title. Keyboard-focusable; per-item controls below
+          (the avatar stack) opt back in with `relative z-10`. */}
       <Link
         href={`/hr/projects/${project.id}`}
-        className="mt-2 block truncate font-display text-base font-semibold text-slate-900 hover:text-brand-700"
-      >
+        className="absolute inset-0 z-0 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
+        aria-label={project.name}
+      />
+      <div className="flex items-center justify-between gap-2">
+        <span className="nums font-mono text-xs text-slate-500">{project.code}</span>
+        <StatusChip status={project.status} />
+      </div>
+      <p className="mt-2 truncate font-display text-base font-semibold text-slate-900">
         {project.name}
-      </Link>
+      </p>
       <p className="mt-0.5 truncate text-sm text-slate-500">{project.client ?? "—"}</p>
 
       <div className="mt-4">
@@ -55,7 +54,9 @@ export default function ProjectCard({ project }: { project: CardProject }) {
 
       <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-4">
         {n > 0 ? (
-          <AvatarStack names={names} max={5} size="sm" />
+          <span className="relative z-10">
+            <AvatarStack names={names} max={5} size="sm" />
+          </span>
         ) : (
           <span className="text-xs text-slate-400">No team yet</span>
         )}

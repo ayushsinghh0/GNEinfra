@@ -51,7 +51,11 @@ export default async function ProjectsPage({
 
   return (
     <>
-      <PageHeader title="Projects" subtitle={`${projects.length} project(s)`}>
+      <PageHeader
+        title="Projects"
+        subtitle={`${projects.length} project(s)`}
+        breadcrumbs={[{ label: "HR", href: "/hr" }, { label: "Projects" }]}
+      >
         {canWrite && (
           <Link href="/hr/projects/new" className={btn("primary", "sm")}>
             + Add project

@@ -10,22 +10,18 @@ import {
   CardHeader,
   CardBody,
   StatCard,
-  Chip,
-  Avatar,
+  StatusChip,
+  EntityLink,
+  EmptyState,
   ProgressBar,
   btn,
 } from "@/components/ui";
+import { DataTable, type Column } from "@/components/DataTable";
 import AssignEmployeeForm from "@/components/hr/AssignEmployeeForm";
 import RemoveAssignmentButton from "@/components/hr/RemoveAssignmentButton";
 import { projectTimeline, assignmentStats } from "@/lib/hr-projects";
 
 export const dynamic = "force-dynamic";
-
-function statusChipCls(status: string) {
-  if (status === "ACTIVE") return "bg-emerald-50 text-emerald-700";
-  if (status === "ON_HOLD") return "bg-amber-50 text-amber-700";
-  return "bg-slate-100 text-slate-500";
-}
 
 export default async function ProjectDetailPage({
   params,
@@ -61,6 +57,63 @@ export default async function ProjectDetailPage({
   const tl = projectTimeline(project.status, project.startDate, project.endDate);
   const stats = assignmentStats(project.assignments, project.startDate, project.endDate);
 
+  type AssignmentRow = (typeof project.assignments)[number];
+  const rosterColumns: Column<AssignmentRow>[] = [
+    {
+      key: "employee",
+      header: "Employee",
+      titleInCard: true,
+      cell: (a) => (
+        <span className="relative z-10">
+          <EntityLink href={`/hr/employees/${a.employee.id}`} name={a.employee.name} code={a.employee.empId} />
+        </span>
+      ),
+    },
+    {
+      key: "role",
+      header: "Role",
+      cardLabel: "Role",
+      cell: (a) => a.roleOnProject ?? "—",
+    },
+    {
+      key: "allocation",
+      header: "Allocation",
+      cardLabel: "Allocation",
+      cell: (a) =>
+        a.allocationPct != null ? (
+          <div className="w-28">
+            <div className="nums mb-1 text-right text-xs text-slate-500">{a.allocationPct}%</div>
+            <ProgressBar value={a.allocationPct} tone="brand" />
+          </div>
+        ) : (
+          <span className="text-xs text-slate-400">—</span>
+        ),
+    },
+    {
+      key: "dates",
+      header: "Dates",
+      priority: "lg",
+      cardLabel: "Dates",
+      cell: (a) => (
+        <span className="nums">
+          {fmtDateOnly(a.startDate) ?? "—"} → {fmtDateOnly(a.endDate) ?? "Ongoing"}
+        </span>
+      ),
+    },
+  ];
+  if (canWrite) {
+    rosterColumns.push({
+      key: "actions",
+      header: "Actions",
+      cardLabel: "Actions",
+      cell: (a) => (
+        <span className="relative z-10">
+          <RemoveAssignmentButton assignmentId={a.id} />
+        </span>
+      ),
+    });
+  }
+
   return (
     <>
       <PageHeader title={project.name} subtitle={project.code}>
@@ -79,7 +132,7 @@ export default async function ProjectDetailPage({
         <Card>
           <CardBody>
             <div className="flex flex-wrap items-center gap-2">
-              <Chip className={statusChipCls(project.status)}>{project.status.replace(/_/g, " ")}</Chip>
+              <StatusChip status={project.status} />
               <span className="text-sm text-slate-500">{project.client ?? "No client"}</span>
               <span className="nums ml-auto text-sm text-slate-600">
                 {fmtDateOnly(project.startDate) ?? "—"} → {fmtDateOnly(project.endDate) ?? "—"}
@@ -113,41 +166,18 @@ export default async function ProjectDetailPage({
             action={<Users className="h-4 w-4 text-slate-400" />}
           />
           <CardBody>
-            {project.assignments.length === 0 ? (
-              <p className="text-sm text-slate-400">No employees assigned to this project yet.</p>
-            ) : (
-              <ul className="divide-y divide-slate-100">
-                {project.assignments.map((a) => (
-                  <li key={a.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 py-3">
-                    <Avatar name={a.employee.name} size="sm" />
-                    <div className="min-w-0 flex-1">
-                      <Link
-                        href={`/hr/employees/${a.employee.id}`}
-                        className="block truncate font-medium text-slate-800 hover:text-brand-700"
-                      >
-                        {a.employee.name}
-                      </Link>
-                      <span className="nums font-mono text-xs text-slate-500">{a.employee.empId}</span>
-                    </div>
-                    <Chip className="bg-slate-100 text-slate-600">{a.roleOnProject ?? "—"}</Chip>
-                    <div className="w-28">
-                      {a.allocationPct != null ? (
-                        <>
-                          <div className="nums mb-1 text-right text-xs text-slate-500">{a.allocationPct}%</div>
-                          <ProgressBar value={a.allocationPct} tone="brand" />
-                        </>
-                      ) : (
-                        <span className="text-xs text-slate-400">— alloc</span>
-                      )}
-                    </div>
-                    <span className="nums text-xs text-slate-500">
-                      {fmtDateOnly(a.startDate) ?? "—"} → {fmtDateOnly(a.endDate) ?? "—"}
-                    </span>
-                    {canWrite && <RemoveAssignmentButton assignmentId={a.id} />}
-                  </li>
-                ))}
-              </ul>
-            )}
+            <DataTable
+              rows={project.assignments}
+              columns={rosterColumns}
+              rowKey={(a) => a.id}
+              empty={
+                <EmptyState
+                  icon={<Users className="h-6 w-6" />}
+                  title="No employees assigned"
+                  description="No employees have been assigned to this project yet."
+                />
+              }
+            />
             {canWrite && (
               <div className="mt-5">
                 <AssignEmployeeForm projectId={project.id} employees={assignableEmployees} />

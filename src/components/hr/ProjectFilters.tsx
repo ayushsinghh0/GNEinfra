@@ -17,6 +17,7 @@ export default function ProjectFilters({
   const params = useSearchParams();
   const urlQ = params.get("q") ?? "";
   const urlStatus = (params.get("status") ?? "") as Status;
+  const employeeId = params.get("employeeId");
 
   const [q, setQ] = useState(urlQ);
 
@@ -41,6 +42,9 @@ export default function ProjectFilters({
     // so a stale timer can't revert the status the user just chose.
     if (timer.current) clearTimeout(timer.current);
     const sp = new URLSearchParams();
+    // Preserve an active ?employeeId= scope (Task 10) — a status/search change must
+    // not silently drop the deep-link scope, mirroring AssetStatusFilter (Task 15).
+    if (employeeId) sp.set("employeeId", employeeId);
     if (nextStatus) sp.set("status", nextStatus);
     if (nextQ.trim()) sp.set("q", nextQ.trim());
     const qs = sp.toString();
