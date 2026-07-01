@@ -517,3 +517,22 @@ export const tdNumCls = "px-4 py-3.5 text-sm text-slate-700 align-middle text-ri
 export const theadRowCls = "border-b border-slate-200/80";
 export const trCls =
   "group relative border-b border-slate-100 last:border-0 transition-colors hover:bg-brand-50/40 before:absolute before:inset-y-0 before:left-0 before:w-0.5 before:bg-brand before:opacity-0 before:transition-opacity hover:before:opacity-100";
+
+/* ── KeyValue (responsive description list) ────────────────────────────────── */
+export function KeyValue({ items, cols = 2 }: { items: { label: string; value: React.ReactNode; mono?: boolean }[]; cols?: 1 | 2 }) {
+  return (
+    <dl className={cn("grid gap-x-8 gap-y-0", cols === 2 ? "sm:grid-cols-2" : "grid-cols-1")}>
+      {items.map((it, i) => (
+        <div key={i} className="flex flex-col gap-0.5 border-b border-slate-100 py-2.5 sm:flex-row sm:items-baseline sm:gap-4">
+          <dt className="w-40 shrink-0 text-[13px] font-medium text-slate-500">{it.label}</dt>
+          <dd className={cn("text-sm text-slate-800", it.mono && "nums font-mono text-xs")}>{it.value ?? "—"}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+/* ── DetailSection (Card wrapper for read-only display) ─────────────────────── */
+export function DetailSection({ title, icon, action, children }: { title: React.ReactNode; icon?: React.ReactNode; action?: React.ReactNode; children: React.ReactNode }) {
+  return <Card><CardHeader title={title} action={action ?? icon} /><CardBody>{children}</CardBody></Card>;
+}
