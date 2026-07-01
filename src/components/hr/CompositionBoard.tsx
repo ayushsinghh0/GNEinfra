@@ -1,9 +1,9 @@
 "use client";
 
+import { MapPin, Briefcase, Layers, Clock, Users } from "lucide-react";
 import { useState } from "react";
-import { MapPin, Briefcase, Layers, Clock } from "lucide-react";
-import { Card, CardHeader, CardBody } from "@/components/ui";
-import { MonthlyBars } from "@/components/Charts";
+import { Card, CardHeader, CardBody, EmptyState } from "@/components/ui";
+import { MonthlyBars, BarList } from "@/components/Charts";
 import Segmented from "@/components/Segmented";
 
 type Bar = { label: string; count: number };
@@ -15,6 +15,20 @@ const OPTIONS = [
   { value: "category" as Dim, label: "Category", icon: <Layers className="h-3.5 w-3.5" /> },
   { value: "tenure" as Dim, label: "Tenure", icon: <Clock className="h-3.5 w-3.5" /> },
 ];
+
+// Deep-link a bar into the employees list filtered on that dimension. "—"
+// stands for a null/unset value on the employee record — there's no way to
+// query for that via the exact-match filter, so leave it non-linked rather
+// than producing a link that returns zero results. Tenure buckets are a
+// derived calculation (not a stored field), so employees can't be filtered
+// by them — also left non-linked.
+function hrefFor(dim: Dim, label: string): string | undefined {
+  if (label === "—") return undefined;
+  if (dim === "location") return `/hr/employees?location=${encodeURIComponent(label)}`;
+  if (dim === "category") return `/hr/employees?category=${encodeURIComponent(label)}`;
+  if (dim === "designation") return `/hr/employees?q=${encodeURIComponent(label)}`;
+  return undefined;
+}
 
 export default function CompositionBoard({
   location,
@@ -52,25 +66,16 @@ export default function CompositionBoard({
           </span>
         </div>
         {data.length === 0 ? (
-          <p className="text-sm text-slate-500">No data yet.</p>
+          <EmptyState
+            icon={<Users className="h-6 w-6" />}
+            title="No composition data yet"
+            description="Once active employees are on record, their breakdown by this dimension will appear here."
+          />
         ) : (
           <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
             <MonthlyBars data={chartData} />
-            <div className="space-y-2.5 lg:border-l lg:border-slate-100 lg:pl-6">
-              {data.map((b) => (
-                <div key={b.label}>
-                  <div className="mb-1 flex items-center justify-between text-xs">
-                    <span className="truncate text-slate-600">{b.label}</span>
-                    <span className="nums ml-2 font-medium text-slate-700">{b.count}</span>
-                  </div>
-                  <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
-                    <div
-                      className="h-1.5 rounded-full bg-gradient-to-r from-brand-500 to-brand-300"
-                      style={{ width: `${(b.count / max) * 100}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
+            <div className="lg:border-l lg:border-slate-100 lg:pl-6">
+              <BarList items={data.map((b) => ({ label: b.label, value: b.count, max, href: hrefFor(dim, b.label) }))} />
             </div>
           </div>
         )}

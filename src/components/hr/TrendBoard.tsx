@@ -2,11 +2,11 @@
 import { useMemo, useState } from "react";
 import { Wallet, Users, CalendarCheck, Plane, FolderKanban } from "lucide-react";
 import Segmented from "@/components/Segmented";
-import { AreaChart, ForecastArea } from "@/components/Charts";
-import { Card, CardHeader, CardBody } from "@/components/ui";
+import { AreaChart, ForecastArea, BarList } from "@/components/Charts";
+import { Card, CardHeader, CardBody, EmptyState } from "@/components/ui";
 
 type Point = { label: string; value: number; forecast?: boolean };
-type Bar = { label: string; count: number };
+type Bar = { label: string; count: number; href?: string };
 
 export type TrendSeries = {
   payroll: Point[];       // 12 actual + forecast tail (forecast:true)
@@ -52,8 +52,6 @@ export default function TrendBoard({ series }: { series: TrendSeries }) {
   const attendance = useMemo(() => windowed(series.attendance, n), [series.attendance, n]);
   const leave = useMemo(() => windowed(series.leave, n), [series.leave, n]);
 
-  const max = Math.max(1, ...series.projects.map((p) => p.count));
-
   return (
     <Card>
       <CardHeader
@@ -79,21 +77,13 @@ export default function TrendBoard({ series }: { series: TrendSeries }) {
         {metric === "leave" && <AreaChart data={leave} ariaLabel="Leave and sick days taken per month" />}
         {metric === "projects" && (
           series.projects.length === 0 ? (
-            <p className="py-8 text-center text-sm text-slate-500">No active projects.</p>
+            <EmptyState
+              icon={<FolderKanban className="h-6 w-6" />}
+              title="No active projects"
+              description="Assign employees to a project to see allocation trends here."
+            />
           ) : (
-            <div className="space-y-3">
-              {series.projects.map((row) => (
-                <div key={row.label}>
-                  <div className="mb-1 flex items-center justify-between text-xs">
-                    <span className="truncate text-slate-600">{row.label}</span>
-                    <span className="nums ml-2 font-medium text-slate-700">{row.count}</span>
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-slate-100">
-                    <div className="h-2 rounded-full bg-gradient-to-r from-brand-500 to-brand-300" style={{ width: `${(row.count / max) * 100}%` }} />
-                  </div>
-                </div>
-              ))}
-            </div>
+            <BarList items={series.projects.map((p) => ({ label: p.label, value: p.count, href: p.href }))} />
           )
         )}
       </CardBody>

@@ -2,6 +2,8 @@
 // chart library: keeps the bundle and server light while staying fully bespoke
 // and on-brand. All motion is CSS and gated on prefers-reduced-motion.
 
+import Link from "next/link";
+
 /* ── Smooth area + line trend ───────────────────────────────────────────── */
 function smoothPath(pts: { x: number; y: number }[]) {
   if (pts.length === 0) return "";
@@ -320,6 +322,52 @@ export function StatusBars({
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+/* ── Bar list (shared horizontal label + count + gradient progress bar) ──
+   Single source of truth for the three call sites that used to hand-roll
+   this (HR dashboard, CompositionBoard, TrendBoard). Rows are optionally
+   linkable — pass `href` to deep-link a bar into a filtered list. */
+export function BarList({
+  items,
+}: {
+  items: { label: string; value: number; max?: number; href?: string }[];
+}) {
+  if (items.length === 0) return null;
+  const maxOfItems = Math.max(1, ...items.map((i) => i.value));
+  return (
+    <div className="space-y-3">
+      {items.map((item) => {
+        const denom = item.max ?? maxOfItems;
+        const pct = denom ? Math.min(100, (item.value / denom) * 100) : 0;
+        const row = (
+          <>
+            <div className="mb-1 flex items-center justify-between text-xs">
+              <span className="truncate text-slate-600">{item.label}</span>
+              <span className="nums ml-2 font-medium text-slate-700">{item.value}</span>
+            </div>
+            <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+              <div
+                className="h-2 rounded-full bg-gradient-to-r from-brand-500 to-brand-300"
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+          </>
+        );
+        return item.href ? (
+          <Link
+            key={item.label}
+            href={item.href}
+            className="-mx-1.5 block rounded-lg px-1.5 py-0.5 motion-safe:transition-colors hover:bg-slate-50"
+          >
+            {row}
+          </Link>
+        ) : (
+          <div key={item.label}>{row}</div>
+        );
+      })}
     </div>
   );
 }

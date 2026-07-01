@@ -24,16 +24,22 @@ const VALID_STATUS = new Set(["ACTIVE", "INACTIVE"]);
 export default async function EmployeesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; status?: string }>;
+  searchParams: Promise<{ q?: string; status?: string; category?: string; location?: string }>;
 }) {
   const viewer = await requirePageRole(HR_VIEW);
   const canWrite = HR_WRITE.includes(viewer.role);
 
-  const { q, status } = await searchParams;
+  const { q, status, category, location } = await searchParams;
 
   const where: Prisma.EmployeeWhereInput = {};
   if (status && VALID_STATUS.has(status)) {
     where.status = status as Prisma.EmployeeWhereInput["status"];
+  }
+  if (category && category.trim()) {
+    where.empCategory = category.trim();
+  }
+  if (location && location.trim()) {
+    where.location = location.trim();
   }
   if (q && q.trim()) {
     const term = q.trim();
@@ -49,6 +55,8 @@ export default async function EmployeesPage({
     where,
     orderBy: { createdAt: "desc" },
   });
+
+  const filterNote = category ? `Category: ${category.trim()}` : location ? `Location: ${location.trim()}` : null;
 
   type Emp = (typeof employees)[number];
   const columns: Column<Emp>[] = [
@@ -104,7 +112,7 @@ export default async function EmployeesPage({
     <>
       <PageHeader
         title="Employees"
-        subtitle={`${employees.length} result(s)`}
+        subtitle={filterNote ? `${employees.length} result(s) · ${filterNote}` : `${employees.length} result(s)`}
         breadcrumbs={[{ label: "HR", href: "/hr" }, { label: "Employees" }]}
       >
         <a

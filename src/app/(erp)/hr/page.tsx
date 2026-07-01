@@ -4,8 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { requirePageRole, HR_VIEW } from "@/lib/rbac";
 import { fmtINR } from "@/lib/format";
 import { BrandHero } from "@/components/chrome";
-import { StatCard, Card, CardHeader, CardBody, ProgressBar } from "@/components/ui";
-import { DeltaBadge } from "@/components/Charts";
+import { StatCard, Card, CardHeader, CardBody, ProgressBar, EmptyState } from "@/components/ui";
+import { DeltaBadge, BarList } from "@/components/Charts";
 import { linearForecast, pctDelta } from "@/lib/hr-forecast";
 import TrendBoard, { type TrendSeries } from "@/components/hr/TrendBoard";
 import CompositionBoard from "@/components/hr/CompositionBoard";
@@ -14,26 +14,7 @@ export const dynamic = "force-dynamic";
 
 const SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-type Bar = { label: string; count: number };
-function BarList({ rows, empty }: { rows: Bar[]; empty: string }) {
-  if (rows.length === 0) return <p className="text-sm text-slate-500">{empty}</p>;
-  const max = Math.max(1, ...rows.map((r) => r.count));
-  return (
-    <div className="space-y-3">
-      {rows.map((row) => (
-        <div key={row.label}>
-          <div className="mb-1 flex items-center justify-between text-xs">
-            <span className="truncate text-slate-600">{row.label}</span>
-            <span className="nums ml-2 font-medium text-slate-700">{row.count}</span>
-          </div>
-          <div className="h-2 overflow-hidden rounded-full bg-slate-100">
-            <div className="h-2 rounded-full bg-gradient-to-r from-brand-500 to-brand-300" style={{ width: `${(row.count / max) * 100}%` }} />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
+type Bar = { label: string; count: number; href?: string };
 
 export default async function HrPage() {
   await requirePageRole(HR_VIEW);
@@ -144,7 +125,7 @@ export default async function HrPage() {
   const locationBars = sortDesc(byLocation.map((r) => ({ label: r.location ?? "—", count: r._count._all })));
   const designationBars = sortDesc(byDesignation.map((r) => ({ label: r.designation ?? "—", count: r._count._all })));
   const categoryBars = sortDesc(byEmpCategory.map((r) => ({ label: r.empCategory ?? "—", count: r._count._all })));
-  const projectBars: Bar[] = projects.map((p) => ({ label: p.name, count: p._count.assignments }));
+  const projectBars: Bar[] = projects.map((p) => ({ label: p.name, count: p._count.assignments, href: `/hr/projects/${p.id}` }));
 
   const series: TrendSeries = { payroll: payrollPoints, headcount: headcountPoints, attendance: attendancePoints, leave: leavePoints, projects: projectBars };
 
@@ -162,14 +143,20 @@ export default async function HrPage() {
         {/* KPI bento with deltas */}
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
           <StatCard tone="brand" icon={<Users className="h-4 w-4" />} label="Active headcount"
+            href="/hr/employees?status=ACTIVE"
             value={<span className="flex flex-wrap items-baseline gap-2"><span>{activeCount}</span><DeltaBadge value={headcountDelta} /></span>} />
           <StatCard tone="emerald" icon={<Wallet className="h-4 w-4" />} label={`Payroll · ${periods[lastActual].label}`}
+            href={`/hr/payout?year=${periods[lastActual].year}&month=${periods[lastActual].month}`}
             value={<span className="flex flex-wrap items-baseline gap-2"><span>{fmtINR(costAnchor)}</span><DeltaBadge value={costDelta} /></span>} />
           <StatCard tone="blue" icon={<CalendarCheck className="h-4 w-4" />} label="Attendance rate (MTD)"
+            href={`/hr/attendance?year=${Y}&month=${Mo}`}
             value={<span className="flex flex-wrap items-baseline gap-2"><span>{monthly[last].rate}%</span><DeltaBadge value={attRateDelta} /></span>} />
-          <StatCard tone="emerald" icon={<CalendarCheck className="h-4 w-4" />} label="Present today" value={presentToday} />
-          <StatCard tone="amber" icon={<Clock className="h-4 w-4" />} label="On leave today" value={onLeaveToday} />
+          <StatCard tone="emerald" icon={<CalendarCheck className="h-4 w-4" />} label="Present today"
+            href={`/hr/attendance?year=${Y}&month=${Mo}`} value={presentToday} />
+          <StatCard tone="amber" icon={<Clock className="h-4 w-4" />} label="On leave today"
+            href={`/hr/attendance?year=${Y}&month=${Mo}`} value={onLeaveToday} />
           <StatCard tone="amber" icon={<UserMinus className="h-4 w-4" />} label="Attrition this month"
+            href="/hr/employees?status=INACTIVE"
             value={<span className="flex flex-wrap items-baseline gap-2"><span>{leaversCur}</span><DeltaBadge value={attritionDelta} invert /></span>} />
         </div>
 
@@ -180,7 +167,17 @@ export default async function HrPage() {
         <div className="grid gap-6 lg:grid-cols-2">
           <Card>
             <CardHeader title="Project utilization" subtitle={`${utilization}% deployed · ${benchCount} on the bench · ${projects.length} active projects`} />
-            <CardBody><BarList rows={projectBars} empty="No active projects." /></CardBody>
+            <CardBody>
+              {projectBars.length === 0 ? (
+                <EmptyState
+                  icon={<FolderKanban className="h-6 w-6" />}
+                  title="No active projects"
+                  description="Assign employees to a project to see utilization here."
+                />
+              ) : (
+                <BarList items={projectBars.map((b) => ({ label: b.label, value: b.count, href: b.href }))} />
+              )}
+            </CardBody>
           </Card>
           <Card>
             <CardHeader title="Leave burn (this year)" subtitle="Days taken vs total annual quota" />
