@@ -15,6 +15,8 @@ export type PayrollRow = {
   role: string;
   designation: string;
   ctc: number | null;
+  /** Attendance-derived LOP day counts for this employee/month (src/lib/hr-lop.ts). */
+  lop?: { workingDays: number; lopDays: number; paidDays: number };
   basic: number;
   hra: number;
   cca: number;
@@ -55,6 +57,10 @@ const DEDUCTIONS: { key: NumericKey; label: string }[] = [
   { key: "epf", label: "EPF" },
   { key: "esi", label: "ESI" },
 ];
+
+// Reserved extraLines label for the attendance-derived LOP deduction. Once inserted it's a
+// normal, fully-editable extraLines row (see ExtraLines) — never auto-overwritten.
+const LOP_LABEL = "Loss of Pay";
 
 // Standard monthly-gross split — mirrors the payroll seeding rules.
 // existingLta / existingSpecialAllowance are already part of the gross, so
@@ -291,6 +297,16 @@ function EditorBody({
   const { totalEarnings, totalDeductions, payableAmount } = computePayrollTotals(row);
   const [gross, setGross] = useState(() => (row.ctc ? Math.round(row.ctc / 12) : totalEarnings || 0));
 
+  // Attendance-derived LOP: rate = LIVE monthly gross ÷ days-in-month, so the suggested
+  // amount always reflects the operator's current earnings edits at the moment "Apply" is
+  // clicked. Once inserted, the line is a normal editable extraLines deduction — never
+  // auto-recomputed or overwritten on subsequent renders.
+  const hasLopLine = row.extraLines.some((l) => l.label === LOP_LABEL);
+  const lopAmount =
+    row.lop && row.lop.workingDays > 0 ? Math.round((totalEarnings / row.lop.workingDays) * row.lop.lopDays) : 0;
+  const canApplyLop = canWrite && !!row.lop && row.lop.lopDays > 0 && row.lop.workingDays > 0 && !hasLopLine;
+  const applyLop = () => onExtra(idx, [...row.extraLines, { label: LOP_LABEL, amount: lopAmount, kind: "deduction" }]);
+
   return (
     <div className="space-y-6">
       {row.error && <div className="rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-700 ring-1 ring-inset ring-rose-200">{row.error}</div>}
@@ -341,13 +357,34 @@ function EditorBody({
         ))}
       </Section>
 
+      {canApplyLop && (
+        <button
+          type="button"
+          onClick={applyLop}
+          className="press flex w-full items-center justify-between gap-3 rounded-xl border border-dashed border-rose-200 bg-rose-50/60 px-3 py-2.5 text-left hover:bg-rose-50"
+        >
+          <span className="text-sm font-medium text-rose-700">
+            Apply LOP — {row.lop!.lopDays}d unpaid this month
+          </span>
+          <span className="nums shrink-0 text-sm font-semibold text-rose-700">−{fmtINR(lopAmount)}</span>
+        </button>
+      )}
+
       {/* Custom line items */}
       <ExtraLines idx={idx} lines={row.extraLines} canWrite={canWrite} onExtra={onExtra} />
 
       {/* Net */}
-      <div className="flex items-center justify-between rounded-xl bg-teal-50 px-4 py-3 ring-1 ring-inset ring-teal-100">
-        <span className="text-sm font-semibold text-teal-900">Net payable</span>
-        <span className="nums text-xl font-bold text-teal-700">{fmtINR(payableAmount)}</span>
+      <div className="space-y-1.5">
+        {row.lop && (
+          <p className="nums px-1 text-xs text-slate-500">
+            Payable days {row.lop.paidDays} of {row.lop.workingDays}
+            {row.lop.lopDays > 0 && <> · LOP {row.lop.lopDays}d</>}
+          </p>
+        )}
+        <div className="flex items-center justify-between rounded-xl bg-teal-50 px-4 py-3 ring-1 ring-inset ring-teal-100">
+          <span className="text-sm font-semibold text-teal-900">Net payable</span>
+          <span className="nums text-xl font-bold text-teal-700">{fmtINR(payableAmount)}</span>
+        </div>
       </div>
 
       {/* Remarks */}

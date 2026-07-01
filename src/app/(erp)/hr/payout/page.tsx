@@ -1,12 +1,18 @@
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, BadgeIndianRupee } from "lucide-react";
+import type { AttendanceStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requirePageRole, HR_VIEW, HR_WRITE } from "@/lib/rbac";
 import { MONTHS, type PayrollExtraLine } from "@/lib/hr-validation";
+import { computeLop } from "@/lib/hr-lop";
 import { PageHeader, EmptyState } from "@/components/ui";
 import PayrollEditor, { type PayrollRow } from "@/components/hr/PayrollEditor";
 import MonthPicker from "@/components/hr/MonthPicker";
 import ScopedFilterChip from "@/components/hr/ScopedFilterChip";
+
+const emptyStatusCounts = (): Record<AttendanceStatus, number> => ({
+  PRESENT: 0, ABSENT: 0, LEAVE: 0, SICK: 0, HALF_DAY: 0, HOLIDAY: 0, WEEK_OFF: 0,
+});
 
 export const dynamic = "force-dynamic";
 
@@ -29,7 +35,15 @@ export default async function PayoutPage({
   const nextMonth = month === 12 ? 1 : month + 1;
   const nextYear = month === 12 ? year + 1 : year;
 
-  const [employees, payrolls, prevPayrolls, scopedEmployee] = await Promise.all([
+  // Attendance-derived LOP (loss of pay) day counts, batched for the whole roster —
+  // two grouped queries total (not 2×N), fed per-employee through the pure computeLop
+  // (src/lib/hr-lop.ts). Mirrors attendanceLop's UTC half-open windowing.
+  const monthStart = new Date(Date.UTC(year, month - 1, 1));
+  const monthEnd = new Date(Date.UTC(year, month, 1));
+  const yearStart = new Date(Date.UTC(year, 0, 1));
+  const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+
+  const [employees, payrolls, prevPayrolls, scopedEmployee, thisMonthGroups, ytdBeforeGroups] = await Promise.all([
     prisma.employee.findMany({
       // Scoped to one employee (any status — an inactive employee's payout
       // history must still be viewable from their profile), else the usual
@@ -41,6 +55,8 @@ export default async function PayoutPage({
         name: true,
         designation: true,
         totalCtc: true,
+        casualLeaveQuota: true,
+        sickLeaveQuota: true,
       },
       orderBy: { name: "asc" },
     }),
@@ -81,6 +97,16 @@ export default async function PayoutPage({
     employeeId
       ? prisma.employee.findUnique({ where: { id: employeeId }, select: { name: true, empId: true } })
       : Promise.resolve(null),
+    prisma.attendanceRecord.groupBy({
+      by: ["employeeId", "status"],
+      where: { date: { gte: monthStart, lt: monthEnd } },
+      _count: { _all: true },
+    }),
+    prisma.attendanceRecord.groupBy({
+      by: ["employeeId", "status"],
+      where: { status: { in: ["LEAVE", "SICK"] }, date: { gte: yearStart, lt: monthStart } },
+      _count: { _all: true },
+    }),
   ]);
 
   const payrollMap = new Map(payrolls.map((p) => [p.employeeId, p]));
@@ -92,7 +118,32 @@ export default async function PayoutPage({
     lastMonth[employeeId] = rest;
   }
 
+  // This-month per-status counts and YTD-before-month LEAVE/SICK counts, keyed by employee —
+  // built once from the two batched groupBy queries above, then fed per-employee into computeLop.
+  const thisMonthByEmp = new Map<string, Record<AttendanceStatus, number>>();
+  for (const g of thisMonthGroups) {
+    if (!thisMonthByEmp.has(g.employeeId)) thisMonthByEmp.set(g.employeeId, emptyStatusCounts());
+    thisMonthByEmp.get(g.employeeId)![g.status] = g._count._all;
+  }
+  const ytdBeforeByEmp = new Map<string, { leave: number; sick: number }>();
+  for (const g of ytdBeforeGroups) {
+    if (!ytdBeforeByEmp.has(g.employeeId)) ytdBeforeByEmp.set(g.employeeId, { leave: 0, sick: 0 });
+    const rec = ytdBeforeByEmp.get(g.employeeId)!;
+    if (g.status === "LEAVE") rec.leave = g._count._all;
+    else if (g.status === "SICK") rec.sick = g._count._all;
+  }
+
   const rows: PayrollRow[] = employees.map((emp) => {
+    const lopResult = computeLop({
+      thisMonth: thisMonthByEmp.get(emp.id) ?? emptyStatusCounts(),
+      casualQuota: emp.casualLeaveQuota,
+      sickQuota: emp.sickLeaveQuota,
+      ytdBeforeLeave: ytdBeforeByEmp.get(emp.id)?.leave ?? 0,
+      ytdBeforeSick: ytdBeforeByEmp.get(emp.id)?.sick ?? 0,
+      daysInMonth,
+    });
+    const lop = { workingDays: lopResult.workingDays, lopDays: lopResult.lopDays, paidDays: lopResult.paidDays };
+
     const rec = payrollMap.get(emp.id);
     if (rec) {
       return {
@@ -102,6 +153,7 @@ export default async function PayoutPage({
         role: rec.role ?? "",
         designation: rec.designation ?? emp.designation,
         ctc: rec.ctc,
+        lop,
         basic: rec.basic,
         hra: rec.hra,
         cca: rec.cca,
@@ -128,6 +180,7 @@ export default async function PayoutPage({
       role: "",
       designation: emp.designation,
       ctc: emp.totalCtc ?? null,
+      lop,
       basic: 0,
       hra: 0,
       cca: 0,
