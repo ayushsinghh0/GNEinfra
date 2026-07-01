@@ -356,7 +356,7 @@ export default function AttendanceGrid({
         </div>
       ) : view === "calendar" ? (
         singleEmp ? (
-          <div className="rounded-2xl bg-white p-4 shadow-[var(--shadow-card)] sm:p-5">
+          <div className="rounded-2xl bg-white p-3 shadow-[var(--shadow-card)] sm:p-5">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <EntityLink href={`/hr/employees/${singleEmp.id}`} name={singleEmp.name} code={singleEmp.empId} />
               {employees.length > 1 && (

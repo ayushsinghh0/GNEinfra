@@ -16,10 +16,13 @@ type Cell = AttendanceStatusValue | "";
  *   button wired to the SAME cellDown/cellEnter drag-to-paint contract the
  *   table matrix uses, so painting behaves identically in both views.
  *
- * Cell width is responsive (`h-9 … sm:h-11`) so a full 7-column month never
- * forces horizontal scroll on narrow phones; the day grid is `inline-grid`
- * so fixed-size cells stay tightly packed instead of stretching to fill a
- * wide parent (a plain `grid` with 1fr tracks would space them apart).
+ * `compact` cells are a fixed small size (`inline-grid`, shrink-wrapped) —
+ * intentionally tiny for the small-multiples overview. Non-compact cells are
+ * FLUID: `w-full aspect-square` inside a `grid-cols-7` track that fills its
+ * (width-capped) parent, so each day is as large as the available width
+ * allows — comfortably clearing the 44px tap-target guardrail on desktop —
+ * while still never forcing horizontal scroll on narrow phones (the grid
+ * shrinks to fit instead of overflowing). See the `max-w-sm` wrapper below.
  */
 export default function AttendanceCalendar({
   year,
@@ -46,21 +49,25 @@ export default function AttendanceCalendar({
   const tY = now.getUTCFullYear(), tM = now.getUTCMonth() + 1, tD = now.getUTCDate();
 
   const interactive = !compact && canWrite && !!(onCellDown || onCellEnter);
-  const cellSize = compact ? "h-7 w-7" : "h-9 w-9 sm:h-11 sm:w-11";
+  // Compact: fixed tiny size, shrink-wrapped (small-multiples). Non-compact:
+  // fluid square that fills its grid column — `min-h`/`max-w` just guard the
+  // extremes (a vanishingly narrow parent, or an uncapped wide one).
+  const cellSize = compact ? "h-7 w-7" : "aspect-square w-full min-h-9 max-w-14";
   const gap = compact ? "gap-0.5" : "gap-0.5 sm:gap-1";
+  const gridDisplay = compact ? "inline-grid" : "grid";
 
-  return (
-    <div className="select-none">
+  const calendar = (
+    <>
       {!compact && (
-        <div className={cn("mb-1 inline-grid grid-cols-7", gap)}>
+        <div className={cn("mb-1", gridDisplay, "grid-cols-7", gap)}>
           {WD.map((w, i) => (
-            <div key={i} className="w-9 text-center text-[10px] font-semibold uppercase text-slate-400 sm:w-11">
+            <div key={i} className="text-center text-[10px] font-semibold uppercase text-slate-400">
               {w}
             </div>
           ))}
         </div>
       )}
-      <div className={cn("inline-grid grid-cols-7", gap)}>
+      <div className={cn(gridDisplay, "grid-cols-7", gap)}>
         {Array.from({ length: leading }, (_, i) => (
           <div key={`lead-${i}`} className={cellSize} aria-hidden="true" />
         ))}
@@ -129,6 +136,12 @@ export default function AttendanceCalendar({
           );
         })}
       </div>
+    </>
+  );
+
+  return (
+    <div className="select-none">
+      {compact ? calendar : <div className="w-full max-w-sm">{calendar}</div>}
     </div>
   );
 }
