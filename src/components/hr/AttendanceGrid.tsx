@@ -3,27 +3,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CalendarCheck2, Eraser, Search, Users } from "lucide-react";
-import { Button, StatCard, cn } from "@/components/ui";
+import { Button, EmptyState, EntityLink, StatCard, cn } from "@/components/ui";
 import { ATTENDANCE_STATUSES, type AttendanceStatusValue } from "@/lib/hr-validation";
+import { STATUS, WD } from "./attendance-status";
+import AttendanceCalendar from "./AttendanceCalendar";
+import Segmented from "@/components/Segmented";
+import { TableScroll } from "@/components/DataTable";
 
 type Brush = AttendanceStatusValue | "ERASE";
 type Cell = AttendanceStatusValue | "";
 type Emp = { id: string; empId: string; name: string };
-
-const STATUS: Record<
-  AttendanceStatusValue,
-  { code: string; label: string; cell: string; swatch: string; text: string }
-> = {
-  PRESENT: { code: "P", label: "Present", cell: "bg-emerald-100 text-emerald-800 ring-1 ring-inset ring-emerald-200", swatch: "bg-emerald-500", text: "text-emerald-700" },
-  ABSENT: { code: "A", label: "Absent", cell: "bg-rose-100 text-rose-700 ring-1 ring-inset ring-rose-200", swatch: "bg-rose-500", text: "text-rose-700" },
-  LEAVE: { code: "L", label: "Leave", cell: "bg-amber-100 text-amber-700 ring-1 ring-inset ring-amber-200", swatch: "bg-amber-500", text: "text-amber-700" },
-  SICK: { code: "S", label: "Sick", cell: "bg-orange-100 text-orange-700 ring-1 ring-inset ring-orange-200", swatch: "bg-orange-500", text: "text-orange-700" },
-  HALF_DAY: { code: "½", label: "Half-day", cell: "bg-blue-100 text-blue-700 ring-1 ring-inset ring-blue-200", swatch: "bg-blue-500", text: "text-blue-700" },
-  HOLIDAY: { code: "H", label: "Holiday", cell: "bg-violet-100 text-violet-700 ring-1 ring-inset ring-violet-200", swatch: "bg-violet-500", text: "text-violet-700" },
-  WEEK_OFF: { code: "W", label: "Week-off", cell: "bg-slate-200 text-slate-500 ring-1 ring-inset ring-slate-300", swatch: "bg-slate-400", text: "text-slate-500" },
-};
-
-const WD = ["S", "M", "T", "W", "T", "F", "S"];
+type ViewMode = "calendar" | "table";
 
 export default function AttendanceGrid({
   employees,
@@ -59,6 +49,7 @@ export default function AttendanceGrid({
   const dragRef = useRef<Cell | null>(null);
 
   const [selectedEmp, setSelectedEmp] = useState<string | null>(null);
+  const [view, setView] = useState<ViewMode>("calendar");
 
   // Day metadata (weekday / weekend / today) — UTC to match stored dates.
   const days = useMemo(() => {
@@ -147,25 +138,77 @@ export default function AttendanceGrid({
     return pillEmployees;
   }, [pillEmployees, selectedEmp]);
 
-  // Totals across all employees for the stat strip.
+  // Table-mode only: click a day column header to apply the current brush to
+  // that day for every currently-shown (filtered) employee — a fast path for
+  // marking a HOLIDAY/WEEK_OFF across the whole roster at once.
+  function fillDay(day: number) {
+    if (!canWrite) return;
+    const eff: Cell = brush === "ERASE" ? "" : brush;
+    setGrid((g) => {
+      const next = { ...g };
+      for (const emp of filtered) next[key(emp.id, day)] = eff;
+      return next;
+    });
+  }
+
+  // Totals across all employees for the stat strip. `unmarked` only counts
+  // ELAPSED WORKING days — weekends never count, and (for the current month)
+  // days after today don't either: a past month counts every non-weekend
+  // day, a future month counts zero (nothing has "elapsed" yet).
   const totals = useMemo(() => {
-    let present = 0, absent = 0, leave = 0, marked = 0;
-    for (const emp of employees) for (const { d } of days) {
+    const now = new Date();
+    const tY = now.getUTCFullYear(), tM = now.getUTCMonth() + 1, tD = now.getUTCDate();
+    const isFutureMonth = year > tY || (year === tY && month > tM);
+    const isPastMonth = year < tY || (year === tY && month < tM);
+    const elapsedThrough = isFutureMonth ? 0 : isPastMonth ? daysInMonth : Math.min(daysInMonth, tD);
+
+    let present = 0, absent = 0, leave = 0, unmarked = 0;
+    for (const emp of employees) for (const { d, weekend } of days) {
       const s = grid[key(emp.id, d)] ?? "";
-      if (!s) continue;
-      marked++;
       if (s === "PRESENT") present++;
       else if (s === "ABSENT") absent++;
       else if (s === "LEAVE" || s === "SICK") leave++;
+      if (!s && !weekend && d <= elapsedThrough) unmarked++;
     }
-    const capacity = employees.length * days.length;
-    return { present, absent, leave, unmarked: capacity - marked };
-  }, [grid, employees, days]);
+    return { present, absent, leave, unmarked };
+  }, [grid, employees, days, year, month, daysInMonth]);
 
   const tally = (empId: string, s: AttendanceStatusValue) =>
     days.reduce((n, { d }) => n + (grid[key(empId, d)] === s ? 1 : 0), 0);
 
+  // All 7 statuses, tinted per STATUS[s] (falls back to a neutral chip at 0).
+  function renderTally(empId: string) {
+    return ATTENDANCE_STATUSES.map((s) => {
+      const n = tally(empId, s);
+      return (
+        <span
+          key={s}
+          className={cn(
+            "inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium",
+            n ? STATUS[s].cell : "bg-slate-50 text-slate-400"
+          )}
+        >
+          <span className="nums font-semibold">{n}</span> {STATUS[s].label}
+        </span>
+      );
+    });
+  }
+
+  function calendarCells(empId: string): Record<number, Cell> {
+    const out: Record<number, Cell> = {};
+    for (const { d } of days) out[d] = grid[key(empId, d)] ?? "";
+    return out;
+  }
+
   const BRUSHES: Brush[] = [...ATTENDANCE_STATUSES, "ERASE"];
+
+  // Calendar mode shows one big paintable month for a single employee when
+  // either they're explicitly pinned via the filter pills, or the roster
+  // itself is scoped to exactly one employee (e.g. /hr/attendance?employeeId=…).
+  const singleEmp: Emp | null =
+    filtered.length === 1 && (selectedEmp === filtered[0].id || employees.length === 1)
+      ? filtered[0]
+      : null;
 
   return (
     <div className="space-y-5">
@@ -173,44 +216,66 @@ export default function AttendanceGrid({
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatCard label="Employees" value={employees.length} icon={<Users className="h-4 w-4" />} tone="brand" />
         <StatCard label="Present days" value={totals.present} icon={<CalendarCheck2 className="h-4 w-4" />} tone="emerald" />
-        <StatCard label="Absent days" value={totals.absent} tone="amber" />
+        <StatCard label="Absent days" value={totals.absent} tone="rose" />
         <StatCard label="Unmarked" value={totals.unmarked} tone="slate" />
       </div>
 
-      {/* Toolbar: legend + brush picker + actions */}
+      {/* Toolbar: legend/brush picker + view toggle + search */}
       <div className="rounded-2xl bg-white p-4 shadow-[var(--shadow-card)]">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Attendance status">
-            {BRUSHES.map((b) => {
-              const active = brush === b;
-              const isErase = b === "ERASE";
-              const meta = b === "ERASE" ? null : STATUS[b];
-              return (
-                <button
-                  key={b}
-                  type="button"
-                  onClick={() => canWrite && setBrush(b)}
-                  disabled={!canWrite}
-                  aria-pressed={active}
-                  title={isErase ? "Erase" : `${meta!.label} (${meta!.code})`}
-                  className={cn(
-                    "press inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-xs font-medium transition-colors",
-                    active ? "border-brand-300 bg-brand-50 text-brand-800 ring-1 ring-brand-200" : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50",
-                    !canWrite && "cursor-default opacity-90"
-                  )}
+          {canWrite ? (
+            <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Attendance status brush">
+              {BRUSHES.map((b) => {
+                const active = brush === b;
+                const isErase = b === "ERASE";
+                const meta = b === "ERASE" ? null : STATUS[b];
+                return (
+                  <button
+                    key={b}
+                    type="button"
+                    onClick={() => setBrush(b)}
+                    aria-pressed={active}
+                    title={isErase ? "Erase" : `${meta!.label} (${meta!.code})`}
+                    className={cn(
+                      "press inline-flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-xs font-medium transition-colors",
+                      active ? "border-brand-300 bg-brand-50 text-brand-800 ring-1 ring-brand-200" : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                    )}
+                  >
+                    {isErase ? (
+                      <Eraser className="h-3.5 w-3.5 text-slate-400" />
+                    ) : (
+                      <span className={cn("grid h-4 w-4 place-items-center rounded text-[10px] font-bold text-white", meta!.swatch)}>{meta!.code}</span>
+                    )}
+                    <span>{isErase ? "Erase" : meta!.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center gap-2" aria-label="Attendance status legend">
+              {ATTENDANCE_STATUSES.map((s) => (
+                <span
+                  key={s}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-600"
                 >
-                  {isErase ? (
-                    <Eraser className="h-3.5 w-3.5 text-slate-400" />
-                  ) : (
-                    <span className={cn("grid h-4 w-4 place-items-center rounded text-[10px] font-bold text-white", meta!.swatch)}>{meta!.code}</span>
-                  )}
-                  <span>{isErase ? "Erase" : meta!.label}</span>
-                </button>
-              );
-            })}
-          </div>
+                  <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", STATUS[s].swatch)} aria-hidden="true" />
+                  {STATUS[s].label}
+                </span>
+              ))}
+            </div>
+          )}
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <Segmented
+              ariaLabel="Attendance view"
+              size="sm"
+              value={view}
+              onChange={setView}
+              options={[
+                { value: "calendar", label: "Calendar" },
+                { value: "table", label: "Table" },
+              ]}
+            />
             <div className="relative">
               <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
@@ -226,6 +291,7 @@ export default function AttendanceGrid({
         {canWrite && (
           <p className="mt-3 text-xs text-slate-500">
             Pick a status, then <span className="font-medium text-slate-600">click or drag</span> across days to mark it. Click a cell again to clear it.
+            {view === "table" && " Click a day column header to fill that day for every employee shown."}
           </p>
         )}
       </div>
@@ -270,91 +336,165 @@ export default function AttendanceGrid({
         </div>
       )}
 
-      {/* Per-employee summary — appears when the pinned employee is the one shown */}
-      {selectedEmp && filtered.length === 1 && filtered[0].id === selectedEmp && (
-        <div className="flex flex-wrap items-center gap-2 rounded-2xl bg-white p-4 shadow-[var(--shadow-card)]">
-          <span className="mr-1 text-sm font-semibold text-slate-800">
-            <span className="nums text-slate-400">{filtered[0].empId}</span> {filtered[0].name}
-          </span>
-          {ATTENDANCE_STATUSES.map((s) => {
-            const n = tally(filtered[0].id, s);
-            return (
-              <span
-                key={s}
-                className={cn(
-                  "inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium",
-                  n ? STATUS[s].cell : "bg-slate-50 text-slate-400"
-                )}
+      {/* Main content: empty state, calendar heatmap, or the table matrix */}
+      {filtered.length === 0 ? (
+        <div className="rounded-2xl border border-slate-200 bg-white shadow-[var(--shadow-card)]">
+          <EmptyState
+            icon={<Search className="h-6 w-6" />}
+            title="No employees match your search"
+            description={query ? `No results for “${query}”.` : "Try a different name or employee ID."}
+            action={
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => { setQuery(""); setSelectedEmp(null); }}
               >
-                <span className="nums font-semibold">{n}</span> {STATUS[s].label}
-              </span>
-            );
-          })}
+                Clear search
+              </Button>
+            }
+          />
         </div>
-      )}
-
-      {/* Grid */}
-      <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-[var(--shadow-card)]">
-        <table className="min-w-max border-collapse text-xs select-none">
-          <thead>
-            <tr className="border-b border-slate-200">
-              <th className="sticky left-0 z-10 bg-slate-50/80 px-4 py-2 text-left font-semibold uppercase tracking-wide text-slate-500">Employee</th>
-              {days.map(({ d, dow, weekend, today }) => (
-                <th key={d} className={cn("w-9 px-0 py-1.5 text-center font-medium", weekend ? "bg-slate-50 text-slate-400" : "text-slate-400")}>
-                  <div className="leading-none">{WD[dow]}</div>
-                  <div className={cn("nums mt-0.5 leading-none", today ? "mx-auto grid h-5 w-5 place-items-center rounded-full bg-brand text-white" : "text-slate-600")}>{d}</div>
-                </th>
-              ))}
-              {(["PRESENT", "HALF_DAY", "LEAVE", "ABSENT"] as const).map((s) => (
-                <th key={s} className={cn("px-2 py-2 text-center font-bold", STATUS[s].text)} title={STATUS[s].label}>{STATUS[s].code}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
+      ) : view === "calendar" ? (
+        singleEmp ? (
+          <div className="rounded-2xl bg-white p-4 shadow-[var(--shadow-card)] sm:p-5">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <EntityLink href={`/hr/employees/${singleEmp.id}`} name={singleEmp.name} code={singleEmp.empId} />
+              {employees.length > 1 && (
+                <Button variant="ghost" size="sm" onClick={() => setSelectedEmp(null)}>
+                  <Users className="h-3.5 w-3.5" /> All employees
+                </Button>
+              )}
+            </div>
+            <AttendanceCalendar
+              year={year}
+              month={month}
+              daysInMonth={daysInMonth}
+              cells={calendarCells(singleEmp.id)}
+              canWrite={canWrite}
+              onCellDown={(d) => cellDown(singleEmp.id, d)}
+              onCellEnter={(d) => cellEnter(singleEmp.id, d)}
+            />
+            <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-100 pt-4">
+              {renderTally(singleEmp.id)}
+            </div>
+          </div>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map((emp) => (
-              <tr
+              <div
                 key={emp.id}
-                className="border-b border-slate-100 last:border-0 hover:bg-slate-50/40 motion-safe:transition-colors"
+                className="rounded-2xl border border-slate-200 bg-white p-3 shadow-[var(--shadow-card)] motion-safe:transition-colors hover:border-brand-200"
               >
-                <td className="sticky left-0 z-10 bg-white px-4 py-1.5 font-medium text-slate-800 whitespace-nowrap group-hover:bg-slate-50">
-                  <span><span className="nums text-slate-400">{emp.empId}</span> {emp.name}</span>
-                </td>
-                {days.map(({ d, weekend }) => {
-                  const s = grid[key(emp.id, d)] ?? "";
-                  return (
-                    <td key={d} className={cn("px-0.5 py-1 text-center", weekend && "bg-slate-50/70")}>
-                      <button
-                        type="button"
-                        onPointerDown={() => cellDown(emp.id, d)}
-                        onPointerEnter={() => cellEnter(emp.id, d)}
-                        disabled={!canWrite}
-                        aria-label={`Day ${d}: ${s ? STATUS[s].label : "unmarked"}`}
-                        className={cn(
-                          "mx-auto grid h-8 w-8 place-items-center rounded-md text-[11px] font-bold transition-colors",
-                          s ? STATUS[s].cell : "text-slate-300",
-                          canWrite ? "cursor-pointer hover:ring-1 hover:ring-brand-200" : "cursor-default",
-                          !s && !weekend && "hover:bg-slate-100"
-                        )}
-                      >
-                        {s ? STATUS[s].code : <span className="text-slate-200">·</span>}
-                      </button>
-                    </td>
-                  );
-                })}
-                {(["PRESENT", "HALF_DAY", "LEAVE", "ABSENT"] as const).map((s) => {
-                  const n = tally(emp.id, s);
-                  return (
-                    <td key={s} className={cn("nums px-2 text-center font-semibold", n ? STATUS[s].text : "text-slate-300")}>{n}</td>
-                  );
-                })}
-              </tr>
+                <div className="mb-2">
+                  <EntityLink href={`/hr/employees/${emp.id}`} name={emp.name} code={emp.empId} className="text-xs" />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedEmp(emp.id)}
+                  aria-label={`Focus ${emp.name}'s attendance calendar`}
+                  className="block w-full rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
+                >
+                  <AttendanceCalendar
+                    year={year}
+                    month={month}
+                    daysInMonth={daysInMonth}
+                    cells={calendarCells(emp.id)}
+                    compact
+                  />
+                </button>
+              </div>
             ))}
-          </tbody>
-        </table>
-        {filtered.length === 0 && (
-          <p className="px-4 py-10 text-center text-sm text-slate-400">No employees match “{query}”.</p>
-        )}
-      </div>
+          </div>
+        )
+      ) : (
+        <>
+          {/* Per-employee summary — appears when a single employee is in focus */}
+          {singleEmp && (
+            <div className="flex flex-wrap items-center gap-2 rounded-2xl bg-white p-4 shadow-[var(--shadow-card)]">
+              <EntityLink href={`/hr/employees/${singleEmp.id}`} name={singleEmp.name} code={singleEmp.empId} className="mr-1" />
+              {renderTally(singleEmp.id)}
+            </div>
+          )}
+
+          <TableScroll ariaLabel="Attendance grid">
+            <table className="min-w-max border-collapse text-xs select-none">
+              <thead>
+                <tr className="border-b border-slate-200">
+                  <th className="sticky left-0 z-10 bg-slate-50/80 px-4 py-2 text-left font-semibold uppercase tracking-wide text-slate-500">Employee</th>
+                  {days.map(({ d, dow, weekend, today }) => {
+                    const headerContent = (
+                      <>
+                        <div className="leading-none">{WD[dow]}</div>
+                        <div className={cn("nums mt-0.5 leading-none", today ? "mx-auto grid h-5 w-5 place-items-center rounded-full bg-brand text-white" : "text-slate-600")}>{d}</div>
+                      </>
+                    );
+                    return (
+                      <th key={d} className={cn("w-9 px-0 py-1.5 text-center font-medium", weekend ? "bg-slate-50 text-slate-400" : "text-slate-400")}>
+                        {canWrite ? (
+                          <button
+                            type="button"
+                            onClick={() => fillDay(d)}
+                            title="Fill this day for every employee shown with the current brush"
+                            aria-label={`Fill day ${d} for all shown employees with ${brush === "ERASE" ? "erase" : STATUS[brush].label}`}
+                            className="w-full cursor-pointer rounded-md motion-safe:transition-colors hover:bg-brand-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
+                          >
+                            {headerContent}
+                          </button>
+                        ) : (
+                          headerContent
+                        )}
+                      </th>
+                    );
+                  })}
+                  {(["PRESENT", "HALF_DAY", "LEAVE", "ABSENT"] as const).map((s) => (
+                    <th key={s} className={cn("px-2 py-2 text-center font-bold", STATUS[s].text)} title={STATUS[s].label}>{STATUS[s].code}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((emp) => (
+                  <tr
+                    key={emp.id}
+                    className="border-b border-slate-100 last:border-0 hover:bg-slate-50/40 motion-safe:transition-colors"
+                  >
+                    <td className="sticky left-0 z-10 bg-white px-4 py-1.5 font-medium text-slate-800 whitespace-nowrap group-hover:bg-slate-50">
+                      <span><span className="nums text-slate-400">{emp.empId}</span> {emp.name}</span>
+                    </td>
+                    {days.map(({ d, weekend }) => {
+                      const s = grid[key(emp.id, d)] ?? "";
+                      return (
+                        <td key={d} className={cn("px-0.5 py-1 text-center", weekend && "bg-slate-50/70")}>
+                          <button
+                            type="button"
+                            onPointerDown={() => cellDown(emp.id, d)}
+                            onPointerEnter={() => cellEnter(emp.id, d)}
+                            disabled={!canWrite}
+                            aria-label={`Day ${d}: ${s ? STATUS[s].label : "unmarked"}`}
+                            className={cn(
+                              "mx-auto grid h-8 w-8 place-items-center rounded-md text-[11px] font-bold transition-colors",
+                              s ? STATUS[s].cell : "text-slate-300",
+                              canWrite ? "cursor-pointer hover:ring-1 hover:ring-brand-200" : "cursor-default",
+                              !s && !weekend && "hover:bg-slate-100"
+                            )}
+                          >
+                            {s ? STATUS[s].code : <span className="text-slate-200">·</span>}
+                          </button>
+                        </td>
+                      );
+                    })}
+                    {(["PRESENT", "HALF_DAY", "LEAVE", "ABSENT"] as const).map((s) => {
+                      const n = tally(emp.id, s);
+                      return (
+                        <td key={s} className={cn("nums px-2 text-center font-semibold", n ? STATUS[s].text : "text-slate-300")}>{n}</td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </TableScroll>
+        </>
+      )}
 
       {/* Sticky save bar */}
       {canWrite && (

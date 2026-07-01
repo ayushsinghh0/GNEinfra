@@ -330,6 +330,7 @@ const STAT_TONES: Record<string, { chip: string; spark: string }> = {
   blue: { chip: "bg-blue-50 text-blue-600", spark: "from-blue-500 to-blue-300" },
   emerald: { chip: "bg-emerald-50 text-emerald-600", spark: "from-emerald-500 to-emerald-300" },
   slate: { chip: "bg-slate-100 text-slate-600", spark: "from-slate-400 to-slate-300" },
+  rose: { chip: "bg-rose-50 text-rose-600", spark: "from-rose-500 to-rose-300" },
 };
 
 export function StatCard({
@@ -344,7 +345,7 @@ export function StatCard({
   label: string;
   value: React.ReactNode;
   icon?: React.ReactNode;
-  tone?: "brand" | "amber" | "blue" | "emerald" | "slate";
+  tone?: "brand" | "amber" | "blue" | "emerald" | "slate" | "rose";
   spark?: number; // 0–100 — optional progress whisker
   href?: string;
   className?: string;
