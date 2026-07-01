@@ -71,6 +71,10 @@
     1.051 39.6%, 1.017 43.1%, 0.991, 0.977 51%, 0.974 53.8%, 0.975 57.1%,
     0.997 69.8%, 1.003 76.9%, 1
   );
+
+  /* Sticky-stack offsets (compose all sticky top-* from these) */
+  --h-topbar: 3.5rem;   /* mobile app bar (pt-14) */
+  --h-header: 4rem;     /* PageHeader h-16 */
 }
 
 body {
