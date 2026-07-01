@@ -1,4 +1,5 @@
 import * as React from "react";
+import Link from "next/link";
 import { statusMeta } from "@/lib/hr-status";
 
 // Tiny class combiner (no dependency needed).
@@ -303,6 +304,21 @@ export function AvatarStack({
         </span>
       )}
     </div>
+  );
+}
+
+/* ── EntityLink (clickable identity cell) ───────────────────────────────── */
+export function EntityLink({
+  href, name, code, icon, avatar = true, className,
+}: { href: string; name: string; code?: string; icon?: React.ReactNode; avatar?: boolean; className?: string }) {
+  return (
+    <Link href={href} className={cn("group inline-flex items-center gap-2 min-w-0", className)}>
+      {icon ? <span className="shrink-0 text-slate-400">{icon}</span> : avatar ? <Avatar name={name} size="sm" /> : null}
+      <span className="min-w-0">
+        <span className="block truncate font-medium text-slate-800 group-hover:text-brand-700">{name}</span>
+        {code && <span className="nums block truncate font-mono text-[11px] text-slate-400">{code}</span>}
+      </span>
+    </Link>
   );
 }
 
