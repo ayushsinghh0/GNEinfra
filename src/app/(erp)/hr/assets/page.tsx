@@ -4,6 +4,7 @@ import { requirePageRole, HR_VIEW, HR_WRITE } from "@/lib/rbac";
 import { fmtDate } from "@/lib/format";
 import AssetForm from "@/components/hr/AssetForm";
 import AssetRowActions from "@/components/hr/AssetRowActions";
+import ScopedFilterChip from "@/components/hr/ScopedFilterChip";
 import {
   PageHeader,
   Card,
@@ -18,12 +19,20 @@ import {
 
 export const dynamic = "force-dynamic";
 
-export default async function AssetsPage() {
+export default async function AssetsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ employeeId?: string }>;
+}) {
   const viewer = await requirePageRole(HR_VIEW);
   const canWrite = HR_WRITE.includes(viewer.role);
 
-  const [assets, employees] = await Promise.all([
+  const { employeeId: rawEmployeeId } = await searchParams;
+  const employeeId = rawEmployeeId?.trim() || undefined;
+
+  const [assets, employees, scopedEmployee] = await Promise.all([
     prisma.employeeAsset.findMany({
+      where: employeeId ? { employeeId } : undefined,
       include: { employee: { select: { id: true, empId: true, name: true, designation: true, mailId: true, location: true } } },
       orderBy: { allocatedAt: "desc" },
     }),
@@ -34,6 +43,9 @@ export default async function AssetsPage() {
           orderBy: { name: "asc" },
         })
       : Promise.resolve([]),
+    employeeId
+      ? prisma.employee.findUnique({ where: { id: employeeId }, select: { name: true, empId: true } })
+      : Promise.resolve(null),
   ]);
 
   return (
@@ -41,6 +53,14 @@ export default async function AssetsPage() {
       <PageHeader title="Asset Register" subtitle={`${assets.length} record(s)`} />
 
       <div className="p-8 space-y-6">
+        {scopedEmployee && (
+          <ScopedFilterChip
+            name={scopedEmployee.name}
+            empId={scopedEmployee.empId}
+            employeeHref={`/hr/employees/${employeeId}`}
+            clearHref="/hr/assets"
+          />
+        )}
         {canWrite && (
           <Card>
             <CardHeader title="Add asset record" />

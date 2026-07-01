@@ -6,6 +6,7 @@ import { PageHeader, Card, StatCard, EmptyState, btn } from "@/components/ui";
 import { projectStats, statusCounts } from "@/lib/hr-projects";
 import ProjectFilters from "@/components/hr/ProjectFilters";
 import ProjectCard from "@/components/hr/ProjectCard";
+import ScopedFilterChip from "@/components/hr/ScopedFilterChip";
 
 export const dynamic = "force-dynamic";
 
@@ -14,16 +15,28 @@ const VALID = new Set(["ACTIVE", "ON_HOLD", "COMPLETED"]);
 export default async function ProjectsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; q?: string }>;
+  searchParams: Promise<{ status?: string; q?: string; employeeId?: string }>;
 }) {
   const viewer = await requirePageRole(HR_VIEW);
   const canWrite = HR_WRITE.includes(viewer.role);
-  const { status, q } = await searchParams;
+  const { status, q, employeeId: rawEmployeeId } = await searchParams;
+  const employeeId = rawEmployeeId?.trim() || undefined;
 
-  const projects = await prisma.project.findMany({
-    orderBy: { createdAt: "desc" },
-    include: { assignments: { include: { employee: { select: { id: true, name: true } } } } },
-  });
+  const [allProjects, scopedEmployee] = await Promise.all([
+    prisma.project.findMany({
+      orderBy: { createdAt: "desc" },
+      include: { assignments: { include: { employee: { select: { id: true, name: true } } } } },
+    }),
+    employeeId
+      ? prisma.employee.findUnique({ where: { id: employeeId }, select: { name: true, empId: true } })
+      : Promise.resolve(null),
+  ]);
+
+  // Scoped to the projects that employee is assigned to (stats/counts below
+  // then reflect just their project footprint, matching the deep-link intent).
+  const projects = employeeId
+    ? allProjects.filter((p) => p.assignments.some((a) => a.employee.id === employeeId))
+    : allProjects;
 
   const stats = projectStats(projects);
   const counts = statusCounts(projects);
@@ -47,12 +60,24 @@ export default async function ProjectsPage({
       </PageHeader>
 
       <div className="p-8 space-y-6">
+        {scopedEmployee && (
+          <ScopedFilterChip
+            name={scopedEmployee.name}
+            empId={scopedEmployee.empId}
+            employeeHref={`/hr/employees/${employeeId}`}
+            clearHref="/hr/projects"
+          />
+        )}
         {projects.length === 0 ? (
           <Card className="overflow-hidden">
             <EmptyState
               icon={<Briefcase className="h-6 w-6" />}
-              title="No projects yet"
-              description="Add your first project to get started."
+              title={scopedEmployee ? "No project assignments" : "No projects yet"}
+              description={
+                scopedEmployee
+                  ? "This employee has not been assigned to any projects."
+                  : "Add your first project to get started."
+              }
             />
           </Card>
         ) : (

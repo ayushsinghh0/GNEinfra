@@ -6,13 +6,14 @@ import { MONTHS, type PayrollExtraLine } from "@/lib/hr-validation";
 import { PageHeader, EmptyState } from "@/components/ui";
 import PayrollEditor, { type PayrollRow } from "@/components/hr/PayrollEditor";
 import MonthPicker from "@/components/hr/MonthPicker";
+import ScopedFilterChip from "@/components/hr/ScopedFilterChip";
 
 export const dynamic = "force-dynamic";
 
 export default async function PayoutPage({
   searchParams,
 }: {
-  searchParams: Promise<{ year?: string; month?: string }>;
+  searchParams: Promise<{ year?: string; month?: string; employeeId?: string }>;
 }) {
   const viewer = await requirePageRole(HR_VIEW);
   const canWrite = HR_WRITE.includes(viewer.role);
@@ -21,15 +22,19 @@ export default async function PayoutPage({
   const now = new Date();
   const year = Math.max(2000, Math.min(2100, Number(sp.year) || now.getUTCFullYear()));
   const month = Math.max(1, Math.min(12, Number(sp.month) || now.getUTCMonth() + 1));
+  const employeeId = sp.employeeId?.trim() || undefined;
 
   const prevMonth = month === 1 ? 12 : month - 1;
   const prevYear = month === 1 ? year - 1 : year;
   const nextMonth = month === 12 ? 1 : month + 1;
   const nextYear = month === 12 ? year + 1 : year;
 
-  const [employees, payrolls, prevPayrolls] = await Promise.all([
+  const [employees, payrolls, prevPayrolls, scopedEmployee] = await Promise.all([
     prisma.employee.findMany({
-      where: { status: "ACTIVE" },
+      // Scoped to one employee (any status — an inactive employee's payout
+      // history must still be viewable from their profile), else the usual
+      // active roster.
+      where: employeeId ? { id: employeeId } : { status: "ACTIVE" },
       select: {
         id: true,
         empId: true,
@@ -73,6 +78,9 @@ export default async function PayoutPage({
         tds: true, loanAdv: true, epf: true, esi: true,
       },
     }),
+    employeeId
+      ? prisma.employee.findUnique({ where: { id: employeeId }, select: { name: true, empId: true } })
+      : Promise.resolve(null),
   ]);
 
   const payrollMap = new Map(payrolls.map((p) => [p.employeeId, p]));
@@ -168,6 +176,14 @@ export default async function PayoutPage({
       </PageHeader>
 
       <div className="p-6 sm:p-8">
+        {scopedEmployee && (
+          <ScopedFilterChip
+            name={scopedEmployee.name}
+            empId={scopedEmployee.empId}
+            employeeHref={`/hr/employees/${employeeId}`}
+            clearHref={`/hr/payout?year=${year}&month=${month}`}
+          />
+        )}
         {employees.length === 0 ? (
           <EmptyState
             icon={<BadgeIndianRupee className="h-6 w-6" />}

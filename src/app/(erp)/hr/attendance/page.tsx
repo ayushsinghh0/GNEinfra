@@ -6,13 +6,14 @@ import { MONTHS, type AttendanceStatusValue } from "@/lib/hr-validation";
 import { PageHeader, EmptyState } from "@/components/ui";
 import AttendanceGrid from "@/components/hr/AttendanceGrid";
 import MonthPicker from "@/components/hr/MonthPicker";
+import ScopedFilterChip from "@/components/hr/ScopedFilterChip";
 
 export const dynamic = "force-dynamic";
 
 export default async function AttendancePage({
   searchParams,
 }: {
-  searchParams: Promise<{ year?: string; month?: string }>;
+  searchParams: Promise<{ year?: string; month?: string; employeeId?: string }>;
 }) {
   const viewer = await requirePageRole(HR_VIEW);
   const canWrite = HR_WRITE.includes(viewer.role);
@@ -21,6 +22,7 @@ export default async function AttendancePage({
   const now = new Date();
   const year = Number(params.year) || now.getUTCFullYear();
   const month = Number(params.month) || now.getUTCMonth() + 1;
+  const employeeId = params.employeeId?.trim() || undefined;
 
   // Clamp to valid range
   const y = Math.max(2000, Math.min(2100, year));
@@ -39,9 +41,11 @@ export default async function AttendancePage({
   const nextMonth = m === 12 ? 1 : m + 1;
   const nextYear = m === 12 ? y + 1 : y;
 
-  const [employees, records] = await Promise.all([
+  const [employees, records, scopedEmployee] = await Promise.all([
     prisma.employee.findMany({
-      where: { status: "ACTIVE" },
+      // Scoped to one employee (any status — an inactive employee's history
+      // must still be viewable from their profile), else the usual active roster.
+      where: employeeId ? { id: employeeId } : { status: "ACTIVE" },
       select: { id: true, empId: true, name: true },
       orderBy: { name: "asc" },
     }),
@@ -49,6 +53,9 @@ export default async function AttendancePage({
       where: { date: { gte: monthStart, lt: monthEnd } },
       select: { employeeId: true, date: true, status: true },
     }),
+    employeeId
+      ? prisma.employee.findUnique({ where: { id: employeeId }, select: { name: true, empId: true } })
+      : Promise.resolve(null),
   ]);
 
   const initial = records.map((r) => ({
@@ -87,6 +94,14 @@ export default async function AttendancePage({
       </PageHeader>
 
       <div className="p-6 sm:p-8">
+        {scopedEmployee && (
+          <ScopedFilterChip
+            name={scopedEmployee.name}
+            empId={scopedEmployee.empId}
+            employeeHref={`/hr/employees/${employeeId}`}
+            clearHref={`/hr/attendance?year=${y}&month=${m}`}
+          />
+        )}
         {employees.length === 0 ? (
           <EmptyState
             icon={<CalendarClock className="h-6 w-6" />}
