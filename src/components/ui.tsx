@@ -1,4 +1,5 @@
 import * as React from "react";
+import { statusMeta } from "@/lib/hr-status";
 
 // Tiny class combiner (no dependency needed).
 export function cn(...parts: Array<string | false | null | undefined>) {
@@ -198,6 +199,29 @@ export function Chip({
       )}
     >
       {children}
+    </span>
+  );
+}
+
+/* ── StatusChip (status → tone pill, via the shared registry) ────────────── */
+export function StatusChip({
+  status,
+  className,
+}: {
+  status: string;
+  className?: string;
+}) {
+  const m = statusMeta(status);
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium",
+        m.chip,
+        className
+      )}
+    >
+      <span className={cn("h-1.5 w-1.5 rounded-full", m.dot)} aria-hidden="true" />
+      {m.label}
     </span>
   );
 }
