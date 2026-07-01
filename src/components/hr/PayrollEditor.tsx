@@ -5,8 +5,11 @@ import Link from "next/link";
 import { BadgeIndianRupee, ChevronRight, Copy, Plus, Printer, Search, Trash2, Wand2 } from "lucide-react";
 import { computePayrollTotals, type PayrollExtraLine, type PayrollLineKind } from "@/lib/hr-validation";
 import { fmtINR } from "@/lib/format";
-import { Button, StatCard, cn } from "@/components/ui";
+import { Button, StatCard, StatusChip, cn } from "@/components/ui";
 import SlideOver from "@/components/SlideOver";
+import Segmented from "@/components/Segmented";
+import ConfirmDialog from "@/components/ConfirmDialog";
+import { toast } from "@/components/Toast";
 
 export type PayrollRow = {
   emp: { id: string; empId: string; name: string };
@@ -79,6 +82,26 @@ function splitFromGross(gross: number, existingLta = 0, existingSpecialAllowance
   return { basic, hra, cca, conveyance, medicalReimb, pla, personalPay, epf, esi };
 }
 
+// The exact per-row request body — shared by the single-row save() and the
+// batch save-all so both hit the server with an identical shape (the server
+// re-validates + recomputes totals either way; this is just DRY wiring).
+function rowPayload(r: PayrollRow, year: number, month: number) {
+  return {
+    employeeId: r.emp.id, year, month,
+    code: r.code, role: r.role, designation: r.designation, ctc: r.ctc,
+    basic: r.basic, hra: r.hra, cca: r.cca, personalPay: r.personalPay,
+    conveyance: r.conveyance, lta: r.lta, specialAllowance: r.specialAllowance,
+    pla: r.pla, medicalReimb: r.medicalReimb,
+    tds: r.tds, loanAdv: r.loanAdv, epf: r.epf, esi: r.esi, remarks: r.remarks,
+    extraLines: r.extraLines,
+  };
+}
+
+// Payroll's client-side status — feeds the shared statusMeta registry (DRAFT/UNSAVED/SAVED).
+function payrollStatus(dirty: boolean, saved: boolean): "UNSAVED" | "SAVED" | "DRAFT" {
+  return dirty ? "UNSAVED" : saved ? "SAVED" : "DRAFT";
+}
+
 export default function PayrollEditor({
   rows: initial,
   year,
@@ -97,6 +120,8 @@ export default function PayrollEditor({
   );
   const [openIdx, setOpenIdx] = useState<number | null>(null);
   const [query, setQuery] = useState("");
+  const [view, setView] = useState<"all" | "pending" | "saved">("all");
+  const [confirmSplitAll, setConfirmSplitAll] = useState(false);
 
   function patch(idx: number, fields: Partial<RowState>, markDirty = true) {
     setRows((prev) => prev.map((r, i) => (i === idx ? { ...r, ...fields, ...(markDirty ? { dirty: true } : {}) } : r)));
@@ -111,15 +136,7 @@ export default function PayrollEditor({
       const res = await fetch("/api/hr/payroll", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          employeeId: r.emp.id, year, month,
-          code: r.code, role: r.role, designation: r.designation, ctc: r.ctc,
-          basic: r.basic, hra: r.hra, cca: r.cca, personalPay: r.personalPay,
-          conveyance: r.conveyance, lta: r.lta, specialAllowance: r.specialAllowance,
-          pla: r.pla, medicalReimb: r.medicalReimb,
-          tds: r.tds, loanAdv: r.loanAdv, epf: r.epf, esi: r.esi, remarks: r.remarks,
-          extraLines: r.extraLines,
-        }),
+        body: JSON.stringify(rowPayload(r, year, month)),
       });
       const json = (await res.json()) as { record?: { id: string }; error?: string };
       if (!res.ok) throw new Error(json.error ?? "Save failed");
@@ -127,6 +144,44 @@ export default function PayrollEditor({
     } catch (e) {
       patch(idx, { saving: false, error: (e as Error).message }, false);
     }
+  }
+
+  async function saveAll() {
+    const dirtyIdx = rows.reduce<number[]>((acc, r, i) => (r.dirty ? [...acc, i] : acc), []);
+    if (dirtyIdx.length === 0) return;
+    const dirtySet = new Set(dirtyIdx);
+    setRows((prev) => prev.map((r, i) => (dirtySet.has(i) ? { ...r, saving: true, error: null } : r)));
+    try {
+      const res = await fetch("/api/hr/payroll/batch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rows: dirtyIdx.map((i) => rowPayload(rows[i], year, month)) }),
+      });
+      const json = (await res.json()) as { ok?: boolean; results?: { employeeId: string; id: string }[]; error?: string };
+      if (!res.ok || !json.ok) throw new Error(json.error ?? "Save failed");
+      const idByEmp = new Map(json.results!.map((x) => [x.employeeId, x.id] as const));
+      setRows((prev) =>
+        prev.map((r, i) =>
+          dirtySet.has(i)
+            ? { ...r, saving: false, savedId: idByEmp.get(r.emp.id) ?? r.savedId, dirty: false, error: null }
+            : r
+        )
+      );
+      toast(`Saved ${dirtyIdx.length} payslip${dirtyIdx.length === 1 ? "" : "s"}`, "success");
+    } catch (e) {
+      const msg = (e as Error).message;
+      setRows((prev) => prev.map((r, i) => (dirtySet.has(i) ? { ...r, saving: false, error: msg } : r)));
+      toast(msg, "error");
+    }
+  }
+
+  function autoSplitAll() {
+    rows.forEach((r, idx) => {
+      const gross = r.ctc ? Math.round(r.ctc / 12) : computePayrollTotals(r).totalEarnings;
+      patch(idx, splitFromGross(gross, r.lta, r.specialAllowance));
+    });
+    setConfirmSplitAll(false);
+    toast(`Auto-split applied for ${rows.length} employee${rows.length === 1 ? "" : "s"}`, "success");
   }
 
   const totals = useMemo(() => {
@@ -144,8 +199,12 @@ export default function PayrollEditor({
     const q = query.trim().toLowerCase();
     return rows
       .map((r, idx) => ({ r, idx }))
-      .filter(({ r }) => !q || r.emp.name.toLowerCase().includes(q) || r.emp.empId.toLowerCase().includes(q));
-  }, [rows, query]);
+      .filter(({ r }) => !q || r.emp.name.toLowerCase().includes(q) || r.emp.empId.toLowerCase().includes(q))
+      .filter(({ r }) => (view === "pending" ? !r.savedId : view === "saved" ? !!r.savedId : true));
+  }, [rows, query, view]);
+
+  const dirtyCount = rows.reduce((n, r) => n + (r.dirty ? 1 : 0), 0);
+  const anySaving = rows.some((r) => r.saving);
 
   const active = openIdx === null ? null : rows[openIdx];
 
@@ -156,17 +215,36 @@ export default function PayrollEditor({
         <StatCard label="Total payout" value={fmtINR(totals.payable)} icon={<BadgeIndianRupee className="h-4 w-4" />} tone="brand" />
         <StatCard label="Total earnings" value={fmtINR(totals.earnings)} tone="emerald" />
         <StatCard label="Processed" value={`${totals.processed}/${rows.length}`} tone="blue" spark={rows.length ? (totals.processed / rows.length) * 100 : 0} />
-        <StatCard label="Pending" value={totals.pending} tone="amber" />
+        <StatCard
+          label="Pending"
+          value={totals.pending}
+          tone="amber"
+          onClick={() => setView((v) => (v === "pending" ? "all" : "pending"))}
+          className={cn(view === "pending" && "ring-2 ring-amber-400/60")}
+        />
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-xs">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search employee…"
-          className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-brand focus:ring-[3px] focus:ring-brand/20"
+      {/* Search + view filter */}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative max-w-xs flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search employee…"
+            className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-brand focus:ring-[3px] focus:ring-brand/20"
+          />
+        </div>
+        <Segmented
+          ariaLabel="Filter payslips"
+          size="sm"
+          value={view}
+          onChange={setView}
+          options={[
+            { value: "all", label: "All" },
+            { value: "pending", label: "Pending" },
+            { value: "saved", label: "Saved" },
+          ]}
         />
       </div>
 
@@ -193,7 +271,10 @@ export default function PayrollEditor({
                   className="grid flex-1 grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-xl py-1.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-brand/30 sm:grid-cols-[minmax(0,1fr)_7rem_8rem_6rem]"
                 >
                   <span className="min-w-0">
-                    <span className="block truncate font-medium text-slate-900">{r.emp.name}</span>
+                    <span className="flex min-w-0 items-center gap-2">
+                      <span className="truncate font-medium text-slate-900">{r.emp.name}</span>
+                      <StatusChip status={payrollStatus(r.dirty, !!r.savedId)} className="shrink-0 sm:hidden" />
+                    </span>
                     <span className="block truncate text-xs text-slate-400">
                       <span className="nums">{r.emp.empId}</span> · {r.designation || "—"}
                     </span>
@@ -203,7 +284,7 @@ export default function PayrollEditor({
                     {untouched ? "—" : fmtINR(payableAmount)}
                   </span>
                   <span className="hidden justify-center sm:flex">
-                    <StatusBadge dirty={r.dirty} saved={!!r.savedId} />
+                    <StatusChip status={payrollStatus(r.dirty, !!r.savedId)} />
                   </span>
                 </button>
                 <div className="flex w-16 shrink-0 items-center justify-end gap-1">
@@ -229,6 +310,40 @@ export default function PayrollEditor({
         </ul>
         {filtered.length === 0 && <p className="px-5 py-10 text-center text-sm text-slate-400">No employees match “{query}”.</p>}
       </div>
+
+      {/* Bulk actions — sticky footer, mirrors the attendance grid's save bar */}
+      {canWrite && (
+        <div className="sticky bottom-4 z-10 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 shadow-[var(--shadow-pop)] backdrop-blur">
+          <span className="text-sm text-slate-500">
+            {dirtyCount > 0 ? (
+              <>
+                <span className="font-semibold text-slate-800">{dirtyCount}</span> unsaved change{dirtyCount === 1 ? "" : "s"}
+              </>
+            ) : (
+              "All changes saved"
+            )}
+          </span>
+          <div className="flex items-center gap-2">
+            <Button variant="secondary" size="sm" onClick={() => setConfirmSplitAll(true)} disabled={rows.length === 0}>
+              <Wand2 className="h-4 w-4" /> Auto-split all
+            </Button>
+            {dirtyCount > 0 && (
+              <Button size="sm" onClick={saveAll} disabled={anySaving}>
+                {anySaving ? "Saving…" : `Save all (${dirtyCount})`}
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+
+      <ConfirmDialog
+        open={confirmSplitAll}
+        title="Auto-split all from CTC?"
+        message={`Overwrite earnings for all ${rows.length} employees from their CTC? Unsaved changes will be replaced.`}
+        confirmLabel="Auto-split all"
+        onConfirm={autoSplitAll}
+        onCancel={() => setConfirmSplitAll(false)}
+      />
 
       {/* Editor slide-over */}
       <SlideOver
@@ -275,12 +390,6 @@ export default function PayrollEditor({
       </SlideOver>
     </div>
   );
-}
-
-function StatusBadge({ dirty, saved }: { dirty: boolean; saved: boolean }) {
-  if (dirty) return <span className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700 ring-1 ring-inset ring-amber-200">Unsaved</span>;
-  if (saved) return <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700 ring-1 ring-inset ring-emerald-200">Saved</span>;
-  return <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-500">Draft</span>;
 }
 
 function EditorBody({

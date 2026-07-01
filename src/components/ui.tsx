@@ -340,6 +340,7 @@ export function StatCard({
   tone = "brand",
   spark,
   href,
+  onClick,
   className,
 }: {
   label: string;
@@ -348,6 +349,7 @@ export function StatCard({
   tone?: "brand" | "amber" | "blue" | "emerald" | "slate" | "rose";
   spark?: number; // 0–100 — optional progress whisker
   href?: string;
+  onClick?: () => void;
   className?: string;
 }) {
   const t = STAT_TONES[tone];
@@ -374,8 +376,15 @@ export function StatCard({
       )}
     </>
   );
-  const cls = cn(cardCls, "lift p-5", href && "block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40", className);
-  return href ? <Link href={href} className={cls}>{inner}</Link> : <div className={cls}>{inner}</div>;
+  const cls = cn(
+    cardCls,
+    "lift p-5",
+    (href || onClick) && "block w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40",
+    className
+  );
+  if (href) return <Link href={href} className={cls}>{inner}</Link>;
+  if (onClick) return <button type="button" onClick={onClick} className={cls}>{inner}</button>;
+  return <div className={cls}>{inner}</div>;
 }
 
 /* ── Empty state ────────────────────────────────────────────────────────── */
