@@ -30,9 +30,9 @@ function NavBody({ sections, pathname, onNavigate }: { sections: NavSection[]; p
                   </li>
                 );
               }
-              const active = item.href === "/scm" || item.href === "/bd" || item.href === "/project" || item.href === "/finance" || item.href === "/hr" || item.href === "/overview"
-                ? pathname === item.href
-                : pathname.startsWith(item.href);
+              const segs = item.href.split("/").filter(Boolean);
+              const isHome = segs.length <= 1; // "/hr","/scm","/overview" are homes → exact match only
+              const active = pathname === item.href || (!isHome && pathname.startsWith(item.href + "/"));
               return (
                 <li key={item.label}>
                   <Link href={item.href} onClick={onNavigate} className={`press group relative flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-colors ${active ? "bg-brand-50 text-brand-700" : "text-slate-500 hover:bg-slate-100 hover:text-slate-900"}`}>

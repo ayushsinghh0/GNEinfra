@@ -97,7 +97,21 @@ export function deptLabel(role: Role): string {
 }
 
 export function navForRole(role: Role): NavSection[] {
-  if (role === "BD" || role === "SCM" || role === "PROJECT" || role === "FINANCE" || role === "HR") {
+  if (role === "HR") {
+    // HR-role users get a grouped nav (same items as DEPT.HR, regrouped). Oversight roles
+    // (ADMIN/MANAGER/SUPERADMIN) keep the flat DEPT.HR section below to avoid a bloated sidebar.
+    const item = (label: string) => {
+      const found = HR.items.find((i) => i.label === label);
+      if (!found) throw new Error(`nav: HR item "${label}" not found`);
+      return found;
+    };
+    return [
+      { heading: "Overview", items: [item("Dashboard")] },
+      { heading: "People", items: [item("Employees"), item("Attendance"), item("Payout")] },
+      { heading: "Resources", items: [item("Assets"), item("Projects"), item("Manpower Planning"), item("Recruitment")] },
+    ];
+  }
+  if (role === "BD" || role === "SCM" || role === "PROJECT" || role === "FINANCE") {
     return [DEPT[role]];
   }
   // Oversight: overview + every department. Administration only for ADMIN/SUPERADMIN.
