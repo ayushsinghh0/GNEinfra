@@ -287,10 +287,9 @@ export function DetailSection({ title, icon, action, children }: { title: React.
   - `<TableScroll ariaLabel={string} children/>` — the sticky/scroll-shadow shell for the rare genuinely-wide grid (used by attendance matrix fallback).
   - `<ErrorState title description? action?/>` in `ui.tsx`.
 
-- [ ] **Step 1: Priority→class map + `DataTable`.** Create `src/components/DataTable.tsx`:
+- [ ] **Step 1: Priority→class map + `DataTable`.** Create `src/components/DataTable.tsx`. **This is a SERVER component — do NOT add `"use client"`.** It has no client state; sorting and row-links are plain `<Link>`s, and `cell`/`href` are render functions passed from server-component pages (functions can't cross the server→client boundary, so a client DataTable would break every consumer). `TableScroll` is likewise a plain component (no server-only imports) so it can also be rendered inside the client `AttendanceGrid`.
 
 ```tsx
-"use client";
 import * as React from "react";
 import Link from "next/link";
 import { ChevronRight, ArrowUpDown } from "lucide-react";
