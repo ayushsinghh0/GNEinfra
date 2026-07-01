@@ -337,6 +337,7 @@ export function StatCard({
   icon,
   tone = "brand",
   spark,
+  href,
   className,
 }: {
   label: string;
@@ -344,11 +345,12 @@ export function StatCard({
   icon?: React.ReactNode;
   tone?: "brand" | "amber" | "blue" | "emerald" | "slate";
   spark?: number; // 0–100 — optional progress whisker
+  href?: string;
   className?: string;
 }) {
   const t = STAT_TONES[tone];
-  return (
-    <div className={cn(cardCls, "lift p-5", className)}>
+  const inner = (
+    <>
       <div className="flex items-center justify-between">
         <span className="text-[13px] font-medium text-slate-500">{label}</span>
         {icon && (
@@ -368,8 +370,10 @@ export function StatCard({
           />
         </div>
       )}
-    </div>
+    </>
   );
+  const cls = cn(cardCls, "lift p-5", href && "block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40", className);
+  return href ? <Link href={href} className={cls}>{inner}</Link> : <div className={cls}>{inner}</div>;
 }
 
 /* ── Empty state ────────────────────────────────────────────────────────── */
