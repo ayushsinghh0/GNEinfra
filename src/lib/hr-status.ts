@@ -80,6 +80,9 @@ const REGISTRY: Record<string, Tone> = {
   // Employee
   ACTIVE: T.emerald("Active"),
   INACTIVE: T.slate("Inactive"),
+  // Asset register (derived from EmployeeAsset.returnedAt — not a DB enum)
+  ALLOCATED: T.sky("Allocated"),
+  RETURNED: T.slate("Returned"),
   // Project (src/lib/hr-validation.ts PROJECT_STATUSES — ACTIVE/ON_HOLD/COMPLETED only,
   // no PLANNED/ARCHIVED; ACTIVE is shared with Employee status above).
   ON_HOLD: T.amber("On hold"),
