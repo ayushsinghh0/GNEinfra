@@ -1,5 +1,6 @@
 import * as React from "react";
 import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 import { statusMeta } from "@/lib/hr-status";
 
 // Tiny class combiner (no dependency needed).
@@ -402,23 +403,60 @@ export function EmptyState({
   );
 }
 
+/* ── Breadcrumbs ─────────────────────────────────────────────────────────── */
+export function Breadcrumbs({ items }: { items: { label: string; href?: string }[] }) {
+  return (
+    <nav aria-label="Breadcrumb" className="flex items-center gap-1 text-[13px] text-slate-500 min-w-0">
+      {items.map((it, i) => (
+        <span key={i} className="inline-flex items-center gap-1 min-w-0">
+          {i > 0 && <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-300" />}
+          {it.href && i < items.length - 1
+            ? <Link href={it.href} className="truncate hover:text-brand-700">{it.label}</Link>
+            : <span className="truncate font-medium text-slate-700" aria-current="page">{it.label}</span>}
+        </span>
+      ))}
+    </nav>
+  );
+}
+
 /* ── Page header bar (frosted, sticky) ──────────────────────────────────── */
 export function PageHeader({
   title,
   subtitle,
+  breadcrumbs,
   children,
 }: {
   title: React.ReactNode;
   subtitle?: React.ReactNode;
+  breadcrumbs?: { label: string; href?: string }[];
   children?: React.ReactNode;
 }) {
+  const titleGroup = (
+    <div className="flex items-baseline gap-3 min-w-0">
+      <h1 className="text-lg font-semibold tracking-tight text-slate-900 truncate">{title}</h1>
+      {subtitle && <span className="text-sm text-slate-500 truncate">{subtitle}</span>}
+    </div>
+  );
+  const actions = children && <div className="flex items-center gap-2 shrink-0">{children}</div>;
+
+  if (!breadcrumbs || breadcrumbs.length === 0) {
+    return (
+      <header className="glass sticky top-[var(--h-topbar)] md:top-0 z-20 flex h-16 items-center justify-between gap-4 border-b border-slate-200/70 px-6 sm:px-8">
+        {titleGroup}
+        {actions}
+      </header>
+    );
+  }
+
   return (
-    <header className="glass sticky top-14 md:top-0 z-20 flex h-16 items-center justify-between gap-4 border-b border-slate-200/70 px-6 sm:px-8">
-      <div className="flex items-baseline gap-3 min-w-0">
-        <h1 className="text-lg font-semibold tracking-tight text-slate-900 truncate">{title}</h1>
-        {subtitle && <span className="text-sm text-slate-500 truncate">{subtitle}</span>}
+    <header className="glass sticky top-[var(--h-topbar)] md:top-0 z-20 border-b border-slate-200/70 px-6 sm:px-8">
+      <div className="flex h-8 items-center pt-1.5">
+        <Breadcrumbs items={breadcrumbs} />
       </div>
-      {children && <div className="flex items-center gap-2 shrink-0">{children}</div>}
+      <div className="flex h-16 items-center justify-between gap-4">
+        {titleGroup}
+        {actions}
+      </div>
     </header>
   );
 }
