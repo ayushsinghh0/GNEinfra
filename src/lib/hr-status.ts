@@ -101,6 +101,19 @@ const REGISTRY: Record<string, Tone> = {
   USED: T.emerald("Used"),
   EXPIRED: T.slateExpired("Expired"),
   REVOKED: T.roseRevoked("Revoked"),
+  // BD pipeline (BdStage / BdFinalStatus)
+  ENQUIRY: T.sky("Enquiry"),
+  QUOTE_SUBMITTED: T.violet("Quote submitted"),
+  FOLLOW_UP: T.blue("Follow-up"),
+  NEGOTIATION: T.amber("Negotiation"),
+  CLOSED: T.slate("Closed"),
+  OPEN: T.sky("Open"),
+  WON: T.emerald("Won"),
+  LOST: T.rose("Lost"),
+  // Finance invoice workflow (DRAFT / APPROVED / REJECTED already exist above)
+  PENDING_APPROVAL: T.amber("Pending approval"),
+  UNPAID: T.amber("Unpaid"),
+  PAID: T.emerald("Paid"),
 };
 
 export function statusMeta(status: string): Tone {

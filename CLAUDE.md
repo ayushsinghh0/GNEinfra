@@ -17,7 +17,7 @@ accounts, 8 roles) and land in their **department workspace**: **BD · SCM · Pr
 cross-department), **Admin** (read/write all departments), **Superadmin** (everything incl. user
 management). Line departments are siloed; only the oversight roles cross boundaries.
 
-Two verticals are built; the rest are role-scoped "coming soon" shells:
+Four verticals are built; Project is still a role-scoped "coming soon" shell:
 - **SCM** owns the **vendor/supplier master** — the original vendor-registration flow (admin emails
   a vendor a token link → multi-step form + KYC uploads → review/approve → `vendorCode` like
   `GNE-V-0001`), re-homed under `/scm/*`.
@@ -25,6 +25,22 @@ Two verticals are built; the rest are role-scoped "coming soon" shells:
   printable salary slips, projects + concurrent assignments, leave balances, and a predictive
   analytics dashboard. It was reworked in the **"Connected" redesign** (branch `hr-connected-redesign`,
   unmerged) so every record cross-links and no list scrolls sideways — see the dedicated section below.
+- **BD** (`/bd/*`, built 2026-07-03) digitizes the four sheets of the GNE "BD Tracker" workbook:
+  Clients (`/bd/clients`, 40 real clients seeded), Enquiries & Quotes (`/bd/enquiries`, the
+  Query-&-Quote tracker with `BdStage`/`BdFinalStatus` pipeline), PO Tracker (`/bd/pos`) and
+  yearly Targets (`/bd/targets`), plus a pipeline dashboard. Zod in `src/lib/bd-validation.ts`,
+  Prisma-data mappers in `src/lib/bd-mappers.ts`, fiscal-year helpers in `src/lib/fiscal.ts`.
+- **Finance** (`/finance/*`, built 2026-07-03) implements the invoice workflow from the GNE
+  document formats: **Invoice raise** (manual Tax-Invoice fields + line items, totals recomputed
+  server-side) → **submit = NOPA** (Note On Payment Approval, 1:1 with the invoice, created by the
+  `submit` endpoint which is also the `DRAFT/REJECTED→PENDING_APPROVAL` transition) → **sign-off by
+  `FINANCE_APPROVE` = MANAGER/ADMIN/SUPERADMIN** (the one deliberate exception to managers-read-only;
+  the Finance initiator can never approve) → **payment marking** by `FINANCE_WRITE` → a
+  **reconciliation** ledger. Three print-clean documents under `(print)/finance/invoices/[id]/…`:
+  the Tax Invoice, the NOPA, and the GNE-002 Approval Note (renders only once APPROVED). Zod in
+  `src/lib/finance-validation.ts`; suggested (still editable) document numbers from
+  `src/lib/finance-numbers.ts` (`GNE/25-26/0001`, `NOPA/25-26/0001`); status transitions are never
+  client-settable — they happen only through the dedicated `submit`/`decision`/`payment` endpoints.
 
 > **Branches (rewired 2026-07-02):** **`main` is the branch of record** — it was fast-forwarded to the
 > complete product (multi-role ERP + the fully-redesigned HR module, all four "Connected" phases) and
@@ -93,10 +109,13 @@ R2/MinIO-compatible via `S3_ENDPOINT`), or SMTP provider is a `.env` change only
   attribute means the app MUST be served over **HTTPS** in production or browsers silently drop
   the session cookie and login appears to fail.
 - **RBAC & money conventions**: `src/lib/rbac.ts` exports per-area role sets — `VENDOR_VIEW`/
-  `VENDOR_WRITE`, `HR_VIEW`/`HR_WRITE`, `OVERSIGHT`, `ADMIN_AREA`, `SUPERADMIN_ONLY`. The pattern
+  `VENDOR_WRITE`, `HR_VIEW`/`HR_WRITE`, `BD_VIEW`/`BD_WRITE`, `FINANCE_VIEW`/`FINANCE_WRITE`,
+  `FINANCE_APPROVE`, `OVERSIGHT`, `ADMIN_AREA`, `SUPERADMIN_ONLY`. The pattern
   everywhere: **managers are read-only** — a department's view sets include `MANAGER` but its write
   sets do NOT, enforced in BOTH the UI (a `canWrite` flag hides mutate controls) AND every mutating
-  API. Guards also reject `mustChangePassword` users. **Money is integer rupees** (no Prisma
+  API. Guards also reject `mustChangePassword` users. ONE deliberate exception:
+  `FINANCE_APPROVE = [MANAGER, ADMIN, SUPERADMIN]` — invoice approval is a sign-off (the manager's
+  stated function), and the FINANCE initiator is intentionally NOT in it (no self-approval). **Money is integer rupees** (no Prisma
   `Decimal`); payslip totals are recomputed server-side (`computePayrollTotals`). HR Zod lives in
   `src/lib/hr-validation.ts`; HR compute helpers in `src/lib/hr-leave.ts` / `src/lib/hr-forecast.ts` / `src/lib/hr-lop.ts`
   (attendance-derived loss-of-pay) / `src/lib/hr-projects.ts`.
@@ -252,6 +271,19 @@ Postgres via Prisma (`prisma/schema.prisma`). Model groups:
   `computePayrollTotals`), `Project` + `ProjectAssignment` (concurrent per-employee assignments —
   assignable from EITHER the employee detail OR the project detail page). `AttendanceRecord`/
   `PayrollRecord` use `onDelete: Restrict` so deleting an employee can't wipe payroll/attendance history.
+- **BD:** `BdClient` (client master; enquiry/PO FKs are `onDelete: Restrict` so a client with history
+  can't be deleted), `BdEnquiry` (Query & Quote row; enums `BdStage` ENQUIRY/QUOTE_SUBMITTED/FOLLOW_UP/
+  NEGOTIATION/CLOSED + `BdFinalStatus` OPEN/WON/LOST; `fiscalYear` string like "FY 26-27"),
+  `BdPurchaseOrder` (optional `enquiryId` link, `SetNull` on enquiry delete), `BdTarget` (target sheet
+  lines). `prisma/seed.ts` inserts the 40 tracker clients (`prisma/bd-clients.ts`) only when the table
+  is EMPTY — idempotent, never clobbers app edits.
+- **Finance:** `Invoice` (status `InvoiceStatus` DRAFT/PENDING_APPROVAL/APPROVED/REJECTED +
+  `PaymentStatus` UNPAID/PAID; `invoiceNo` unique; workflow audit as loose name strings:
+  submittedByName/decidedByName/decidedByRole/paymentMarkedBy), `InvoiceItem` (qty Float — the one
+  non-integer number; rate/amount integer rupees, amount = server-side `round(qty×rate)`), `Nopa`
+  (1:1 with Invoice, `nopaNo` unique) + `NopaLine`. Invoice content is editable only in
+  DRAFT/REJECTED; deletes only in DRAFT; `decision` uses a conditional `updateMany` on
+  status=PENDING_APPROVAL so concurrent double-decisions lose instead of overwriting.
 
 ⚠️ **Migrations are additive.** Each schema change is a tracked `prisma migrate dev` migration — or,
 when no DB is reachable, authored **offline** via `prisma migrate diff --from-schema-datamodel <old>

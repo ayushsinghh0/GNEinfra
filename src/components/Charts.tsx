@@ -293,12 +293,28 @@ const STATUS_COLOR: Record<string, string> = {
   UNDER_REVIEW: "#f59e0b",
   APPROVED: "#10b981",
   REJECTED: "#f43f5e",
+  // BD pipeline stages / outcomes (match src/lib/hr-status.ts tones)
+  ENQUIRY: "#0ea5e9",
+  QUOTE_SUBMITTED: "#8b5cf6",
+  FOLLOW_UP: "#3b82f6",
+  NEGOTIATION: "#f59e0b",
+  CLOSED: "#94a3b8",
+  OPEN: "#0ea5e9",
+  WON: "#10b981",
+  LOST: "#f43f5e",
+  // Finance invoice workflow
+  DRAFT: "#94a3b8",
+  PENDING_APPROVAL: "#f59e0b",
+  UNPAID: "#f59e0b",
+  PAID: "#10b981",
 };
 
 export function Donut({
   data,
+  unitLabel = "vendors",
 }: {
   data: { label: string; status: string; value: number }[];
+  unitLabel?: string;
 }) {
   const total = data.reduce((s, d) => s + d.value, 0);
   const r = 52;
@@ -341,7 +357,7 @@ export function Donut({
         </svg>
         <div className="pointer-events-none absolute inset-0 grid place-content-center text-center">
           <div className="nums text-2xl font-bold leading-none text-slate-900">{total}</div>
-          <div className="mt-0.5 text-[11px] font-medium text-slate-400">vendors</div>
+          <div className="mt-0.5 text-[11px] font-medium text-slate-400">{unitLabel}</div>
         </div>
       </div>
 
@@ -450,8 +466,11 @@ export function StatusBars({
    linkable — pass `href` to deep-link a bar into a filtered list. */
 export function BarList({
   items,
+  formatValue,
 }: {
   items: { label: string; value: number; max?: number; href?: string }[];
+  /** Optional value renderer (e.g. fmtINR for money bars); defaults to the raw number. */
+  formatValue?: (n: number) => string;
 }) {
   if (items.length === 0) return null;
   const maxOfItems = Math.max(1, ...items.map((i) => i.value));
@@ -464,7 +483,9 @@ export function BarList({
           <>
             <div className="mb-1 flex items-center justify-between text-xs">
               <span className="truncate text-slate-600">{item.label}</span>
-              <span className="nums ml-2 font-medium text-slate-700">{item.value}</span>
+              <span className="nums ml-2 font-medium text-slate-700">
+                {formatValue ? formatValue(item.value) : item.value}
+              </span>
             </div>
             <div className="h-2 overflow-hidden rounded-full bg-slate-100">
               <div

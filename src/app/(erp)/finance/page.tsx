@@ -1,59 +1,282 @@
-import { requirePageRole, deptArea } from "@/lib/rbac";
-import { BrandHero } from "@/components/chrome";
-import { ComingSoon } from "@/components/ComingSoon";
-import { Card, CardHeader, CardBody } from "@/components/ui";
-import { ReceiptText, PackageCheck, BadgeIndianRupee, Wallet, Workflow } from "lucide-react";
+import Link from "next/link";
+import { prisma } from "@/lib/prisma";
+import { requirePageRole, FINANCE_VIEW, FINANCE_WRITE, FINANCE_APPROVE } from "@/lib/rbac";
+import { fmtDate, fmtDateOnly, fmtINR } from "@/lib/format";
+import { Donut } from "@/components/Charts";
+import { BrandHero, CanvasAtmosphere } from "@/components/chrome";
+import { DataTable, type Column } from "@/components/DataTable";
+import {
+  ReceiptText,
+  PackageCheck,
+  BadgeIndianRupee,
+  Wallet,
+  PieChart,
+  ChevronRight,
+  Inbox,
+} from "lucide-react";
+import {
+  StatCard,
+  Card,
+  CardHeader,
+  CardBody,
+  EmptyState,
+  EntityLink,
+  StatusChip,
+  btn,
+} from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 
-export default async function FinancePage() {
-  await requirePageRole(deptArea("FINANCE"));
+export default async function FinanceDashboardPage() {
+  const viewer = await requirePageRole(FINANCE_VIEW);
+  const canWrite = FINANCE_WRITE.includes(viewer.role);
+  const canApprove = FINANCE_APPROVE.includes(viewer.role);
+
+  const [statusGroups, raisedAgg, pendingAgg, outstandingAgg, paidAgg, recent, pendingQueue] =
+    await Promise.all([
+      prisma.invoice.groupBy({ by: ["status"], _count: { _all: true } }),
+      prisma.invoice.aggregate({ where: { status: { not: "DRAFT" } }, _sum: { total: true }, _count: { _all: true } }),
+      prisma.invoice.aggregate({ where: { status: "PENDING_APPROVAL" }, _sum: { total: true }, _count: { _all: true } }),
+      prisma.invoice.aggregate({
+        where: { status: "APPROVED", paymentStatus: "UNPAID" },
+        _sum: { total: true },
+        _count: { _all: true },
+      }),
+      prisma.invoice.aggregate({
+        where: { status: "APPROVED", paymentStatus: "PAID" },
+        _sum: { total: true },
+        _count: { _all: true },
+      }),
+      prisma.invoice.findMany({ orderBy: { createdAt: "desc" }, take: 6 }),
+      prisma.invoice.findMany({
+        where: { status: "PENDING_APPROVAL" },
+        orderBy: { submittedAt: "asc" },
+        take: 5,
+      }),
+    ]);
+
+  const statusCounts = new Map(statusGroups.map((g) => [g.status, g._count._all]));
+  const STATUS_LABELS: Record<string, string> = {
+    DRAFT: "Draft",
+    PENDING_APPROVAL: "Pending approval",
+    APPROVED: "Approved",
+    REJECTED: "Rejected",
+  };
+  const statusData = (["DRAFT", "PENDING_APPROVAL", "APPROVED", "REJECTED"] as const).map((s) => ({
+    status: s,
+    label: STATUS_LABELS[s],
+    value: statusCounts.get(s) ?? 0,
+  }));
+
+  type Row = (typeof recent)[number];
+  const recentColumns: Column<Row>[] = [
+    {
+      key: "invoice",
+      header: "Invoice",
+      titleInCard: true,
+      cell: (inv) => (
+        <span className="relative z-10">
+          <EntityLink
+            href={`/finance/invoices/${inv.id}`}
+            name={inv.billTo.split("\n")[0]}
+            code={inv.invoiceNo}
+          />
+        </span>
+      ),
+    },
+    {
+      key: "total",
+      header: "Total",
+      align: "right",
+      cardLabel: "Total",
+      cell: (inv) => <span className="nums font-medium">{fmtINR(inv.total)}</span>,
+    },
+    {
+      key: "status",
+      header: "Status",
+      cardLabel: "Status",
+      cell: (inv) => (
+        <span className="relative z-10">
+          <StatusChip status={inv.status} />
+        </span>
+      ),
+    },
+    {
+      key: "payment",
+      header: "Payment",
+      priority: "lg",
+      cardLabel: "Payment",
+      cell: (inv) =>
+        inv.status === "APPROVED" ? (
+          <span className="relative z-10">
+            <StatusChip status={inv.paymentStatus} />
+          </span>
+        ) : (
+          <span className="text-slate-400">—</span>
+        ),
+    },
+    {
+      key: "date",
+      header: "Date",
+      priority: "md",
+      cardLabel: "Date",
+      cell: (inv) => <span className="nums text-slate-500">{fmtDateOnly(inv.invoiceDate)}</span>,
+    },
+  ];
+
   return (
     <>
       <BrandHero
-        variant="teal"
-        size="md"
-        eyebrow="Finance"
-        title="Finance Workspace"
-        subtitle="Invoices, payments and reconciliation — closing the loop on every project."
-        className="px-6 pb-12 pt-10 sm:px-8"
-      >
-        <span className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-medium uppercase tracking-wide text-white ring-1 ring-inset ring-white/25">
-          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-300 motion-reduce:animate-none" aria-hidden="true" />
-          In development
-        </span>
-      </BrandHero>
+        variant="mint"
+        size="sm"
+        wave={false}
+        eyebrow="GNE Finance"
+        title="Dashboard"
+        subtitle="Invoices, approvals and payments at a glance."
+        className="px-6 pb-7 pt-9 sm:px-8"
+      />
 
-      <div className="grid grid-cols-1 items-start gap-6 p-6 sm:p-8 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <ComingSoon
-            items={[
-              { label: "Invoice Raise", icon: ReceiptText, desc: "Create and send invoices to clients." },
-              { label: "Invoice Approval", icon: PackageCheck, desc: "Review and approve pending invoices." },
-              { label: "Payment", icon: BadgeIndianRupee, desc: "Record and track incoming payments." },
-              { label: "Reconciliation", icon: Wallet, desc: "Reconcile accounts and bank statements." },
-            ]}
+      <div className="relative isolate space-y-6 p-6 sm:p-8">
+        <CanvasAtmosphere />
+
+        {/* KPI bento — the reconciliation equation, each tile a drill-through. */}
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <StatCard
+            label={`Raised (${raisedAgg._count._all})`}
+            value={fmtINR(raisedAgg._sum.total ?? 0)}
+            tone="brand"
+            icon={<ReceiptText className="h-[18px] w-[18px]" />}
+            href="/finance/invoices"
+          />
+          <StatCard
+            label={`Pending approval (${pendingAgg._count._all})`}
+            value={fmtINR(pendingAgg._sum.total ?? 0)}
+            tone="amber"
+            icon={<PackageCheck className="h-[18px] w-[18px]" />}
+            href="/finance/approvals"
+          />
+          <StatCard
+            label={`Awaiting payment (${outstandingAgg._count._all})`}
+            value={fmtINR(outstandingAgg._sum.total ?? 0)}
+            tone="blue"
+            icon={<Wallet className="h-[18px] w-[18px]" />}
+            href="/finance/payments?status=UNPAID"
+          />
+          <StatCard
+            label={`Paid (${paidAgg._count._all})`}
+            value={fmtINR(paidAgg._sum.total ?? 0)}
+            tone="emerald"
+            icon={<BadgeIndianRupee className="h-[18px] w-[18px]" />}
+            href="/finance/payments?status=PAID"
           />
         </div>
 
-        <Card>
-          <CardHeader
-            title={
-              <span className="flex items-center gap-2">
-                <span className="grid h-8 w-8 place-items-center rounded-lg bg-brand-50 text-brand-700">
-                  <Workflow className="h-4 w-4" />
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          {/* Approval queue */}
+          <Card className="overflow-hidden lg:col-span-2">
+            <CardHeader
+              title="Awaiting approval"
+              subtitle={
+                pendingQueue.length > 0
+                  ? canApprove
+                    ? "Open an invoice to approve or reject it"
+                    : "Waiting on Manager / Admin / Superadmin"
+                  : undefined
+              }
+              action={
+                <Link
+                  href="/finance/approvals"
+                  className="press inline-flex items-center gap-1 text-sm font-medium text-brand-700 transition-colors hover:text-brand"
+                >
+                  View all
+                  <ChevronRight className="h-4 w-4" />
+                </Link>
+              }
+            />
+            <DataTable
+              rows={pendingQueue}
+              columns={[
+                recentColumns[0],
+                recentColumns[1],
+                {
+                  key: "since",
+                  header: "Waiting since",
+                  cardLabel: "Waiting since",
+                  cell: (inv) => (
+                    <span className="nums text-slate-500">
+                      {inv.submittedAt ? fmtDate(inv.submittedAt) : "—"}
+                    </span>
+                  ),
+                },
+              ]}
+              rowKey={(inv) => inv.id}
+              href={(inv) => `/finance/invoices/${inv.id}`}
+              empty={
+                <EmptyState
+                  icon={<PackageCheck className="h-6 w-6" />}
+                  title="Nothing waiting"
+                  description="Submitted invoices land here for sign-off."
+                />
+              }
+            />
+          </Card>
+
+          <Card>
+            <CardHeader
+              title={
+                <span className="flex items-center gap-2">
+                  <PieChart className="h-[18px] w-[18px] text-brand" />
+                  By status
                 </span>
-                Where Finance fits
+              }
+              subtitle="All invoices"
+            />
+            <CardBody>
+              <Donut data={statusData} unitLabel="invoices" />
+            </CardBody>
+          </Card>
+        </div>
+
+        <Card className="overflow-hidden">
+          <CardHeader
+            title="Recent invoices"
+            action={
+              <span className="flex items-center gap-3">
+                {canWrite && (
+                  <Link href="/finance/invoices/new" className={btn("primary", "sm")}>
+                    + Raise invoice
+                  </Link>
+                )}
+                <Link
+                  href="/finance/invoices"
+                  className="press inline-flex items-center gap-1 text-sm font-medium text-brand-700 transition-colors hover:text-brand"
+                >
+                  View all
+                  <ChevronRight className="h-4 w-4" />
+                </Link>
               </span>
             }
           />
-          <CardBody>
-            <p className="text-sm leading-relaxed text-slate-600">
-              Finance closes the loop: it bills the milestones the <b>Project</b> department
-              delivers, settles vendors onboarded through <b>SCM</b>, and reconciles everything
-              back to the books.
-            </p>
-          </CardBody>
+          <DataTable
+            rows={recent}
+            columns={recentColumns}
+            rowKey={(inv) => inv.id}
+            href={(inv) => `/finance/invoices/${inv.id}`}
+            empty={
+              <EmptyState
+                icon={<Inbox className="h-6 w-6" />}
+                title="No invoices yet"
+                description="Raise your first invoice to start the ledger."
+                action={
+                  canWrite ? (
+                    <Link href="/finance/invoices/new" className={btn("primary", "sm")}>
+                      + Raise invoice
+                    </Link>
+                  ) : undefined
+                }
+              />
+            }
+          />
         </Card>
       </div>
     </>

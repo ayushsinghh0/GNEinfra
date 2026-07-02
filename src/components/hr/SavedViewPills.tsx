@@ -8,7 +8,7 @@ import { buildQuery, type ParsedListParams } from "@/lib/hr-filters";
 
 // "dir" was missing here — latent (no sortable list reuses this component
 // yet), but any pill click would have silently reset a future ?dir= scope.
-const DEFAULT_PRESERVE: (keyof ParsedListParams)[] = ["q", "category", "location", "employeeId", "sort", "dir"];
+const DEFAULT_PRESERVE: (keyof ParsedListParams)[] = ["q", "category", "location", "employeeId", "fy", "stage", "sort", "dir"];
 
 export interface SavedViewPillsProps {
   /** List page path the pills navigate within, e.g. "/hr/employees". */

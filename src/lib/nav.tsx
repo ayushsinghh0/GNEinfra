@@ -2,7 +2,7 @@ import type { Role } from "@prisma/client";
 import {
   LayoutDashboard, Building2, Mail, Settings, Users, Boxes, Wallet, UserRound,
   Briefcase, ClipboardList, FileText, ReceiptText, Truck, PackageCheck,
-  CalendarClock, HardHat, BadgeIndianRupee, FolderKanban, type LucideIcon,
+  CalendarClock, HardHat, BadgeIndianRupee, FolderKanban, Target, type LucideIcon,
 } from "lucide-react";
 
 export type NavItem = { label: string; href?: string; icon: LucideIcon; soon?: boolean };
@@ -12,10 +12,10 @@ const BD: NavSection = {
   heading: "Business Development",
   items: [
     { label: "Dashboard", href: "/bd", icon: LayoutDashboard },
-    { label: "Lead", icon: Briefcase, soon: true },
-    { label: "Quotation", icon: FileText, soon: true },
-    { label: "Purchase Order", icon: ReceiptText, soon: true },
-    { label: "Order Confirmation", icon: PackageCheck, soon: true },
+    { label: "Clients", href: "/bd/clients", icon: Building2 },
+    { label: "Enquiries & Quotes", href: "/bd/enquiries", icon: FileText },
+    { label: "PO Tracker", href: "/bd/pos", icon: ReceiptText },
+    { label: "Targets", href: "/bd/targets", icon: Target },
   ],
 };
 
@@ -52,10 +52,10 @@ const FINANCE: NavSection = {
   heading: "Finance",
   items: [
     { label: "Dashboard", href: "/finance", icon: LayoutDashboard },
-    { label: "Invoice Raise", icon: ReceiptText, soon: true },
-    { label: "Invoice Approval", icon: PackageCheck, soon: true },
-    { label: "Payment", icon: BadgeIndianRupee, soon: true },
-    { label: "Reconciliation", icon: Wallet, soon: true },
+    { label: "Invoice Raise", href: "/finance/invoices", icon: ReceiptText },
+    { label: "Invoice Approval", href: "/finance/approvals", icon: PackageCheck },
+    { label: "Payment", href: "/finance/payments", icon: BadgeIndianRupee },
+    { label: "Reconciliation", href: "/finance/reconciliation", icon: Wallet },
   ],
 };
 

@@ -1,14 +1,19 @@
-// Static company details printed on the salary slip header.
-// Replace placeholder values with the real registered-office details.
+// Static company details printed on document headers (salary slip, tax
+// invoice, NOPA, approval note). Values come from the GNE invoice format.
 export const COMPANY = {
-  name: "GNE Infra",
+  name: "Green Next Energy Infra Pvt. Ltd.",
   addressLines: [
-    "Registered Office address line 1",
-    "City, State – PIN",
+    "Flat No. C-3/8, DDA Flat, Near Krishna Cyber Café",
+    "New Delhi – 110065, India",
   ],
-  pan: "",       // company PAN, e.g. "AAAAA0000A"
-  gstin: "",     // GSTIN
-  cin: "",       // CIN
-  email: "",     // HR/payroll contact email
-  phone: "",     // contact phone
+  pan: "AALCG5876C",
+  gstin: "07AALCG5876C1ZD",
+  cin: "", // CIN (not on the invoice format — fill when available)
+  email: "vinod.saini@gneinfra.com",
+  phone: "9958002517",
+  bank: {
+    name: "HDFC Bank",
+    accountNo: "50200102008242",
+    ifsc: "HDFC0000483",
+  },
 } as const;

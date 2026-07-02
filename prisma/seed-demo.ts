@@ -8,6 +8,7 @@
  */
 import { PrismaClient, type Role, type AttendanceStatus } from "@prisma/client";
 import { hashPassword } from "../src/lib/password";
+import { BD_CLIENTS } from "./bd-clients";
 
 const prisma = new PrismaClient();
 
@@ -191,6 +192,277 @@ async function main() {
     await prisma.vendor.upsert({ where: { id: v.id }, update: {}, create: v });
   }
   console.log(`  ✓ ${VENDORS.length} vendors`);
+
+  // 8) BD module — client list (from the tracker) + a working pipeline
+  if ((await prisma.bdClient.count()) === 0) {
+    await prisma.bdClient.createMany({ data: BD_CLIENTS });
+    console.log(`  ✓ ${BD_CLIENTS.length} BD clients (tracker client list)`);
+  } else {
+    console.log("  ✓ BD clients already present — skipped");
+  }
+  const clientId = async (name: string) => {
+    const c = await prisma.bdClient.findFirst({ where: { name } });
+    if (!c) throw new Error(`BD client missing from seed: ${name}`);
+    return c.id;
+  };
+
+  if ((await prisma.bdEnquiry.count()) === 0) {
+    const jakson = await clientId("Jakson");
+    const oriana = await clientId("Oriana Power");
+    const bondada = await clientId("Bondada");
+    const ntpc = await clientId("NTPC Re Ltd");
+    const azure = await clientId("Azure Power");
+    const jmb = await clientId("JMB");
+
+    const wonEnquiry = await prisma.bdEnquiry.create({
+      data: {
+        fiscalYear: "FY 26-27", enquiryDate: D("2026-05-12"), enquiryType: "O&M", clientId: ntpc,
+        personName: "R. Sharma", contactNo: "9811001100", location: "Bhadla, Rajasthan",
+        projectType: "Ground-mount O&M", activities: "Annual O&M contract for 40 MW block",
+        unit: "kW", qty: 40000, quoteNo: "GNE/Q/26-27/009", submissionDate: D("2026-05-28"),
+        probabilityPct: 100, forecastedRevenue: 9200000, stage: "CLOSED", finalStatus: "WON",
+        customerContact: "S. Iyer", value: 9200000,
+      },
+    });
+    await prisma.bdEnquiry.createMany({
+      data: [
+        {
+          fiscalYear: "FY 26-27", enquiryDate: D("2026-06-02"), enquiryType: "O&M", clientId: jakson,
+          personName: "A. Mehta", contactNo: "9899887766", location: "Delhi NCR",
+          projectType: "Rooftop O&M", activities: "Quarterly cleaning + preventive maintenance, 14 sites",
+          unit: "kW", qty: 2500, quoteNo: "GNE/Q/26-27/014", submissionDate: D("2026-06-18"),
+          projectStatus: "Commercial review", probabilityPct: 70, forecastedRevenue: 3360000,
+          stage: "QUOTE_SUBMITTED", finalStatus: "OPEN", expectedClosure: D("2026-08-15"),
+          customerContact: "P. Nair", value: 4800000,
+        },
+        {
+          fiscalYear: "FY 26-27", enquiryDate: D("2026-05-20"), enquiryType: "EPC", clientId: oriana,
+          personName: "K. Joshi", contactNo: "9822334455", location: "Jaipur, Rajasthan",
+          projectType: "Ground-mount EPC", activities: "BOS + installation for 8 MW",
+          unit: "MW", qty: 8, quoteNo: "GNE/Q/26-27/011", submissionDate: D("2026-06-05"),
+          projectStatus: "Negotiating rates", probabilityPct: 60, forecastedRevenue: 7500000,
+          stage: "NEGOTIATION", finalStatus: "OPEN", expectedClosure: D("2026-09-30"),
+          value: 12500000,
+        },
+        {
+          fiscalYear: "FY 26-27", enquiryDate: D("2026-06-26"), enquiryType: "EPC", clientId: bondada,
+          personName: "V. Rao", location: "Hyderabad", projectType: "Ground-mount EPC",
+          activities: "Site survey requested", unit: "MW", qty: 12,
+          stage: "ENQUIRY", finalStatus: "OPEN",
+        },
+        {
+          fiscalYear: "FY 26-27", enquiryDate: D("2026-04-15"), enquiryType: "O&M", clientId: azure,
+          location: "Pune", projectType: "Rooftop O&M", unit: "kW", qty: 1800,
+          quoteNo: "GNE/Q/26-27/004", submissionDate: D("2026-04-28"), probabilityPct: 0,
+          stage: "CLOSED", finalStatus: "LOST", value: 3000000,
+          notes: "Lost on price — incumbent renewed at lower rate.",
+        },
+        {
+          fiscalYear: "FY 25-26", enquiryDate: D("2026-01-10"), enquiryType: "O&M", clientId: jmb,
+          location: "Lucknow", projectType: "Rooftop O&M", unit: "kW", qty: 900,
+          quoteNo: "GNE/Q/25-26/031", submissionDate: D("2026-01-22"), probabilityPct: 100,
+          forecastedRevenue: 2100000, stage: "CLOSED", finalStatus: "WON", value: 2100000,
+        },
+      ],
+    });
+
+    await prisma.bdPurchaseOrder.createMany({
+      data: [
+        {
+          fiscalYear: "FY 26-27", receivedDate: D("2026-06-25"), projectType: "Ground-mount O&M",
+          clientId: ntpc, activities: "Annual O&M contract for 40 MW block", quoteNo: "GNE/Q/26-27/009",
+          enquiryId: wonEnquiry.id, projectQty: "40 MW", projectPeriod: "12 months",
+          poNumber: "NTPC/PO/2026/118", poValue: 9200000, poDate: D("2026-06-24"),
+          poStart: D("2026-07-01"), poEnd: D("2027-06-30"),
+        },
+        {
+          fiscalYear: "FY 25-26", receivedDate: D("2026-02-05"), projectType: "Rooftop O&M",
+          clientId: jmb, activities: "O&M for 900 kW rooftop portfolio", quoteNo: "GNE/Q/25-26/031",
+          projectQty: "900 kW", projectPeriod: "12 months", poNumber: "JMB-PO-0093",
+          poValue: 2100000, poDate: D("2026-02-03"), poStart: D("2026-03-01"), poEnd: D("2027-02-28"),
+        },
+        {
+          fiscalYear: "FY 25-26", receivedDate: D("2025-11-18"), projectType: "Rooftop O&M",
+          clientId: jakson, activities: "Preventive maintenance, 6 sites", projectQty: "1.4 MW",
+          projectPeriod: "9 months", poNumber: "JKS/PO/8821", poValue: 1450000,
+          poDate: D("2025-11-15"), poStart: D("2025-12-01"), poEnd: D("2026-08-31"),
+          remarks: "Extension likely on completion.",
+        },
+      ],
+    });
+    console.log("  ✓ BD pipeline (6 enquiries, 3 POs)");
+  } else {
+    console.log("  ✓ BD pipeline already present — skipped");
+  }
+
+  if ((await prisma.bdTarget.count()) === 0) {
+    await prisma.bdTarget.createMany({
+      data: [
+        {
+          fiscalYear: "FY 26-27", quarter: "Q1", states: "Delhi NCR, UP", keyAccountPerson: "Vinod Saini",
+          project: "Rooftop O&M portfolio", serviceType: "OM", plantType: "ROOF", projectSize: "5 MW",
+          locations: 12, estimatedValue: 15000000, probabilityPct: 60, forecastedRevenue: 9000000,
+          orderReceived: 2500000,
+        },
+        {
+          fiscalYear: "FY 26-27", quarter: "Q2", states: "Rajasthan", keyAccountPerson: "Vinod Saini",
+          project: "Ground-mount EPC", serviceType: "EPC", plantType: "GROUND", projectSize: "20 MW",
+          locations: 2, estimatedValue: 60000000, probabilityPct: 40, forecastedRevenue: 24000000,
+          orderReceived: 0,
+        },
+        {
+          fiscalYear: "FY 26-27", quarter: "Q3", states: "Karnataka, Tamil Nadu", keyAccountPerson: "B. Iyer",
+          project: "Hybrid O&M", serviceType: "EPC_OM", plantType: "HYBRID", projectSize: "10 MW",
+          locations: 4, estimatedValue: 22000000, probabilityPct: 35, forecastedRevenue: 7700000,
+          orderReceived: 0,
+        },
+        {
+          fiscalYear: "FY 25-26", quarter: "Q4", states: "UP, Bihar", keyAccountPerson: "Vinod Saini",
+          project: "Rooftop O&M", serviceType: "OM", plantType: "ROOF", projectSize: "3 MW",
+          locations: 8, estimatedValue: 9000000, probabilityPct: 80, forecastedRevenue: 7200000,
+          orderReceived: 6400000,
+        },
+      ],
+    });
+    console.log("  ✓ 4 BD target lines");
+  } else {
+    console.log("  ✓ BD targets already present — skipped");
+  }
+
+  // 9) Finance module — one invoice in each workflow state
+  const invoiceCount = await prisma.invoice.count();
+  if (invoiceCount === 0) {
+    // APPROVED + PAID — the full happy path, ready to print all three documents.
+    await prisma.invoice.create({
+      data: {
+        invoiceNo: "GNE/26-27/0001", invoiceDate: D("2026-06-10"),
+        orderNo: "JKS/PO/8821", orderDate: D("2025-11-15"),
+        contactPerson: "A. Mehta", contactNumber: "9899887766",
+        billTo: "Jakson Limited\nA-43, Sector 63\nNoida, UP – 201301\nGSTIN: 09AABCJ4664L1ZM",
+        shipTo: "Jakson Limited\nRooftop sites — Delhi NCR cluster",
+        gstLabel: "IGST", gstRate: 18, subtotal: 450000, gstAmount: 81000, total: 531000,
+        status: "APPROVED", paymentStatus: "PAID",
+        paymentDate: D("2026-06-28"), paymentRef: "UTR-HDFC0483-99120", paymentMarkedBy: "Farhan (Finance)",
+        createdByName: "Farhan (Finance)",
+        submittedByName: "Farhan (Finance)", submittedAt: new Date("2026-06-12T09:30:00.000Z"),
+        decidedByName: "Anita Admin", decidedByRole: "ADMIN",
+        decidedAt: new Date("2026-06-13T14:05:00.000Z"),
+        decisionRemarks: "Cleared against PO JKS/PO/8821.",
+        items: {
+          create: [
+            { description: "O&M services — rooftop solar portfolio, June 2026 (6 sites)", sacCode: "998717", qty: 1, uom: "Job", rate: 300000, amount: 300000, sortOrder: 0 },
+            { description: "Module cleaning cycles — additional visits", sacCode: "998717", qty: 3, uom: "Visit", rate: 50000, amount: 150000, sortOrder: 1 },
+          ],
+        },
+        nopa: {
+          create: {
+            nopaNo: "NOPA/26-27/0001", nopaDate: D("2026-06-12"),
+            plantName: "Jakson rooftop portfolio — Delhi NCR", partyName: "Jakson Limited",
+            itemDescription: "O&M services + module cleaning, June 2026", poRef: "JKS/PO/8821",
+            gstRate: 18, basicAmount: 450000, gstAmount: 81000, grandTotal: 531000,
+            dueDate: D("2026-07-10"), bankName: "HDFC Bank", accountNo: "50200102008242",
+            ifsc: "HDFC0000483", branchName: "New Delhi", initiatedBy: "Farhan (Finance)",
+            checkedBy: "Neha Gupta",
+            lines: {
+              create: [
+                { description: "O&M services — June 2026", qtyWords: "One Job", uom: "Job", unitPrice: 300000, amount: 300000, sortOrder: 0 },
+                { description: "Module cleaning — additional visits", qtyWords: "Three Visits", uom: "Visit", unitPrice: 50000, amount: 150000, sortOrder: 1 },
+              ],
+            },
+          },
+        },
+      },
+    });
+
+    // PENDING_APPROVAL — sitting in the approval queue.
+    await prisma.invoice.create({
+      data: {
+        invoiceNo: "GNE/26-27/0002", invoiceDate: D("2026-06-26"),
+        orderNo: "NTPC/PO/2026/118", orderDate: D("2026-06-24"),
+        contactPerson: "R. Sharma", contactNumber: "9811001100",
+        billTo: "NTPC Renewable Energy Ltd\nBhadla Solar Park\nJodhpur, Rajasthan – 342301",
+        gstLabel: "IGST", gstRate: 18, subtotal: 766667, gstAmount: 138000, total: 904667,
+        status: "PENDING_APPROVAL",
+        createdByName: "Farhan (Finance)",
+        submittedByName: "Farhan (Finance)", submittedAt: new Date("2026-06-27T11:15:00.000Z"),
+        items: {
+          create: [
+            { description: "O&M mobilisation — 40 MW block, month 1 of 12", sacCode: "998717", qty: 1, uom: "Month", rate: 766667, amount: 766667, sortOrder: 0 },
+          ],
+        },
+        nopa: {
+          create: {
+            nopaNo: "NOPA/26-27/0002", nopaDate: D("2026-06-27"),
+            plantName: "Bhadla 40 MW block", partyName: "NTPC Renewable Energy Ltd",
+            itemDescription: "O&M mobilisation — month 1", poRef: "NTPC/PO/2026/118",
+            gstRate: 18, basicAmount: 766667, gstAmount: 138000, grandTotal: 904667,
+            dueDate: D("2026-07-30"), bankName: "HDFC Bank", accountNo: "50200102008242",
+            ifsc: "HDFC0000483", branchName: "New Delhi", initiatedBy: "Farhan (Finance)",
+            lines: {
+              create: [
+                { description: "O&M mobilisation — month 1 of 12", qtyWords: "One Month", uom: "Month", unitPrice: 766667, amount: 766667, sortOrder: 0 },
+              ],
+            },
+          },
+        },
+      },
+    });
+
+    // REJECTED — sent back with remarks, editable + resubmittable.
+    await prisma.invoice.create({
+      data: {
+        invoiceNo: "GNE/26-27/0003", invoiceDate: D("2026-06-18"),
+        orderNo: "ONX/WO/2026/77",
+        billTo: "Onix Renewable Pvt Ltd\nAhmedabad, Gujarat – 380054",
+        gstLabel: "IGST", gstRate: 18, subtotal: 220000, gstAmount: 39600, total: 259600,
+        status: "REJECTED",
+        createdByName: "Farhan (Finance)",
+        submittedByName: "Farhan (Finance)", submittedAt: new Date("2026-06-19T08:45:00.000Z"),
+        decidedByName: "Manish Manager", decidedByRole: "MANAGER",
+        decidedAt: new Date("2026-06-20T10:20:00.000Z"),
+        decisionRemarks: "Rate does not match the work order — correct line 1 and resubmit.",
+        items: {
+          create: [
+            { description: "Site survey and DPR — 12 MW ground-mount", sacCode: "998339", qty: 1, uom: "Job", rate: 220000, amount: 220000, sortOrder: 0 },
+          ],
+        },
+        nopa: {
+          create: {
+            nopaNo: "NOPA/26-27/0003", nopaDate: D("2026-06-19"),
+            plantName: "Onix 12 MW site", partyName: "Onix Renewable Pvt Ltd",
+            itemDescription: "Site survey and DPR", poRef: "ONX/WO/2026/77",
+            gstRate: 18, basicAmount: 220000, gstAmount: 39600, grandTotal: 259600,
+            dueDate: D("2026-07-20"), initiatedBy: "Farhan (Finance)",
+            lines: {
+              create: [
+                { description: "Site survey and DPR — 12 MW", qtyWords: "One Job", uom: "Job", unitPrice: 220000, amount: 220000, sortOrder: 0 },
+              ],
+            },
+          },
+        },
+      },
+    });
+
+    // DRAFT — still being prepared.
+    await prisma.invoice.create({
+      data: {
+        invoiceNo: "GNE/26-27/0004", invoiceDate: D("2026-07-01"),
+        billTo: "Oriana Power Ltd\nNoida, UP – 201301",
+        gstLabel: "IGST", gstRate: 18, subtotal: 380000, gstAmount: 68400, total: 448400,
+        status: "DRAFT",
+        createdByName: "Farhan (Finance)",
+        notes: "Awaiting final BOQ confirmation before submission.",
+        items: {
+          create: [
+            { description: "EPC advance — BOS supply milestone 1", sacCode: "995461", qty: 1, uom: "Milestone", rate: 380000, amount: 380000, sortOrder: 0 },
+          ],
+        },
+      },
+    });
+    console.log("  ✓ 4 invoices (paid / pending / rejected / draft) with NOPAs");
+  } else {
+    console.log(`  ✓ invoices already present (${invoiceCount}) — skipped`);
+  }
 
   console.log("\nDemo seed complete.");
 }

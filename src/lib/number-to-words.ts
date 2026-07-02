@@ -15,13 +15,14 @@ function threeDigits(n: number): string {
   return parts.join(" ");
 }
 
-// Indian numbering (crore / lakh / thousand / hundred). e.g. 123456 →
-// "Rupees One Lakh Twenty Three Thousand Four Hundred Fifty Six Only".
-export function amountInWords(rupees: number): string {
-  if (!Number.isFinite(rupees) || rupees < 0) return "Rupees Zero Only";
-  let n = Math.floor(rupees);
-  if (n === 0) return "Rupees Zero Only";
-  if (n > 9_999_999_999) return "Rupees (amount too large) Only";
+// Indian numbering (crore / lakh / thousand / hundred) without any currency
+// framing — e.g. 123456 → "One Lakh Twenty Three Thousand Four Hundred Fifty
+// Six". Used for NOPA "Qty (words)" prefills and the invoice amount line.
+export function numberInWords(value: number): string {
+  if (!Number.isFinite(value) || value < 0) return "Zero";
+  let n = Math.floor(value);
+  if (n === 0) return "Zero";
+  if (n > 9_999_999_999) return "(number too large)";
   const crore = Math.floor(n / 10000000); n %= 10000000;
   const lakh = Math.floor(n / 100000); n %= 100000;
   const thousand = Math.floor(n / 1000); n %= 1000;
@@ -31,5 +32,14 @@ export function amountInWords(rupees: number): string {
   if (lakh) parts.push(twoDigits(lakh) + " Lakh");
   if (thousand) parts.push(twoDigits(thousand) + " Thousand");
   if (hundred) parts.push(threeDigits(hundred));
-  return "Rupees " + parts.join(" ") + " Only";
+  return parts.join(" ");
+}
+
+// e.g. 123456 → "Rupees One Lakh Twenty Three Thousand Four Hundred Fifty Six Only".
+export function amountInWords(rupees: number): string {
+  if (!Number.isFinite(rupees) || rupees < 0) return "Rupees Zero Only";
+  const n = Math.floor(rupees);
+  if (n === 0) return "Rupees Zero Only";
+  if (n > 9_999_999_999) return "Rupees (amount too large) Only";
+  return "Rupees " + numberInWords(n) + " Only";
 }

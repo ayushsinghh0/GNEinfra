@@ -20,6 +20,13 @@ export const VENDOR_VIEW: Role[] = ["SCM", "MANAGER", "ADMIN", "SUPERADMIN"];
 export const VENDOR_WRITE: Role[] = ["SCM", "ADMIN", "SUPERADMIN"]; // manager is read-only
 export const HR_VIEW: Role[] = ["HR", "MANAGER", "ADMIN", "SUPERADMIN"];
 export const HR_WRITE: Role[] = ["HR", "ADMIN", "SUPERADMIN"]; // manager read-only
+export const BD_VIEW: Role[] = ["BD", "MANAGER", "ADMIN", "SUPERADMIN"];
+export const BD_WRITE: Role[] = ["BD", "ADMIN", "SUPERADMIN"]; // manager read-only
+export const FINANCE_VIEW: Role[] = ["FINANCE", "MANAGER", "ADMIN", "SUPERADMIN"];
+export const FINANCE_WRITE: Role[] = ["FINANCE", "ADMIN", "SUPERADMIN"]; // manager read-only
+// Invoice approval is a sign-off, not an edit — per the business rule it is made
+// by the oversight tier (Manager / Admin / Superadmin), never the Finance initiator.
+export const FINANCE_APPROVE: Role[] = ["MANAGER", "ADMIN", "SUPERADMIN"];
 
 // A line department's own role + the three oversight roles.
 export function deptArea(dept: Role): Role[] {

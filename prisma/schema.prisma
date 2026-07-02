@@ -439,3 +439,284 @@ model ProjectAssignment {
   @@index([employeeId])
   @@index([projectId])
 }
+
+// ── BD Module ─────────────────────────────────────────────────────────────────
+// Mirrors the four sheets of the GNE "BD Tracker" workbook: Client list,
+// Query & Quote (enquiry) tracker, PO Received tracker, and yearly Targets.
+
+enum BdServiceType {
+  EPC
+  OM
+  EPC_OM
+}
+
+enum BdPlantType {
+  GROUND // GBS — ground-based solar
+  ROOF // RTS — rooftop solar
+  HYBRID
+}
+
+// "Stage" column of the Query & Quote tracker — the working pipeline stage.
+enum BdStage {
+  ENQUIRY
+  QUOTE_SUBMITTED
+  FOLLOW_UP
+  NEGOTIATION
+  CLOSED
+}
+
+// "Final Status" column — the commercial outcome.
+enum BdFinalStatus {
+  OPEN
+  WON
+  LOST
+}
+
+model BdClient {
+  id            String         @id @default(cuid())
+  name          String
+  industry      String? // e.g. Renewable / Govt / O&M
+  serviceType   BdServiceType?
+  plantType     BdPlantType?
+  contactPerson String?
+  contactNumber String?
+  notes         String?
+
+  enquiries      BdEnquiry[]
+  purchaseOrders BdPurchaseOrder[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([name])
+}
+
+// One row of the "Query & Quote" (commercial quote submission) tracker.
+model BdEnquiry {
+  id                String        @id @default(cuid())
+  fiscalYear        String // "FY 25-26"
+  enquiryDate       DateTime?     @db.Date
+  enquiryType       String? // "Type" column (e.g. O&M, EPC, AMC)
+  clientId          String
+  client            BdClient      @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  personName        String?
+  contactNo         String?
+  location          String?
+  projectType       String?
+  activities        String?
+  unit              String? // kW / MW / Nos …
+  qty               Int? // quantity in the unit above (sheet: "Qty ( KW)")
+  quoteNo           String?
+  submissionDate    DateTime?     @db.Date
+  projectStatus     String? // free-text "Status of Project"
+  probabilityPct    Int? // 0–100
+  forecastedRevenue Int? // integer rupees
+  stage             BdStage       @default(ENQUIRY)
+  expectedClosure   DateTime?     @db.Date
+  finalStatus       BdFinalStatus @default(OPEN)
+  customerContact   String?
+  value             Int? // quoted value, integer rupees
+  notes             String?
+
+  purchaseOrders BdPurchaseOrder[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([clientId])
+  @@index([stage])
+  @@index([finalStatus])
+  @@index([fiscalYear])
+}
+
+// One row of the "PO Received" tracker.
+model BdPurchaseOrder {
+  id            String     @id @default(cuid())
+  fiscalYear    String
+  receivedDate  DateTime?  @db.Date // sheet "Date" — when the PO landed
+  projectType   String?
+  clientId      String
+  client        BdClient   @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  activities    String?
+  quoteNo       String?
+  enquiryId     String? // optional link back to the winning enquiry
+  enquiry       BdEnquiry? @relation(fields: [enquiryId], references: [id], onDelete: SetNull)
+  projectQty    String? // free-text (e.g. "2 MW", "14 sites")
+  projectPeriod String?
+  poNumber      String? // sheet "PO Received"
+  poValue       Int? // integer rupees
+  poDate        DateTime?  @db.Date
+  poStart       DateTime?  @db.Date
+  poEnd         DateTime?  @db.Date
+  remarks       String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([clientId])
+  @@index([fiscalYear])
+}
+
+// One row of the "Target for Year" sheet — a business target line.
+model BdTarget {
+  id                String         @id @default(cuid())
+  fiscalYear        String // "FY 25-26"
+  quarter           String? // Q1–Q4
+  states            String?
+  keyAccountPerson  String?
+  project           String?
+  serviceType       BdServiceType?
+  plantType         BdPlantType?
+  projectSize       String? // free-text "Project Size (kW/MW)"
+  locations         Int? // "No of Locations"
+  estimatedValue    Int? // integer rupees
+  probabilityPct    Int? // 0–100
+  forecastedRevenue Int? // integer rupees
+  orderReceived     Int? // integer rupees actually received
+  notes             String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([fiscalYear])
+}
+
+// ── Finance Module ────────────────────────────────────────────────────────────
+// Invoice raise → NOPA (Note On Payment Approval) → oversight sign-off →
+// payment marking → reconciliation. Mirrors the GNE Tax Invoice format and
+// NOPA sheet; all money is integer rupees, totals recomputed server-side.
+
+enum InvoiceStatus {
+  DRAFT // being edited by Finance
+  PENDING_APPROVAL // NOPA raised, waiting on Manager/Admin/Superadmin
+  APPROVED
+  REJECTED // sent back — editable again, resubmit allowed
+}
+
+enum PaymentStatus {
+  UNPAID
+  PAID
+}
+
+model Invoice {
+  id        String   @id @default(cuid())
+  invoiceNo String   @unique // e.g. "GNE/25-26/0001" — suggested, editable while draft
+  invoiceDate DateTime @db.Date
+
+  // Order / contact block (top-right of the Tax Invoice format)
+  orderNo       String?
+  orderDate     DateTime? @db.Date
+  contactPerson String?
+  contactNumber String?
+
+  // Parties (multi-line address blocks)
+  billTo String
+  shipTo String?
+
+  // Tax — single GST line per the format ("IGST Amount", 18%)
+  gstLabel String @default("IGST")
+  gstRate  Int    @default(18) // percent
+
+  // Server-computed totals (integer rupees)
+  subtotal  Int @default(0)
+  gstAmount Int @default(0)
+  total     Int @default(0)
+
+  status InvoiceStatus @default(DRAFT)
+
+  // Payment marking — done by the Finance role after approval
+  paymentStatus   PaymentStatus @default(UNPAID)
+  paymentDate     DateTime?     @db.Date
+  paymentRef      String?
+  paymentMarkedBy String? // name of the finance user who marked it
+
+  // Workflow audit trail (loose name strings, matching HR's precedent)
+  createdByName   String?
+  submittedByName String?
+  submittedAt     DateTime?
+  decidedByName   String?
+  decidedByRole   String?
+  decidedAt       DateTime?
+  decisionRemarks String?
+
+  notes String?
+
+  items InvoiceItem[]
+  nopa  Nopa?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([paymentStatus])
+  @@index([invoiceDate])
+}
+
+model InvoiceItem {
+  id          String  @id @default(cuid())
+  invoiceId   String
+  invoice     Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  description String
+  sacCode     String?
+  qty         Float   @default(1)
+  uom         String?
+  rate        Int     @default(0) // integer rupees per unit
+  amount      Int     @default(0) // server-computed round(qty × rate)
+  sortOrder   Int     @default(0)
+
+  @@index([invoiceId])
+}
+
+// Note On Payment Approval — one per invoice, created when Finance submits the
+// invoice for approval. Pre-filled from the invoice, every field editable.
+model Nopa {
+  id        String  @id @default(cuid())
+  invoiceId String  @unique
+  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  nopaNo   String   @unique // e.g. "NOPA/25-26/0001"
+  nopaDate DateTime @db.Date
+
+  companyName     String  @default("Green Next Energy Infra Pvt Ltd")
+  plantName       String?
+  partyName       String? // sheet "Vendor Name" — the payee / party
+  itemDescription String?
+  poRef           String? // "PO/WO Reference No"
+
+  gstRate     Int @default(18) // percent
+  basicAmount Int @default(0) // server-computed from lines
+  gstAmount   Int @default(0)
+  grandTotal  Int @default(0)
+
+  advancePaid    Int       @default(0) // "Advance 1st Payment Paid"
+  advanceRequest Int       @default(0) // "Request for Advance Payment"
+  dueDate        DateTime? @db.Date
+
+  // Payee bank details
+  bankName    String?
+  accountNo   String?
+  ifsc        String?
+  branchName  String?
+
+  initiatedBy String?
+  checkedBy   String?
+
+  lines NopaLine[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model NopaLine {
+  id          String @id @default(cuid())
+  nopaId      String
+  nopa        Nopa   @relation(fields: [nopaId], references: [id], onDelete: Cascade)
+  description String
+  qtyWords    String? // sheet "Qty(WORDS)"
+  uom         String?
+  unitPrice   Int    @default(0)
+  amount      Int    @default(0)
+  sortOrder   Int    @default(0)
+
+  @@index([nopaId])
+}

@@ -14,6 +14,9 @@ export interface ParsedListParams {
   category?: string;
   location?: string;
   employeeId?: string;
+  // BD/Finance list scopes (unused by HR pages; parse/serialize like the rest).
+  fy?: string;
+  stage?: string;
   sort?: string;
   dir: "asc" | "desc";
   page: number;
@@ -38,6 +41,8 @@ export function parseListParams(sp: RawSearchParams): ParsedListParams {
     category: trimmedOrUndefined(sp.category),
     location: trimmedOrUndefined(sp.location),
     employeeId: trimmedOrUndefined(sp.employeeId),
+    fy: trimmedOrUndefined(sp.fy),
+    stage: trimmedOrUndefined(sp.stage),
     sort: trimmedOrUndefined(sp.sort),
     dir: sp.dir === "desc" ? "desc" : "asc",
     page: Math.max(1, parseInt(sp.page ?? "1", 10) || 1),
@@ -63,6 +68,8 @@ export function buildQuery(base: string, patch: Partial<ParsedListParams>): stri
   setIfPresent("category", patch.category);
   setIfPresent("location", patch.location);
   setIfPresent("employeeId", patch.employeeId);
+  setIfPresent("fy", patch.fy);
+  setIfPresent("stage", patch.stage);
   setIfPresent("sort", patch.sort);
 
   if (patch.dir === "desc") usp.set("dir", "desc");
