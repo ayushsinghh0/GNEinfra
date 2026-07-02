@@ -422,7 +422,7 @@ export default function AttendanceGrid({
             <table className="min-w-max border-collapse text-xs select-none">
               <thead>
                 <tr className="border-b border-slate-200">
-                  <th className="sticky left-0 z-10 bg-slate-50/80 px-4 py-2 text-left font-semibold uppercase tracking-wide text-slate-500">Employee</th>
+                  <th scope="col" className="sticky left-0 z-10 bg-slate-50/80 px-4 py-2 text-left font-semibold uppercase tracking-wide text-slate-500">Employee</th>
                   {days.map(({ d, dow, weekend, today }) => {
                     const headerContent = (
                       <>
@@ -431,7 +431,7 @@ export default function AttendanceGrid({
                       </>
                     );
                     return (
-                      <th key={d} className={cn("w-9 px-0 py-1.5 text-center font-medium", weekend ? "bg-slate-50 text-slate-400" : "text-slate-400")}>
+                      <th key={d} scope="col" className={cn("w-9 px-0 py-1.5 text-center font-medium", weekend ? "bg-slate-50 text-slate-400" : "text-slate-400")}>
                         {canWrite ? (
                           <button
                             type="button"
@@ -449,7 +449,7 @@ export default function AttendanceGrid({
                     );
                   })}
                   {(["PRESENT", "HALF_DAY", "LEAVE", "ABSENT"] as const).map((s) => (
-                    <th key={s} className={cn("px-2 py-2 text-center font-bold", STATUS[s].text)} title={STATUS[s].label}>{STATUS[s].code}</th>
+                    <th key={s} scope="col" className={cn("px-2 py-2 text-center font-bold", STATUS[s].text)} title={STATUS[s].label}>{STATUS[s].code}</th>
                   ))}
                 </tr>
               </thead>
@@ -459,9 +459,9 @@ export default function AttendanceGrid({
                     key={emp.id}
                     className="border-b border-slate-100 last:border-0 hover:bg-slate-50/40 motion-safe:transition-colors"
                   >
-                    <td className="sticky left-0 z-10 bg-white px-4 py-1.5 font-medium text-slate-800 whitespace-nowrap group-hover:bg-slate-50">
+                    <th scope="row" className="sticky left-0 z-10 bg-white px-4 py-1.5 text-left font-medium text-slate-800 whitespace-nowrap group-hover:bg-slate-50">
                       <span><span className="nums text-slate-400">{emp.empId}</span> {emp.name}</span>
-                    </td>
+                    </th>
                     {days.map(({ d, weekend }) => {
                       const s = grid[key(emp.id, d)] ?? "";
                       return (

@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef, useState, type KeyboardEvent } from "react";
 import { cn } from "@/components/ui";
 import { STATUS, WD } from "./attendance-status";
 import type { AttendanceStatusValue } from "@/lib/hr-validation";
@@ -55,6 +56,60 @@ export default function AttendanceCalendar({
   const cellSize = compact ? "h-7 w-7" : "aspect-square w-full min-h-9 max-w-14";
   const gap = compact ? "gap-0.5" : "gap-0.5 sm:gap-1";
   const gridDisplay = compact ? "inline-grid" : "grid";
+
+  // Roving tabindex: exactly one day cell is a Tab stop at a time; arrow keys
+  // move it. Defaults to "today" when this month is the current one, else
+  // day 1. Re-derived (not via an effect — an in-render "adjust state when a
+  // prop changes" reset, per React's guidance) whenever the displayed period
+  // changes, so navigating months resets the Tab stop instead of leaving it
+  // pinned to a day that may not exist in the new month.
+  // Only wired up for the non-compact calendar: `compact` (small-multiples)
+  // cells are always plain, non-focusable tiles nested inside a single
+  // parent <button> (see AttendanceGrid's org-overview grid) — giving each
+  // of those cells its own Tab stop would nest focusable content inside a
+  // <button>, which is both invalid markup and a worse experience than the
+  // one summary Tab stop it already has.
+  const defaultFocusedDay = () => (tY === year && tM === month ? Math.min(tD, daysInMonth) : 1);
+  const [focusedDay, setFocusedDay] = useState(defaultFocusedDay);
+  const period = `${year}-${month}`;
+  const [trackedPeriod, setTrackedPeriod] = useState(period);
+  if (trackedPeriod !== period) {
+    setTrackedPeriod(period);
+    setFocusedDay(defaultFocusedDay());
+  }
+
+  const cellRefs = useRef(new Map<number, HTMLElement>());
+  function registerCell(day: number, el: HTMLElement | null) {
+    if (el) cellRefs.current.set(day, el);
+    else cellRefs.current.delete(day);
+  }
+  function moveFocusTo(day: number) {
+    const clamped = Math.min(daysInMonth, Math.max(1, day));
+    setFocusedDay(clamped);
+    cellRefs.current.get(clamped)?.focus();
+  }
+  // Shared by both the paintable button cells and the read-only-but-focusable
+  // cells: arrow keys always move the roving Tab stop; Enter/Space only paints
+  // (calls the SAME onCellDown the pointer path uses) when `interactive` — a
+  // read-only calendar stays read-only from the keyboard too.
+  function onCellKeyDown(e: KeyboardEvent<HTMLElement>, day: number) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    switch (e.key) {
+      case "ArrowLeft": e.preventDefault(); moveFocusTo(day - 1); break;
+      case "ArrowRight": e.preventDefault(); moveFocusTo(day + 1); break;
+      case "ArrowUp": e.preventDefault(); moveFocusTo(day - 7); break;
+      case "ArrowDown": e.preventDefault(); moveFocusTo(day + 7); break;
+      case "Enter":
+        if (interactive) onCellDown?.(day);
+        break;
+      case " ":
+        e.preventDefault(); // don't scroll the page
+        if (interactive) onCellDown?.(day);
+        break;
+      default:
+        break;
+    }
+  }
 
   const calendar = (
     <>
@@ -117,6 +172,9 @@ export default function AttendanceCalendar({
               <button
                 key={day}
                 type="button"
+                ref={(el) => registerCell(day, el)}
+                tabIndex={day === focusedDay ? 0 : -1}
+                onKeyDown={(e) => onCellKeyDown(e, day)}
                 onPointerDown={() => onCellDown?.(day)}
                 onPointerEnter={() => onCellEnter?.(day)}
                 aria-label={label}
@@ -127,6 +185,23 @@ export default function AttendanceCalendar({
               >
                 {glyph}
               </button>
+            );
+          }
+          // Non-compact, read-only (canWrite=false or no paint handlers): still
+          // part of the roving-tabindex grid so the calendar is readable by
+          // keyboard, but Enter/Space no-ops (onCellKeyDown checks `interactive`).
+          if (!compact) {
+            return (
+              <div
+                key={day}
+                ref={(el) => registerCell(day, el)}
+                tabIndex={day === focusedDay ? 0 : -1}
+                onKeyDown={(e) => onCellKeyDown(e, day)}
+                aria-label={label}
+                className={cn(cls, "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40")}
+              >
+                {glyph}
+              </div>
             );
           }
           return (
