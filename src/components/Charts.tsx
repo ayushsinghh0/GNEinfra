@@ -25,7 +25,11 @@ export function AreaChart({
   data: { label: string; value: number }[];
   ariaLabel?: string;
 }) {
-  const W = 560;
+  // Wide, flat viewBox (~4.8:1). The svg renders at the card's full width, so the
+  // viewBox scale factor is what sizes text/strokes on screen: at 560 units wide a
+  // ~1500px card scaled everything 2.7× (cartoonishly large labels, a 600px-tall
+  // chart). 1000 units keeps fonts near-native and the chart a sane height.
+  const W = 1000;
   const H = 210;
   const pad = { l: 10, r: 10, t: 16, b: 26 };
   const innerW = W - pad.l - pad.r;
@@ -134,7 +138,8 @@ export function ForecastArea({
   data: { label: string; value: number; forecast?: boolean }[];
   idPrefix?: string;
 }) {
-  const W = 560, H = 220;
+  // Same wide-flat viewBox rationale as AreaChart (see comment there).
+  const W = 1000, H = 220;
   const pad = { l: 12, r: 12, t: 20, b: 28 };
   const innerW = W - pad.l - pad.r;
   const innerH = H - pad.t - pad.b;
