@@ -81,6 +81,58 @@ export default function AttendanceGrid({
     return () => window.removeEventListener("pointerup", up);
   }, []);
 
+  // Unsaved-changes navigation guard — active ONLY while dirtyCount > 0,
+  // removed on save/discard (dirtyCount back to 0) or unmount. Two layers:
+  // (1) `beforeunload` covers hard nav (typed URL, refresh, tab close) — the
+  // browser shows its own generic prompt, `returnValue` is legacy-required.
+  // (2) A capture-phase `document` click listener covers in-app `<Link>`
+  // navigations (month Prev/Next, MonthPicker, ScopedFilterChip "Clear",
+  // sidebar/breadcrumbs, …) that a server-rendered page header can't see
+  // `dirtyCount` to guard itself. It walks up to the nearest `<a href>`,
+  // skips new-tab/download/hash/external targets, and — for a same-origin
+  // navigation — shows a native `confirm()`. Declining calls
+  // `preventDefault()` in the CAPTURE phase, which runs before Next.js
+  // Link's own bubble-phase click handler; Link bails out when it sees
+  // `event.defaultPrevented`, so the router never navigates.
+  // Known gap: the browser Back/Forward buttons don't fire a click (or, for
+  // client-side App Router transitions, `beforeunload`), so they aren't
+  // covered — that would need a `popstate` handler with its own history
+  // gymnastics, out of scope for this pragmatic guard.
+  useEffect(() => {
+    if (dirtyCount === 0) return;
+
+    function onBeforeUnload(e: BeforeUnloadEvent) {
+      e.preventDefault();
+      e.returnValue = "";
+    }
+
+    function onClickCapture(e: MouseEvent) {
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      const target = e.target as HTMLElement | null;
+      const anchor = target?.closest("a[href]") as HTMLAnchorElement | null;
+      if (!anchor) return;
+      if (anchor.target && anchor.target !== "_self") return; // new tab/window — nothing lost here
+      if (anchor.hasAttribute("download")) return;
+      const href = anchor.getAttribute("href") || "";
+      if (!href || href.startsWith("#")) return;
+      let url: URL;
+      try { url = new URL(anchor.href); } catch { return; }
+      if (url.origin !== window.location.origin) return; // external link — leaving the app anyway
+
+      const ok = window.confirm(
+        `You have ${dirtyCount} unsaved attendance change${dirtyCount === 1 ? "" : "s"}. Leave without saving?`
+      );
+      if (!ok) e.preventDefault();
+    }
+
+    window.addEventListener("beforeunload", onBeforeUnload);
+    document.addEventListener("click", onClickCapture, true);
+    return () => {
+      window.removeEventListener("beforeunload", onBeforeUnload);
+      document.removeEventListener("click", onClickCapture, true);
+    };
+  }, [dirtyCount]);
+
   function write(empId: string, day: number, value: Cell) {
     setGrid((g) => {
       const k = key(empId, day);
