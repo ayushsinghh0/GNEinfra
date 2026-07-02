@@ -37,7 +37,11 @@ export default async function EditProjectPage({
       <div className="p-8">
         <Card>
           <CardBody>
-            <ProjectForm id={id} initial={initial} />
+            {/* key={id}: force a remount on project-to-project edit navigation so
+                ProjectForm's mount-time-seeded state can't show project A's
+                fields under project B's id (same stale-state class as
+                AttendanceGrid/EmployeeForm — see phase4-audit.md). */}
+            <ProjectForm key={id} id={id} initial={initial} />
           </CardBody>
         </Card>
       </div>

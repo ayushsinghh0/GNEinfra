@@ -64,7 +64,10 @@ export default async function EditEmployeePage({
       <div className="p-8">
         <Card>
           <CardBody>
-            <EmployeeForm id={id} initial={initial} />
+            {/* key={id}: force a remount on employee-to-employee edit navigation
+                so EmployeeForm's mount-time-seeded state can't show employee
+                A's fields (bank/PAN/salary) under employee B's id. */}
+            <EmployeeForm key={id} id={id} initial={initial} />
           </CardBody>
         </Card>
       </div>

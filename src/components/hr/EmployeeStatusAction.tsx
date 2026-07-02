@@ -55,6 +55,7 @@ export default function EmployeeStatusAction({
         type="button"
         variant={leaving ? "danger" : "secondary"}
         size={size}
+        disabled={busy}
         onClick={() => setOpen(true)}
       >
         {leaving ? (

@@ -3,6 +3,7 @@ import { useMemo, useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { AlertCircle } from "lucide-react";
 import { Button, Field, Input, Select } from "@/components/ui";
+import { toast } from "@/components/Toast";
 
 export type AssetEmployee = {
   id: string; empId: string; name: string;
@@ -64,6 +65,7 @@ export default function AssetForm({
       });
       const d = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(d.error || "Could not save");
+      toast(assetId ? "Changes saved" : "Asset added", "success");
       if (!assetId) setV({ ...EMPTY });
       router.refresh();
       onDone?.();

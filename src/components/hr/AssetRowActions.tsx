@@ -64,7 +64,15 @@ export default function AssetRowActions({
       </button>
 
       <SlideOver open={editing} onClose={() => setEditing(false)} title="Edit asset record" subtitle={empName}>
-        <AssetForm employees={employees} asset={asset} assetId={asset.id} onDone={() => setEditing(false)} />
+        {/* SlideOver keeps `children` mounted at all times (only the wrapper
+            toggles via CSS transform) and AssetForm seeds its state from
+            `asset` once at mount — so without a key, a `patchReturned()` that
+            updates `asset.returnedAt` while this panel is closed doesn't
+            re-seed the form, and Cancel doesn't reset typed-but-unsaved text.
+            Keying on open/closed forces a remount (re-seeding from the latest
+            prop) each time the panel opens, instead of unmounting AssetForm
+            outright (which would blank the panel mid-close-animation). */}
+        <AssetForm key={editing ? `${asset.id}:open` : `${asset.id}:closed`} employees={employees} asset={asset} assetId={asset.id} onDone={() => setEditing(false)} />
       </SlideOver>
 
       <ConfirmDialog

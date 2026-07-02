@@ -70,7 +70,11 @@ export default async function EmployeeHubLayout({
         </Link>
         {canWrite && (
           <>
-            <EmployeeStatusAction employeeId={emp.id} status={emp.status} />
+            {/* key={emp.id}: this layout persists across [id] navigations, so
+                without a key EmployeeStatusAction's open/busy/date state
+                could leak across employees (an in-flight status mutation
+                resolving under a different employee's route). */}
+            <EmployeeStatusAction key={emp.id} employeeId={emp.id} status={emp.status} />
             <Link href={`/hr/employees/${id}/edit`} className={btn("primary", "sm")}>
               Edit
             </Link>
