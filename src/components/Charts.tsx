@@ -30,7 +30,11 @@ export function AreaChart({
   const pad = { l: 10, r: 10, t: 16, b: 26 };
   const innerW = W - pad.l - pad.r;
   const innerH = H - pad.t - pad.b;
-  const max = Math.max(1, ...data.map((d) => d.value));
+  const dataMax = Math.max(0, ...data.map((d) => d.value));
+  const allZero = data.length > 0 && dataMax === 0;
+  // 15% headroom above the tallest point so its value label (rendered above the point)
+  // never brushes — let alone clips against — the viewBox's top edge.
+  const scaleMax = Math.max(1, dataMax * 1.15);
   const baseY = pad.t + innerH;
   // No live width to measure (server-rendered SVG) — thin x-axis labels deterministically
   // once there are enough points to collide (e.g. a 12-month window) rather than at every
@@ -40,7 +44,7 @@ export function AreaChart({
 
   const pts = data.map((d, i) => {
     const x = pad.l + (data.length <= 1 ? innerW / 2 : (i / (data.length - 1)) * innerW);
-    const y = pad.t + innerH - (d.value / max) * innerH;
+    const y = pad.t + innerH - (d.value / scaleMax) * innerH;
     return { x, y, ...d };
   });
 
@@ -52,10 +56,16 @@ export function AreaChart({
   // 4 horizontal gridlines.
   const grids = [0, 0.25, 0.5, 0.75].map((f) => pad.t + innerH * f);
 
+  // Declutter: label only the first, max (first occurrence), and last point instead of
+  // every point — a flat/near-flat series no longer prints a value under each dot.
+  const maxIdx = data.findIndex((d) => d.value === dataMax);
+  const labeledIdx = new Set([0, maxIdx, data.length - 1].filter((i) => i >= 0));
+
   return (
     <svg
       viewBox={`0 0 ${W} ${H}`}
-      className="h-48 w-full"
+      className="block h-auto w-full"
+      preserveAspectRatio="xMidYMid meet"
       role="img"
       aria-label={ariaLabel}
     >
@@ -75,8 +85,14 @@ export function AreaChart({
       ))}
       <line x1={pad.l} y1={baseY} x2={W - pad.r} y2={baseY} stroke="#e2e8f0" strokeWidth="1" />
 
-      {area && <path className="animate-fade-up" d={area} fill="url(#areaFill)" />}
-      {line && (
+      {allZero && (
+        <text x={W / 2} y={pad.t + innerH / 2} textAnchor="middle" dominantBaseline="middle" fontSize="13" fill="#94a3b8">
+          No data in this range
+        </text>
+      )}
+
+      {!allZero && area && <path className="animate-fade-up" d={area} fill="url(#areaFill)" />}
+      {!allZero && line && (
         <path
           className="draw-line"
           d={line}
@@ -92,12 +108,14 @@ export function AreaChart({
       {pts.map((p, i) => (
         <g key={i}>
           {/* Persistent value label — visible on touch/keyboard/everyone (no hover-only).
-              Always rendered, including a genuine "0" — omitting it made a real zero data
-              point look unlabelled/missing. */}
-          <text x={p.x} y={p.y - 12} textAnchor="middle" fontSize="11" fontWeight="700" fill="#0f766e" className="nums">
-            {p.value}
-          </text>
-          <circle cx={p.x} cy={p.y} r="3.5" fill="#fff" stroke="#0d9488" strokeWidth="2" />
+              Declutter: only the first/max/last point is labeled (see labeledIdx above);
+              an all-zero series renders no line/points/labels at all (see allZero above). */}
+          {!allZero && labeledIdx.has(i) && (
+            <text x={p.x} y={p.y - 12} textAnchor="middle" fontSize="11" fontWeight="700" fill="#0f766e" className="nums">
+              {p.value}
+            </text>
+          )}
+          {!allZero && <circle cx={p.x} cy={p.y} r="3.5" fill="#fff" stroke="#0d9488" strokeWidth="2" />}
           {(i % labelStep === 0 || i === pts.length - 1) && (
             <text x={p.x} y={H - 8} textAnchor="middle" fontSize="11" fill="#64748b">
               {p.label}
@@ -120,27 +138,57 @@ export function ForecastArea({
   const pad = { l: 12, r: 12, t: 20, b: 28 };
   const innerW = W - pad.l - pad.r;
   const innerH = H - pad.t - pad.b;
-  const max = Math.max(1, ...data.map((d) => d.value));
+  const dataMax = Math.max(0, ...data.map((d) => d.value));
+  // Same 15% headroom rationale as AreaChart, kept even though this chart doesn't
+  // currently print per-point values — the drawn curve itself shouldn't hug the top edge.
+  const scaleMax = Math.max(1, dataMax * 1.15);
   const baseY = pad.t + innerH;
   const pts = data.map((d, i) => ({
     x: pad.l + (data.length <= 1 ? innerW / 2 : (i / (data.length - 1)) * innerW),
-    y: pad.t + innerH - (d.value / max) * innerH,
+    y: pad.t + innerH - (d.value / scaleMax) * innerH,
     label: d.label, value: d.value, forecast: !!d.forecast,
   }));
-  // Same deterministic label-thinning as AreaChart — payroll/headcount series run up to
-  // 13 points (12 actual + forecast tail) and collide on narrow viewports otherwise.
-  const labelStep = pts.length > 8 ? 2 : 1;
+
   const fi = pts.findIndex((p) => p.forecast);
   const actual = fi === -1 ? pts : pts.slice(0, fi);
-  const forecast = fi === -1 ? [] : pts.slice(Math.max(0, fi - 1)); // start at last actual to connect
+  const allZero = actual.length > 0 && actual.every((p) => p.value === 0);
+
+  // Projection sanity: a least-squares dashed forecast is misleading (and was observed
+  // swinging wildly after a dip) when there isn't enough real signal to trust it, or when
+  // it disagrees violently with the last actual. Suppress the dashed segment in that case
+  // and render actuals only.
+  const lastActual = actual[actual.length - 1];
+  const nonZeroActualCount = actual.filter((p) => p.value !== 0).length;
+  const firstForecastPt = fi === -1 ? undefined : pts[fi];
+  const earlierNonZero = actual.slice(0, -1).some((p) => p.value !== 0);
+  const isPartialPeriodCliff = !!lastActual && lastActual.value === 0 && earlierNonZero;
+  const deviatesFromLastActual =
+    !!firstForecastPt && !!lastActual && lastActual.value !== 0 &&
+    Math.abs(firstForecastPt.value - lastActual.value) > 2 * Math.abs(lastActual.value);
+  const suppressForecast =
+    allZero ||
+    fi === -1 ||
+    nonZeroActualCount < 3 ||
+    isPartialPeriodCliff ||
+    deviatesFromLastActual ||
+    (!!firstForecastPt && firstForecastPt.value < 0);
+
+  // Points actually rendered — actuals only when the forecast is suppressed, so no
+  // forecast dots/labels/divider linger once the dashed line itself is gone.
+  const visible = suppressForecast ? actual : pts;
+  // Same deterministic label-thinning as AreaChart — payroll/headcount series run up to
+  // 13 points (12 actual + forecast tail) and collide on narrow viewports otherwise.
+  const labelStep = visible.length > 8 ? 2 : 1;
+
   const actualLine = smoothPath(actual);
   const actualArea = actual.length
     ? `${actualLine} L${actual[actual.length - 1].x},${baseY} L${actual[0].x},${baseY} Z`
     : "";
+  const forecast = !suppressForecast && fi !== -1 ? pts.slice(Math.max(0, fi - 1)) : []; // start at last actual to connect
   const forecastLine = smoothPath(forecast);
   const grids = [0, 0.25, 0.5, 0.75].map((f) => pad.t + innerH * f);
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="h-52 w-full" role="img" aria-label="Trend with forecast">
+    <svg viewBox={`0 0 ${W} ${H}`} className="block h-auto w-full" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Trend with forecast">
       <defs>
         <linearGradient id={`${idPrefix}Fill`} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#14b8a6" stopOpacity="0.26" />
@@ -155,20 +203,27 @@ export function ForecastArea({
         <line key={i} x1={pad.l} y1={y} x2={W - pad.r} y2={y} stroke="#eef2f6" strokeWidth="1" />
       ))}
       <line x1={pad.l} y1={baseY} x2={W - pad.r} y2={baseY} stroke="#e2e8f0" strokeWidth="1" />
-      {actualArea && <path className="animate-fade-up" d={actualArea} fill={`url(#${idPrefix}Fill)`} />}
-      {actualLine && (
+
+      {allZero && (
+        <text x={W / 2} y={pad.t + innerH / 2} textAnchor="middle" dominantBaseline="middle" fontSize="13" fill="#94a3b8">
+          No data in this range
+        </text>
+      )}
+
+      {!allZero && actualArea && <path className="animate-fade-up" d={actualArea} fill={`url(#${idPrefix}Fill)`} />}
+      {!allZero && actualLine && (
         <path d={actualLine} fill="none" stroke={`url(#${idPrefix}Line)`} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
       )}
-      {forecastLine && (
+      {!allZero && !suppressForecast && forecastLine && (
         <path d={forecastLine} fill="none" stroke="#94a3b8" strokeWidth="2.5" strokeDasharray="5 4" strokeLinecap="round" strokeLinejoin="round" />
       )}
-      {fi > 0 && (
+      {!allZero && !suppressForecast && fi > 0 && (
         <line x1={pts[fi - 1].x} y1={pad.t} x2={pts[fi - 1].x} y2={baseY} stroke="#cbd5e1" strokeWidth="1" strokeDasharray="3 3" />
       )}
-      {pts.map((p, i) => (
+      {visible.map((p, i) => (
         <g key={i}>
-          <circle cx={p.x} cy={p.y} r="3" fill="#fff" stroke={p.forecast ? "#94a3b8" : "#0d9488"} strokeWidth="2" />
-          {(i % labelStep === 0 || i === pts.length - 1) && (
+          {!allZero && <circle cx={p.x} cy={p.y} r="3" fill="#fff" stroke={p.forecast ? "#94a3b8" : "#0d9488"} strokeWidth="2" />}
+          {(i % labelStep === 0 || i === visible.length - 1) && (
             <text x={p.x} y={H - 8} textAnchor="middle" fontSize="11" fill={p.forecast ? "#94a3b8" : "#64748b"}>
               {p.label}
             </text>
@@ -286,15 +341,28 @@ export function MonthlyBars({
   data: { label: string; value: number }[];
 }) {
   const max = Math.max(1, ...data.map((d) => d.value));
+  const allZero = data.length > 0 && data.every((d) => d.value === 0);
   // Same deterministic thinning as the SVG charts, for consistency if this is ever fed a
   // longer (e.g. 12-month) series — each bar's column is fixed-width and truncates its own
   // label, so collisions aren't the everyday case, but a real zero still needs to read as
   // "0" rather than a blank cell.
   const labelStep = data.length > 8 ? 2 : 1;
+
+  if (allZero) {
+    return (
+      <div className="flex h-44 items-center justify-center border-b border-slate-100">
+        <span className="text-sm text-slate-400">No data in this range</span>
+      </div>
+    );
+  }
+
+  // Bars are capped (max-w-16 column / max-w-12 bar) and the row is centered, so a small
+  // category count (n≤6) reads as an intentional, clustered mini-chart instead of a few
+  // skinny bars stretched across the full card width with huge gaps between them.
   return (
-    <div className="flex h-44 items-end gap-3">
+    <div className="flex h-44 items-end justify-center gap-3">
       {data.map((d, i) => (
-        <div key={i} className="flex h-full flex-1 flex-col items-center justify-end gap-1.5">
+        <div key={i} className="flex h-full min-w-0 max-w-16 flex-1 flex-col items-center justify-end gap-1.5">
           <span className="nums text-[11px] font-semibold text-slate-600">{d.value}</span>
           <div
             className="grow-bar w-full max-w-12 rounded-t-md bg-gradient-to-t from-brand-600 to-brand-300"
