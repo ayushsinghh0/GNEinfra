@@ -16,7 +16,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const canWrite = HR_WRITE.includes(user.role);
   return (
     <div className="flex min-h-dvh w-full bg-canvas">
-      <Sidebar user={{ name: user.name, email: user.email, role: user.role }} />
+      <Sidebar user={{ name: user.name, email: user.email, role: user.role }} canSearch={canSearch} />
       <main className="flex min-h-dvh flex-1 flex-col min-w-0 pt-14 md:pt-0">{children}</main>
       <Toaster />
       <CommandPalette canSearch={canSearch} canWrite={canWrite} />

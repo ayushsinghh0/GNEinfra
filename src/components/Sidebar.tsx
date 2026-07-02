@@ -1,14 +1,71 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import type { Role } from "@prisma/client";
-import { LogOut, Menu, X } from "lucide-react";
+import { LogOut, Menu, Search, X } from "lucide-react";
 import { navForRole, deptLabel, type NavSection } from "@/lib/nav";
 
 type SidebarUser = { name: string; email: string; role: Role };
+
+// Visible discoverability affordance for the Cmd/Ctrl-K command palette
+// (CommandPalette.tsx — fully built, but previously keyboard-only-secret).
+// Dispatches a plain custom DOM event rather than importing the palette
+// directly, so the two client components stay decoupled. `canSearch` is
+// computed server-side in (erp)/layout.tsx from HR_VIEW (the same guard
+// CommandPalette itself uses) and threaded down here — roles that can't
+// call /api/hr/search never see the hint.
+function openCommandPalette() {
+  window.dispatchEvent(new CustomEvent("open-command-palette"));
+}
+
+const noopSubscribe = () => () => {};
+// Client-only platform sniff (mirrors CommandPalette.tsx's isClient guard) —
+// useSyncExternalStore's server snapshot always reads false, so SSR/first
+// hydration render "Ctrl K" and the mac label only appears once hydrated,
+// avoiding a setState-in-effect render cascade for a one-time value.
+function useKbdHint() {
+  const mac = useSyncExternalStore(
+    noopSubscribe,
+    () => /Mac|iPhone|iPad|iPod/.test(navigator.platform ?? ""),
+    () => false
+  );
+  return mac ? "⌘K" : "Ctrl K";
+}
+
+function SearchHintButton() {
+  const hint = useKbdHint();
+  return (
+    <button
+      type="button"
+      onClick={openCommandPalette}
+      className="press flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-slate-400 ring-1 ring-inset ring-slate-200 transition-colors hover:bg-slate-50 hover:text-slate-600"
+    >
+      <Search className="h-4 w-4 shrink-0" />
+      <span className="flex-1 text-left">Search…</span>
+      <kbd className="rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-[10px] font-medium text-slate-400">
+        {hint}
+      </kbd>
+    </button>
+  );
+}
+
+function SearchHintIconButton() {
+  const hint = useKbdHint();
+  return (
+    <button
+      type="button"
+      onClick={openCommandPalette}
+      aria-label={`Search (${hint})`}
+      title={`Search (${hint})`}
+      className="press ml-auto grid h-9 w-9 shrink-0 place-items-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
+    >
+      <Search className="h-5 w-5" />
+    </button>
+  );
+}
 
 function NavBody({ sections, pathname, onNavigate }: { sections: NavSection[]; pathname: string; onNavigate: () => void }) {
   return (
@@ -64,7 +121,7 @@ function Brand({ subtitle }: { subtitle: string }) {
   );
 }
 
-export default function Sidebar({ user }: { user: SidebarUser }) {
+export default function Sidebar({ user, canSearch = false }: { user: SidebarUser; canSearch?: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -105,6 +162,11 @@ export default function Sidebar({ user }: { user: SidebarUser }) {
     <>
       <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col self-start border-r border-slate-200 bg-white text-slate-600 md:flex">
         <div className="flex h-16 items-center border-b border-slate-200 px-5"><Brand subtitle={subtitle} /></div>
+        {canSearch && (
+          <div className="px-3 pt-3">
+            <SearchHintButton />
+          </div>
+        )}
         <NavBody sections={sections} pathname={pathname} onNavigate={() => setOpen(false)} />
         {LogoutBtn}
       </aside>
@@ -114,6 +176,7 @@ export default function Sidebar({ user }: { user: SidebarUser }) {
           <Menu className="h-5 w-5" />
         </button>
         <Image src="/brand/gne-infra.png" alt="GNE Infra" width={84} height={24} className="h-6 w-auto" priority />
+        {canSearch && <SearchHintIconButton />}
       </header>
 
       {open && <div className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm md:hidden" onClick={() => setOpen(false)} aria-hidden="true" />}

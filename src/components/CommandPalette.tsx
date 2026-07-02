@@ -198,6 +198,18 @@ export default function CommandPalette({
     [router, lastEmployeeId, close]
   );
 
+  // Visible-affordance hook: the sidebar's "Search ⌘K/Ctrl K" button (role-
+  // gated the same way, see Sidebar.tsx) dispatches this custom DOM event
+  // instead of importing/calling into this component directly — keeps the
+  // two files decoupled (a plain global event, no shared client state/
+  // context needed for a once-per-app trigger).
+  useEffect(() => {
+    if (!canSearch) return;
+    function onOpenEvent() { setOpen(true); }
+    window.addEventListener("open-command-palette", onOpenEvent);
+    return () => window.removeEventListener("open-command-palette", onOpenEvent);
+  }, [canSearch]);
+
   // Single global shortcut listener — registered ONLY when canSearch (HR_VIEW).
   // Non-HR roles get no listener at all, so Cmd/Ctrl-K is a silent no-op for
   // them everywhere in the app (they can't call /api/hr/search anyway).
