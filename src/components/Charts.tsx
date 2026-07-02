@@ -240,6 +240,31 @@ export function ForecastArea({
   );
 }
 
+/* ── Sparkline (tiny inline trend line for stat-tab cards) ────────────────
+   Minimal ~72×20 polyline — stroke currentColor (inherits the caller's text
+   color via a Tailwind text-* class), no dots/gridlines/labels. Purely
+   decorative next to a real numeric value, so it's aria-hidden. */
+export function Sparkline({ data, className }: { data: number[]; className?: string }) {
+  if (data.length === 0) return null;
+  const W = 72, H = 20, pad = 2;
+  const innerW = W - pad * 2, innerH = H - pad * 2;
+  const max = Math.max(...data);
+  const min = Math.min(...data);
+  const range = max - min || 1;
+  const pts = data
+    .map((v, i) => {
+      const x = pad + (data.length <= 1 ? innerW / 2 : (i / (data.length - 1)) * innerW);
+      const y = pad + innerH - ((v - min) / range) * innerH;
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    })
+    .join(" ");
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className={cn("block", className)} aria-hidden="true">
+      <polyline points={pts} fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 /* ── Delta badge (period-over-period change) ────────────────────────────── */
 export function DeltaBadge({ value, invert }: { value: number | null; invert?: boolean }) {
   if (value === null || !Number.isFinite(value)) {

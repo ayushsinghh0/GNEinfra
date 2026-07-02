@@ -80,7 +80,7 @@ export default function CompositionBoard({
           // (proportional segments + color-keyed legend, deep-linking into the filtered
           // employees list), the ranked list below answers "exactly how much each" (same
           // color language, capped at ROW_CAP so a long tail doesn't sprawl the card).
-          <div className="max-w-2xl space-y-6">
+          <div className="space-y-6">
             <DistributionBar
               segments={data.map((b) => ({ label: b.label, value: b.count, href: hrefFor(dim, b.label) }))}
             />

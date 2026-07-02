@@ -1,16 +1,16 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { Users, Wallet, CalendarCheck, UserMinus, Clock, FolderKanban, CalendarClock, BadgeIndianRupee } from "lucide-react";
+import { Users, Wallet, CalendarCheck, UserMinus, Clock, FolderKanban, CalendarClock, BadgeIndianRupee, ChevronRight } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { requirePageRole, HR_VIEW } from "@/lib/rbac";
 import { fmtINR } from "@/lib/format";
 import { BrandHero } from "@/components/chrome";
-import { StatCard, Skeleton } from "@/components/ui";
+import { StatCard, Skeleton, Card, CardHeader, CardBody } from "@/components/ui";
 import { DeltaBadge } from "@/components/Charts";
 import { pctDelta } from "@/lib/hr-forecast";
 import { getPeriods, periodKey, monthlyAttendanceStats } from "@/lib/hr-dashboard";
 import DashboardTrends from "@/components/hr/DashboardTrends";
-import DashboardComposition from "@/components/hr/DashboardComposition";
+import { DashboardLeaveBurn, DashboardUtilization, DashboardWorkforceComposition } from "@/components/hr/DashboardComposition";
 import MonthPicker from "@/components/hr/MonthPicker";
 
 export const dynamic = "force-dynamic";
@@ -112,10 +112,10 @@ export default async function HrPage({
   const showPayrollDelta = !payrollAnchorOngoing && costDelta !== null;
 
   const quickLinks = [
-    { href: "/hr/employees", label: "Employees", icon: Users, desc: "View and manage employee records." },
-    { href: "/hr/attendance", label: "Attendance", icon: CalendarClock, desc: "Track daily attendance and leave." },
-    { href: "/hr/payout", label: "Payout", icon: BadgeIndianRupee, desc: "Process and review monthly payroll." },
-    { href: "/hr/projects", label: "Projects", icon: FolderKanban, desc: "Projects and concurrent assignments." },
+    { href: "/hr/employees", label: "Employees", icon: Users },
+    { href: "/hr/attendance", label: "Attendance", icon: CalendarClock },
+    { href: "/hr/payout", label: "Payout", icon: BadgeIndianRupee },
+    { href: "/hr/projects", label: "Projects", icon: FolderKanban },
   ];
 
   return (
@@ -126,93 +126,138 @@ export default async function HrPage({
           <MonthPicker year={refYear} month={refMonth} basePath="/hr" />
         </div>
       </BrandHero>
-      <div className="space-y-8 p-6 sm:p-8">
-        {/* KPI bento with deltas — paints before the heavier sections below stream in.
-            Headcount/payroll/attendance-rate/attrition re-anchor to the reference month
-            above; present/on-leave stay real-time "today" (see comment above `refYear`). */}
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
-          <StatCard tone="brand" icon={<Users className="h-4 w-4" />} label={`Headcount · ${cur.label} ${refYear}`}
-            href="/hr/employees?status=ACTIVE"
-            value={<span className="flex flex-wrap items-baseline gap-2"><span>{headcountCur}</span>{showHeadcountDelta && <DeltaBadge value={headcountDelta} />}</span>} />
-          <StatCard tone="emerald" icon={<Wallet className="h-4 w-4" />} label={`Payroll · ${periods[lastActual].label} ${periods[lastActual].year}`}
-            href={`/hr/payout?year=${periods[lastActual].year}&month=${periods[lastActual].month}`}
-            value={
-              <>
-                <span className="flex flex-wrap items-baseline gap-2">
-                  <span>{fmtINR(costAnchor)}</span>
-                  {showPayrollDelta && <DeltaBadge value={costDelta} />}
-                </span>
-                {payrollAnchorOngoing && <p className="mt-1 text-xs text-slate-500">so far this month</p>}
-              </>
-            } />
-          <StatCard tone="blue" icon={<CalendarCheck className="h-4 w-4" />} label={isCurrentRefMonth ? "Attendance rate (MTD)" : `Attendance rate · ${cur.label}`}
-            href={`/hr/attendance?year=${refYear}&month=${refMonth}`}
-            value={
-              <>
-                <span className="flex flex-wrap items-baseline gap-2">
-                  <span className={attCurHasRows ? undefined : "text-slate-300"}>{attCurHasRows ? `${attCur.rate}%` : "—"}</span>
-                  {showAttRateDelta && <DeltaBadge value={attRateDelta} />}
-                </span>
-                {!attCurHasRows && (
-                  <p className="mt-1 text-xs font-medium text-brand-600">
-                    {isCurrentRefMonth ? `No attendance marked for ${cur.label} yet` : `No attendance recorded for ${cur.label}`}
-                  </p>
-                )}
-              </>
-            } />
-          <StatCard tone="emerald" icon={<CalendarCheck className="h-4 w-4" />} label="Present today"
-            href={`/hr/attendance?year=${todayY}&month=${todayM}`}
-            value={
-              <>
-                <span className={todayHasRows ? undefined : "text-slate-300"}>{todayHasRows ? presentToday : "—"}</span>
-                {!todayHasRows && <p className="mt-1 text-xs text-slate-500">Not marked yet</p>}
-              </>
-            } />
-          <StatCard tone="amber" icon={<Clock className="h-4 w-4" />} label="On leave today"
-            href={`/hr/attendance?year=${todayY}&month=${todayM}`}
-            value={
-              <>
-                <span className={todayHasRows ? undefined : "text-slate-300"}>{todayHasRows ? onLeaveToday : "—"}</span>
-                {!todayHasRows && <p className="mt-1 text-xs text-slate-500">Not marked yet</p>}
-              </>
-            } />
-          <StatCard tone="amber" icon={<UserMinus className="h-4 w-4" />} label={`Attrition · ${cur.label} ${refYear}`}
-            href="/hr/employees?status=INACTIVE"
-            value={<span className="flex flex-wrap items-baseline gap-2"><span>{leaversCur}</span>{showAttritionDelta && <DeltaBadge value={attritionDelta} invert />}</span>} />
-        </div>
-
-        {/* Pill-driven trend board — heaviest section (12x monthly aggregations), streamed.
-            Window ends at the reference month, not necessarily "now". */}
-        <Suspense fallback={<Skeleton className="h-[420px] w-full rounded-2xl" />}>
-          <DashboardTrends year={refYear} month={refMonth} />
-        </Suspense>
-
-        {/* Utilization + leave burn + workforce composition, streamed. Kept as a
-            current-snapshot ("now") rather than re-anchored to the reference month —
-            it's workforce composition/utilization, not a monthly KPI. */}
-        <Suspense
-          fallback={
-            <div className="space-y-6">
-              <div className="grid gap-6 lg:grid-cols-2">
-                <Skeleton className="h-64 rounded-2xl" />
-                <Skeleton className="h-64 rounded-2xl" />
-              </div>
-              <Skeleton className="h-96 rounded-2xl" />
+      <div className="space-y-5 p-6 sm:p-8">
+        {/* 12-col bento (lg+) — 3 rows, each pair of cells summing to 12 columns so the
+            grid packs with zero dead space; single column on mobile, same row order.
+            Row 1: KPI cluster (8) + Leave-burn rings (4). Row 2: Trends (8) + Project
+            utilization (4). Row 3: Workforce composition (7) + "Today" pulse card (5). */}
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
+          {/* Row 1A — KPI cluster. Deltas paint before the heavier sections below
+              stream in. Headcount/payroll/attendance-rate/attrition re-anchor to the
+              reference month above; present/on-leave live in the Today pulse card
+              (Row 3B) and stay real-time "today" regardless of the picker. */}
+          <div className="lg:col-span-8">
+            <div className="grid grid-cols-2 gap-4">
+              <StatCard tone="brand" icon={<Users className="h-4 w-4" />} label={`Headcount · ${cur.label} ${refYear}`}
+                href="/hr/employees?status=ACTIVE"
+                value={<span className="flex flex-wrap items-baseline gap-2"><span>{headcountCur}</span>{showHeadcountDelta && <DeltaBadge value={headcountDelta} />}</span>} />
+              <StatCard tone="emerald" icon={<Wallet className="h-4 w-4" />} label={`Payroll · ${periods[lastActual].label} ${periods[lastActual].year}`}
+                href={`/hr/payout?year=${periods[lastActual].year}&month=${periods[lastActual].month}`}
+                value={
+                  <>
+                    <span className="flex flex-wrap items-baseline gap-2">
+                      <span>{fmtINR(costAnchor)}</span>
+                      {showPayrollDelta && <DeltaBadge value={costDelta} />}
+                    </span>
+                    {payrollAnchorOngoing && <p className="mt-1 text-xs text-slate-500">so far this month</p>}
+                  </>
+                } />
+              <StatCard tone="blue" icon={<CalendarCheck className="h-4 w-4" />} label={isCurrentRefMonth ? "Attendance rate (MTD)" : `Attendance rate · ${cur.label}`}
+                href={`/hr/attendance?year=${refYear}&month=${refMonth}`}
+                spark={attCurHasRows ? attCur.rate : undefined}
+                value={
+                  <>
+                    <span className="flex flex-wrap items-baseline gap-2">
+                      <span className={attCurHasRows ? undefined : "text-slate-300"}>{attCurHasRows ? `${attCur.rate}%` : "—"}</span>
+                      {showAttRateDelta && <DeltaBadge value={attRateDelta} />}
+                    </span>
+                    {!attCurHasRows && (
+                      <p className="mt-1 text-xs font-medium text-brand-600">
+                        {isCurrentRefMonth ? `No attendance marked for ${cur.label} yet` : `No attendance recorded for ${cur.label}`}
+                      </p>
+                    )}
+                  </>
+                } />
+              <StatCard tone="amber" icon={<UserMinus className="h-4 w-4" />} label={`Attrition · ${cur.label} ${refYear}`}
+                href="/hr/employees?status=INACTIVE"
+                value={<span className="flex flex-wrap items-baseline gap-2"><span>{leaversCur}</span>{showAttritionDelta && <DeltaBadge value={attritionDelta} invert />}</span>} />
             </div>
-          }
-        >
-          <DashboardComposition today={todayUTC} />
-        </Suspense>
+          </div>
 
-        {/* Quick links */}
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          {quickLinks.map(({ href, label, icon: Icon, desc }) => (
-            <Link key={href} href={href} className="group block rounded-2xl bg-white p-5 shadow-[var(--shadow-card)] motion-safe:transition hover:motion-safe:-translate-y-0.5 hover:shadow-[var(--shadow-cta)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2">
-              <div className="mb-3 grid h-10 w-10 place-items-center rounded-xl bg-brand-50 text-brand-600 motion-safe:transition group-hover:bg-brand-100"><Icon className="h-5 w-5" /></div>
-              <div className="text-sm font-semibold text-slate-900">{label}</div>
-              <div className="mt-1 text-xs leading-relaxed text-slate-500">{desc}</div>
-            </Link>
-          ))}
+          {/* Row 1B — Leave-burn rings. */}
+          <div className="lg:col-span-4">
+            <Suspense fallback={<Skeleton className="h-72 w-full rounded-2xl" />}>
+              <DashboardLeaveBurn today={todayUTC} />
+            </Suspense>
+          </div>
+
+          {/* Row 2A — Pill-driven trend board, heaviest section (12x monthly
+              aggregations), streamed. Window ends at the reference month. */}
+          <div className="lg:col-span-8">
+            <Suspense fallback={<Skeleton className="h-[420px] w-full rounded-2xl" />}>
+              <DashboardTrends year={refYear} month={refMonth} />
+            </Suspense>
+          </div>
+
+          {/* Row 2B — Project utilization. Current-snapshot ("now"), not re-anchored
+              to the reference month — it's utilization, not a monthly KPI. */}
+          <div className="lg:col-span-4">
+            <Suspense fallback={<Skeleton className="h-64 w-full rounded-2xl" />}>
+              <DashboardUtilization today={todayUTC} />
+            </Suspense>
+          </div>
+
+          {/* Row 3A — Workforce composition. Also a current snapshot. */}
+          <div className="lg:col-span-7">
+            <Suspense fallback={<Skeleton className="h-96 w-full rounded-2xl" />}>
+              <DashboardWorkforceComposition today={todayUTC} />
+            </Suspense>
+          </div>
+
+          {/* Row 3B — "Today" pulse card: Present/On-leave today (moved out of the
+              KPI cluster, honesty logic + hrefs unchanged) + quick links as slim rows
+              (replaces the old 4 huge bottom cards). */}
+          <div className="lg:col-span-5">
+            <Card className="h-full">
+              <CardHeader title="Today" subtitle={todayHasRows ? `${presentToday} present · ${onLeaveToday} on leave` : "Attendance not marked yet"} />
+              <CardBody className="space-y-5">
+                <div className="grid grid-cols-2 gap-3">
+                  <Link
+                    href={`/hr/attendance?year=${todayY}&month=${todayM}`}
+                    className="group rounded-xl bg-emerald-50/60 p-3 motion-safe:transition hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
+                  >
+                    <div className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-700">
+                      <CalendarCheck className="h-3.5 w-3.5" />
+                      Present today
+                    </div>
+                    <div className="nums mt-1.5 text-2xl font-semibold leading-none text-slate-900">
+                      <span className={todayHasRows ? undefined : "text-slate-300"}>{todayHasRows ? presentToday : "—"}</span>
+                    </div>
+                    {!todayHasRows && <p className="mt-1 text-[11px] text-slate-500">Not marked yet</p>}
+                  </Link>
+                  <Link
+                    href={`/hr/attendance?year=${todayY}&month=${todayM}`}
+                    className="group rounded-xl bg-amber-50/60 p-3 motion-safe:transition hover:bg-amber-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
+                  >
+                    <div className="flex items-center gap-1.5 text-[11px] font-medium text-amber-700">
+                      <Clock className="h-3.5 w-3.5" />
+                      On leave today
+                    </div>
+                    <div className="nums mt-1.5 text-2xl font-semibold leading-none text-slate-900">
+                      <span className={todayHasRows ? undefined : "text-slate-300"}>{todayHasRows ? onLeaveToday : "—"}</span>
+                    </div>
+                    {!todayHasRows && <p className="mt-1 text-[11px] text-slate-500">Not marked yet</p>}
+                  </Link>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 border-t border-slate-100 pt-4">
+                  {quickLinks.map(({ href, label, icon: Icon }) => (
+                    <Link
+                      key={href}
+                      href={href}
+                      className="group flex min-h-11 items-center gap-2 rounded-lg px-2 motion-safe:transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
+                    >
+                      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-brand-50 text-brand-600 motion-safe:transition group-hover:bg-brand-100">
+                        <Icon className="h-3.5 w-3.5" />
+                      </span>
+                      <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-slate-700">{label}</span>
+                      <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-300 group-hover:text-brand-500" />
+                    </Link>
+                  ))}
+                </div>
+              </CardBody>
+            </Card>
+          </div>
         </div>
 
         <p className="text-center text-[11px] text-slate-400">&quot;Projected&quot; values are least-squares trend extrapolations, not guarantees · {netPayrollMonth ? `${fmtINR(netPayrollMonth)} processed ${isCurrentRefMonth ? "this month" : `in ${cur.label} ${refYear}`}` : `no payroll processed ${isCurrentRefMonth ? "yet this month" : `in ${cur.label} ${refYear}`}`}</p>
