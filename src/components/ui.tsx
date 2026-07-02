@@ -293,7 +293,12 @@ export function AvatarStack({
   return (
     <div className="flex items-center -space-x-2">
       {shown.map((n, i) => (
-        <Avatar key={`${n}-${i}`} name={n} size={size} className="ring-2 ring-white" />
+        // Descending z-index so the FIRST avatar sits on top — with plain
+        // `-space-x-2`, DOM paint order let each later sibling occlude the
+        // previous one (the first avatar rendered half-hidden).
+        <span key={`${n}-${i}`} className="relative inline-flex" style={{ zIndex: shown.length - i }}>
+          <Avatar name={n} size={size} className="ring-2 ring-white" />
+        </span>
       ))}
       {extra > 0 && (
         <span
