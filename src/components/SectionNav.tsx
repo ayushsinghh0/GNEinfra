@@ -2,7 +2,13 @@
 import { useEffect, useState } from "react";
 import { cn } from "@/components/ui";
 
-export default function SectionNav({ sections }: { sections: { id: string; label: string }[] }) {
+export default function SectionNav({
+  sections,
+  className,
+}: {
+  sections: { id: string; label: string }[];
+  className?: string;
+}) {
   const [active, setActive] = useState(sections[0]?.id ?? "");
 
   useEffect(() => {
@@ -30,7 +36,13 @@ export default function SectionNav({ sections }: { sections: { id: string; label
   }
 
   return (
-    <nav aria-label="Sections" className="sticky top-16 z-10 -mx-1 flex gap-1.5 overflow-x-auto rounded-2xl bg-white/90 px-2 py-2 shadow-[var(--shadow-card)] backdrop-blur">
+    <nav
+      aria-label="Sections"
+      className={cn(
+        "sticky top-16 z-10 -mx-1 flex gap-1.5 overflow-x-auto rounded-2xl bg-white/90 px-2 py-2 shadow-[var(--shadow-card)] backdrop-blur",
+        className
+      )}
+    >
       {sections.map((s) => (
         <button
           key={s.id}

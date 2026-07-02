@@ -1,4 +1,5 @@
-import { FolderKanban } from "lucide-react";
+import Link from "next/link";
+import { FolderKanban, Users, ChevronRight, Armchair } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Card, CardHeader, CardBody, ProgressBar, EmptyState } from "@/components/ui";
 import { BarList, RingGauge } from "@/components/Charts";
@@ -40,12 +41,12 @@ export async function DashboardLeaveBurn({ today }: { today: Date }) {
   return (
     <Card className="h-full">
       <CardHeader title="Leave burn (this year)" subtitle={`Days taken vs quota · across ${activeCount} active employees`} />
-      <CardBody className="space-y-5">
+      <CardBody className="space-y-4 px-6 py-5">
         <div className="flex justify-center gap-6">
-          <RingGauge value={casualBurn} tone="amber" label="Casual leave" sublabel={`${casualYear} of ${totalCasualQuota} days`} size={84} />
-          <RingGauge value={sickBurn} tone="brand" label="Sick leave" sublabel={`${sickYear} of ${totalSickQuota} days`} size={84} />
+          <RingGauge value={casualBurn} tone="amber" label="Casual leave" sublabel={`${casualYear} of ${totalCasualQuota} days`} size={76} />
+          <RingGauge value={sickBurn} tone="brand" label="Sick leave" sublabel={`${sickYear} of ${totalSickQuota} days`} size={76} />
         </div>
-        <div className="space-y-2 border-t border-slate-100 pt-4">
+        <div className="space-y-2 border-t border-slate-100 pt-3">
           <div className="flex items-baseline justify-between">
             <span className="text-xs font-medium text-slate-500">Total used</span>
             <span className="nums text-sm font-semibold text-slate-900">
@@ -74,24 +75,102 @@ export async function DashboardUtilization({ today }: { today: Date }) {
     prisma.projectAssignment.findMany({ where: { employee: { status: "ACTIVE" }, OR: [{ endDate: null }, { endDate: { gte: today } }] }, select: { employeeId: true }, distinct: ["employeeId"] }),
   ]);
 
-  const benchCount = Math.max(0, activeCount - assigned.length);
-  const utilization = activeCount ? Math.round((assigned.length / activeCount) * 100) : 0;
-  const projectBars: Bar[] = projects.map((p) => ({ label: p.name, count: p._count.assignments, href: `/hr/projects/${p.id}` }));
+  const deployed = assigned.length;
+  const benchCount = Math.max(0, activeCount - deployed);
+  const utilization = activeCount ? Math.round((deployed / activeCount) * 100) : 0;
+
+  // Top projects by staffed headcount — the list answers "where are people
+  // committed", so it ranks by count (name order was arbitrary) and caps at 5
+  // with an explicit "+N more" link rather than a silently scrolling tail.
+  const TOP = 5;
+  const ranked = [...projects].sort(
+    (a, b) => b._count.assignments - a._count.assignments || a.name.localeCompare(b.name)
+  );
+  const top: Bar[] = ranked
+    .slice(0, TOP)
+    .map((p) => ({ label: p.name, count: p._count.assignments, href: `/hr/projects/${p.id}` }));
+  const moreCount = ranked.length - top.length;
 
   return (
     <Card className="h-full">
-      <CardHeader title="Project utilization" subtitle={`${utilization}% deployed · ${benchCount} on the bench · ${projects.length} active projects`} />
-      <CardBody>
-        {projectBars.length === 0 ? (
-          <EmptyState
-            icon={<FolderKanban className="h-6 w-6" />}
-            title="No active projects"
-            description="Assign employees to a project to see utilization here."
-          />
-        ) : (
-          <BarList items={projectBars.map((b) => ({ label: b.label, value: b.count, href: b.href }))} />
-        )}
-      </CardBody>
+      <CardHeader
+        title="Project utilization"
+        subtitle="Active staff on at least one live project"
+        action={
+          <Link
+            href="/hr/projects"
+            className="press inline-flex items-center gap-1 text-sm font-medium text-brand-700 transition-colors hover:text-brand"
+          >
+            Projects
+            <ChevronRight className="h-4 w-4" />
+          </Link>
+        }
+      />
+      {activeCount === 0 ? (
+        <EmptyState
+          icon={<Users className="h-6 w-6" />}
+          title="No active employees"
+          description="Utilization appears once there are active employees to deploy."
+        />
+      ) : (
+        <CardBody className="space-y-4 px-6 py-5">
+          <div className="flex justify-center">
+            <RingGauge
+              value={utilization}
+              tone="brand"
+              label="Deployed"
+              sublabel={`${deployed} of ${activeCount} active staff`}
+              size={84}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-2.5">
+            <div className="rounded-xl bg-emerald-50/60 p-2.5">
+              <div className="flex items-center gap-1.5 text-[11px] font-medium text-emerald-700">
+                <FolderKanban className="h-3.5 w-3.5" aria-hidden="true" />
+                On projects
+              </div>
+              <div className="nums mt-1 text-xl font-semibold leading-none text-slate-900">{deployed}</div>
+            </div>
+            <div className="rounded-xl bg-amber-50/60 p-2.5">
+              <div className="flex items-center gap-1.5 text-[11px] font-medium text-amber-700">
+                <Armchair className="h-3.5 w-3.5" aria-hidden="true" />
+                On bench
+              </div>
+              <div className="nums mt-1 text-xl font-semibold leading-none text-slate-900">{benchCount}</div>
+            </div>
+          </div>
+
+          <div className="space-y-3 border-t border-slate-100 pt-3">
+            <div className="flex items-baseline justify-between">
+              <span className="text-xs font-medium text-slate-500">Top projects by headcount</span>
+              <span className="nums text-xs text-slate-400">
+                {projects.length} active project{projects.length === 1 ? "" : "s"}
+              </span>
+            </div>
+            {top.length === 0 ? (
+              <p className="text-sm text-slate-400">
+                No active projects yet —{" "}
+                <Link href="/hr/projects" className="font-medium text-brand-700 hover:text-brand">
+                  view projects
+                </Link>
+                .
+              </p>
+            ) : (
+              <BarList items={top.map((b) => ({ label: b.label, value: b.count, href: b.href }))} />
+            )}
+            {moreCount > 0 && (
+              <Link
+                href="/hr/projects"
+                className="press inline-flex items-center gap-1 text-xs font-medium text-brand-700 transition-colors hover:text-brand"
+              >
+                +{moreCount} more project{moreCount === 1 ? "" : "s"}
+                <ChevronRight className="h-3.5 w-3.5" />
+              </Link>
+            )}
+          </div>
+        </CardBody>
+      )}
     </Card>
   );
 }

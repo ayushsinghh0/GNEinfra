@@ -1,70 +1,71 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, FormEvent } from "react";
-import { Search } from "lucide-react";
-import { Button, Select, inputCls, cn } from "@/components/ui";
+import { useState, useTransition, FormEvent } from "react";
+import { Search, X } from "lucide-react";
+import { Button, Spinner, inputCls, cn } from "@/components/ui";
+import { buildQuery } from "@/lib/hr-filters";
 
-const STATUSES = ["", "SUBMITTED", "UNDER_REVIEW", "APPROVED", "REJECTED"];
-
+// Search box for /scm/vendors. Status filtering moved to SavedViewPills, so
+// this only owns `q` — it preserves the current `?status=` scope via
+// buildQuery instead of clobbering it (mirrors EmployeeSearch).
 export default function VendorSearch() {
   const router = useRouter();
   const params = useSearchParams();
   const urlQ = params.get("q") ?? "";
-  const urlStatus = params.get("status") ?? "";
-
   const [q, setQ] = useState(urlQ);
-  const [status, setStatus] = useState(urlStatus);
+  const [isPending, startTransition] = useTransition();
 
-  // Re-sync inputs when the URL changes (e.g. a dashboard card link sets a
-  // filter). React pattern: adjust state during render, not in an effect.
-  const [seen, setSeen] = useState(`${urlQ}|${urlStatus}`);
-  if (seen !== `${urlQ}|${urlStatus}`) {
-    setSeen(`${urlQ}|${urlStatus}`);
+  // Re-sync when the URL changes (e.g. a dashboard card link or "Clear
+  // filters" resets it). Adjust state during render, not in an effect.
+  const [seen, setSeen] = useState(urlQ);
+  if (seen !== urlQ) {
+    setSeen(urlQ);
     setQ(urlQ);
-    setStatus(urlStatus);
   }
 
-  function apply(nextQ: string, nextStatus: string) {
-    const sp = new URLSearchParams();
-    if (nextQ.trim()) sp.set("q", nextQ.trim());
-    if (nextStatus) sp.set("status", nextStatus);
-    const qs = sp.toString();
-    router.push(qs ? `/scm/vendors?${qs}` : "/scm/vendors");
+  function apply(nextQ: string) {
+    const href = buildQuery("/scm/vendors", {
+      q: nextQ,
+      status: params.get("status") ?? undefined,
+    });
+    startTransition(() => router.push(href));
   }
 
   function onSubmit(e: FormEvent) {
     e.preventDefault();
-    apply(q, status);
+    apply(q);
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-3 sm:flex-row sm:items-center">
+    <form onSubmit={onSubmit} role="search" className="flex items-center gap-3">
       <div className="relative flex-1">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+        <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Search company, email, GST or PAN…"
-          className={cn(inputCls, "pl-9")}
+          type="search"
+          enterKeyHint="search"
+          placeholder="Search company, contact, email, GST or PAN…"
+          aria-label="Search vendors"
+          className={cn(inputCls, "pl-10 pr-10 [&::-webkit-search-cancel-button]:hidden")}
         />
+        {q && (
+          <button
+            type="button"
+            onClick={() => {
+              setQ("");
+              apply("");
+            }}
+            aria-label="Clear search"
+            className="press absolute right-2 top-1/2 grid h-7 w-7 -translate-y-1/2 place-items-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
       </div>
-      <Select
-        value={status}
-        onChange={(e) => {
-          setStatus(e.target.value);
-          apply(q, e.target.value);
-        }}
-        className="sm:w-48"
-      >
-        {STATUSES.map((s) => (
-          <option key={s} value={s}>
-            {s ? s.replace(/_/g, " ") : "All statuses"}
-          </option>
-        ))}
-      </Select>
-      <Button type="submit" variant="primary" className="sm:w-auto">
-        <Search className="h-4 w-4" />
+      <Button type="submit" variant="secondary" className="shrink-0">
+        {isPending ? <Spinner /> : <Search className="h-4 w-4" />}
         Search
       </Button>
     </form>

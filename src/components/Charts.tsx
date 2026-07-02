@@ -539,7 +539,9 @@ export function RingGauge({
   const dash = (v / 100) * C;
 
   return (
-    <div className="flex flex-col items-center text-center" style={{ width: size }}>
+    // min-width (not fixed width): the label column may run wider than the
+    // ring so short sublabels ("5 of 6 active staff") stay on one line.
+    <div className="flex flex-col items-center text-center" style={{ minWidth: size, maxWidth: size * 2 }}>
       <svg viewBox="0 0 100 100" width={size} height={size} role="img" aria-label={`${label}: ${v}%`}>
         {/* Rotate just the ring geometry (not the text) so the arc starts at 12 o'clock
             while the center label stays upright. */}

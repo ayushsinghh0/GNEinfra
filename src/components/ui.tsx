@@ -347,6 +347,7 @@ export function StatCard({
   spark,
   href,
   onClick,
+  size = "md",
   className,
 }: {
   label: string;
@@ -356,24 +357,27 @@ export function StatCard({
   spark?: number; // 0–100 — optional progress whisker
   href?: string;
   onClick?: () => void;
+  size?: "md" | "sm"; // sm = dense dashboard tiles
   className?: string;
 }) {
   const t = STAT_TONES[tone];
+  const sm = size === "sm";
+  const pad = sm ? "p-4" : "p-5";
   const inner = (
     <>
       <div className="flex items-center justify-between">
         <span className="text-[13px] font-medium text-slate-500">{label}</span>
         {icon && (
-          <span className={cn("grid h-9 w-9 place-items-center rounded-xl", t.chip)}>
+          <span className={cn("grid place-items-center", sm ? "h-8 w-8 rounded-lg" : "h-9 w-9 rounded-xl", t.chip)}>
             {icon}
           </span>
         )}
       </div>
-      <div className="nums mt-3 text-[28px] font-semibold leading-none text-slate-900">
+      <div className={cn("nums font-semibold leading-none text-slate-900", sm ? "mt-2 text-[22px]" : "mt-3 text-[28px]")}>
         {value}
       </div>
       {typeof spark === "number" && (
-        <div className="mt-3.5 h-1 overflow-hidden rounded-full bg-slate-100">
+        <div className={cn("h-1 overflow-hidden rounded-full bg-slate-100", sm ? "mt-2.5" : "mt-3.5")}>
           <div
             className={cn("h-full rounded-full bg-gradient-to-r", t.spark)}
             style={{ width: `${Math.max(0, Math.min(100, spark))}%` }}
@@ -385,7 +389,8 @@ export function StatCard({
   if (href) {
     const cls = cn(
       cardCls,
-      "lift p-5",
+      "lift",
+      pad,
       href && "block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40",
       className
     );
@@ -394,13 +399,14 @@ export function StatCard({
   if (onClick) {
     const cls = cn(
       cardCls,
-      "lift p-5",
+      "lift",
+      pad,
       "w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40",
       className
     );
     return <button type="button" onClick={onClick} className={cls}>{inner}</button>;
   }
-  const cls = cn(cardCls, "lift p-5", className);
+  const cls = cn(cardCls, "lift", pad, className);
   return <div className={cls}>{inner}</div>;
 }
 

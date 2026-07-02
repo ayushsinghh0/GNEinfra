@@ -1,12 +1,22 @@
 import { Suspense } from "react";
+import Link from "next/link";
 import { Prisma } from "@prisma/client";
-import { Building2 } from "lucide-react";
+import { Building2, FileText, Send, Wrench } from "lucide-react";
 import { prisma } from "@/lib/prisma";
-import { requirePageRole, VENDOR_VIEW } from "@/lib/rbac";
+import { requirePageRole, VENDOR_VIEW, VENDOR_WRITE } from "@/lib/rbac";
 import { fmtDate } from "@/lib/format";
 import VendorSearch from "@/components/VendorSearch";
-import VendorRow from "@/components/VendorRow";
-import { PageHeader, Card, CardBody, EmptyState, thCls, theadRowCls } from "@/components/ui";
+import SavedViewPills from "@/components/hr/SavedViewPills";
+import { DataTable, type Column } from "@/components/DataTable";
+import {
+  PageHeader,
+  Card,
+  CardBody,
+  EmptyState,
+  EntityLink,
+  StatusChip,
+  btn,
+} from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +27,8 @@ export default async function VendorsPage({
 }: {
   searchParams: Promise<{ q?: string; status?: string }>;
 }) {
-  await requirePageRole(VENDOR_VIEW);
+  const viewer = await requirePageRole(VENDOR_VIEW);
+  const canWrite = VENDOR_WRITE.includes(viewer.role);
 
   const { q, status } = await searchParams;
 
@@ -42,72 +53,152 @@ export default async function VendorsPage({
     include: { _count: { select: { services: true, documents: true } } },
   });
 
+  const hasFilters = Boolean((q && q.trim()) || (status && VALID_STATUS.has(status)));
+
+  type Vendor = (typeof vendors)[number];
+  const columns: Column<Vendor>[] = [
+    {
+      key: "company",
+      header: "Company",
+      titleInCard: true,
+      cell: (v) => (
+        <span className="relative z-10">
+          <EntityLink
+            href={`/scm/vendors/${v.id}`}
+            name={v.companyName}
+            code={v.vendorCode ?? undefined}
+          />
+        </span>
+      ),
+    },
+    {
+      key: "contact",
+      header: "Contact",
+      priority: "lg",
+      cardLabel: "Contact",
+      cell: (v) => v.contactPerson || "—",
+    },
+    {
+      key: "email",
+      header: "Email",
+      priority: "md",
+      cardLabel: "Email",
+      cell: (v) => <span className="text-slate-600">{v.email}</span>,
+    },
+    {
+      key: "ids",
+      header: "GST / PAN",
+      priority: "xl",
+      cardLabel: "GST / PAN",
+      cell: (v) =>
+        v.gstNo || v.panNo ? (
+          <span className="block leading-tight">
+            <span className="nums block truncate font-mono text-xs text-slate-600">{v.gstNo || "—"}</span>
+            <span className="nums block truncate font-mono text-xs text-slate-400">{v.panNo || "—"}</span>
+          </span>
+        ) : (
+          "—"
+        ),
+    },
+    {
+      key: "activity",
+      header: "Activity",
+      priority: "lg",
+      cardLabel: "Activity",
+      cell: (v) => (
+        <span className="inline-flex items-center gap-3 text-xs text-slate-500">
+          <span className="inline-flex items-center gap-1" title={`${v._count.services} service(s)`}>
+            <Wrench className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" />
+            {v._count.services}
+          </span>
+          <span className="inline-flex items-center gap-1" title={`${v._count.documents} document(s)`}>
+            <FileText className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" />
+            {v._count.documents}
+          </span>
+        </span>
+      ),
+    },
+    {
+      key: "status",
+      header: "Status",
+      cardLabel: "Status",
+      cell: (v) => <StatusChip status={v.status} />,
+    },
+    {
+      key: "submitted",
+      header: "Submitted",
+      priority: "md",
+      cardLabel: "Submitted",
+      cell: (v) => <span className="nums text-slate-500">{fmtDate(v.createdAt)}</span>,
+    },
+  ];
+
   return (
     <>
-      <PageHeader title="Vendors" subtitle={`${vendors.length} result(s)`} />
+      <PageHeader
+        title="Vendors"
+        subtitle={`${vendors.length} result(s)`}
+        breadcrumbs={[{ label: "SCM", href: "/scm" }, { label: "Vendors" }]}
+      >
+        {canWrite && (
+          <Link href="/scm/invites" className={btn("primary", "sm")}>
+            <Send className="h-4 w-4" />
+            Invite vendor
+          </Link>
+        )}
+      </PageHeader>
 
-      <div className="p-8 space-y-6">
+      <div className="space-y-6 p-6 sm:p-8">
         <Card>
-          <CardBody className="p-4">
-            <Suspense fallback={<div className="h-10" />}>
+          <CardBody className="space-y-3 p-4">
+            <Suspense fallback={<div className="h-8" />}>
+              <SavedViewPills
+                basePath="/scm/vendors"
+                views={[
+                  { value: "", label: "All" },
+                  { value: "SUBMITTED", label: "Submitted" },
+                  { value: "UNDER_REVIEW", label: "Under review" },
+                  { value: "APPROVED", label: "Approved" },
+                  { value: "REJECTED", label: "Rejected" },
+                ]}
+              />
+            </Suspense>
+            <Suspense fallback={<div className="h-11" />}>
               <VendorSearch />
             </Suspense>
           </CardBody>
         </Card>
 
         <Card className="overflow-hidden">
-          {vendors.length === 0 ? (
-            <EmptyState
-              icon={<Building2 className="h-6 w-6" />}
-              title="No vendors found"
-              description="No vendors match your search. Try a different term or status filter."
-            />
-          ) : (
-            <div className="overflow-x-auto">
-            <table className="w-full min-w-[920px] table-fixed text-sm">
-              <colgroup>
-                <col className="w-[19%]" />
-                <col className="w-[20%]" />
-                <col className="w-[15%]" />
-                <col className="w-[11%]" />
-                <col className="w-[11%]" />
-                <col className="w-[13%]" />
-                <col className="w-[11%]" />
-              </colgroup>
-              <thead>
-                <tr className={theadRowCls}>
-                  <th className={thCls}>Company</th>
-                  <th className={thCls}>Email</th>
-                  <th className={thCls}>GST / PAN</th>
-                  <th className={thCls}>State</th>
-                  <th className={thCls}>Activity</th>
-                  <th className={thCls}>Status</th>
-                  <th className={thCls}>Submitted</th>
-                </tr>
-              </thead>
-              <tbody>
-                {vendors.map((v) => (
-                  <VendorRow
-                    key={v.id}
-                    v={{
-                      id: v.id,
-                      companyName: v.companyName,
-                      contactPerson: v.contactPerson,
-                      email: v.email,
-                      gstNo: v.gstNo ?? "",
-                      panNo: v.panNo ?? "",
-                      state: v.state,
-                      services: v._count.services,
-                      documents: v._count.documents,
-                      status: v.status,
-                      submitted: fmtDate(v.createdAt),
-                    }}
-                  />
-                ))}
-              </tbody>
-            </table>
-            </div>
-          )}
+          <DataTable
+            rows={vendors}
+            columns={columns}
+            rowKey={(v) => v.id}
+            href={(v) => `/scm/vendors/${v.id}`}
+            empty={
+              <EmptyState
+                icon={<Building2 className="h-6 w-6" />}
+                title={hasFilters ? "No vendors found" : "No vendors yet"}
+                description={
+                  hasFilters
+                    ? "No vendors match your search. Try a different term or status."
+                    : "Invite your first vendor — their registration will appear here."
+                }
+                action={
+                  hasFilters ? (
+                    <Link href="/scm/vendors" className={btn("secondary", "sm")}>
+                      Clear filters
+                    </Link>
+                  ) : canWrite ? (
+                    <Link href="/scm/invites" className={btn("primary", "sm")}>
+                      <Send className="h-4 w-4" />
+                      Invite a vendor
+                    </Link>
+                  ) : undefined
+                }
+              />
+            }
+          />
         </Card>
       </div>
     </>

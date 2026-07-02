@@ -100,7 +100,7 @@ export default function TrendBoard({ series }: { series: TrendSeries }) {
           />
         }
       />
-      <CardBody className="space-y-4">
+      <CardBody className="space-y-4 px-6 py-5">
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4" role="group" aria-label="Metric">
           {METRICS.map((m) => {
             const selected = metric === m.value;

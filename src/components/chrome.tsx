@@ -179,6 +179,25 @@ export function BrandHero({
   );
 }
 
+/* ── CanvasAtmosphere — whisper-quiet backdrop for dashboard canvases ────── */
+// Sits BEHIND opaque cards (negative z inside an `isolate` parent): a faint
+// dot-grid plus soft brand blobs that only show in the gutters between cards.
+// Data always sits on solid white surfaces, so the daylight-legibility
+// guardrail holds; purely static (no motion to gate).
+export function CanvasAtmosphere({ className }: { className?: string }) {
+  return (
+    <div
+      aria-hidden="true"
+      className={cn("pointer-events-none absolute inset-0 -z-10 overflow-hidden", className)}
+    >
+      <div className="gne-dots absolute inset-0 opacity-60" />
+      <Blob className="-right-28 -top-24 h-96 w-96" color="rgba(20,184,166,0.10)" />
+      <Blob className="-left-32 top-[38%] h-[28rem] w-[28rem]" color="rgba(245,158,11,0.07)" />
+      <Blob className="-bottom-32 right-1/4 h-96 w-96" color="rgba(20,184,166,0.06)" />
+    </div>
+  );
+}
+
 /* ── SuccessCheck — self-drawing ring + tick (the "earned" moment) ───────── */
 export function SuccessCheck({
   className,

@@ -3,11 +3,11 @@ import { prisma } from "@/lib/prisma";
 import { requirePageRole, VENDOR_VIEW, VENDOR_WRITE } from "@/lib/rbac";
 import { ComingSoon } from "@/components/ComingSoon";
 import { fmtDate } from "@/lib/format";
-import Badge from "@/components/Badge";
 import InviteForm from "@/components/InviteForm";
 import CountUp from "@/components/CountUp";
 import { AreaChart, Donut } from "@/components/Charts";
 import { BrandHero } from "@/components/chrome";
+import { DataTable, type Column } from "@/components/DataTable";
 import {
   Building2,
   Clock,
@@ -23,6 +23,7 @@ import {
   ReceiptText,
   Truck,
   Boxes,
+  Wrench,
 } from "lucide-react";
 import {
   StatCard,
@@ -30,11 +31,8 @@ import {
   CardHeader,
   CardBody,
   EmptyState,
-  Table,
-  thCls,
-  tdCls,
-  theadRowCls,
-  trCls,
+  EntityLink,
+  StatusChip,
 } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
@@ -96,6 +94,62 @@ export default async function DashboardPage() {
 
   const pct = (n: number) => (total ? Math.round((n / total) * 100) : 0);
 
+  type Vendor = (typeof recent)[number];
+  const recentColumns: Column<Vendor>[] = [
+    {
+      key: "company",
+      header: "Company",
+      titleInCard: true,
+      cell: (v) => (
+        <span className="relative z-10">
+          <EntityLink
+            href={`/scm/vendors/${v.id}`}
+            name={v.companyName}
+            code={v.vendorCode ?? undefined}
+          />
+        </span>
+      ),
+    },
+    {
+      key: "email",
+      header: "Email",
+      priority: "md",
+      cardLabel: "Email",
+      cell: (v) => <span className="text-slate-600">{v.email}</span>,
+    },
+    {
+      key: "activity",
+      header: "Activity",
+      priority: "lg",
+      cardLabel: "Activity",
+      cell: (v) => (
+        <span className="inline-flex items-center gap-3 text-xs text-slate-500">
+          <span className="inline-flex items-center gap-1" title={`${v._count.services} service(s)`}>
+            <Wrench className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" />
+            {v._count.services}
+          </span>
+          <span className="inline-flex items-center gap-1" title={`${v._count.documents} document(s)`}>
+            <FileText className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" />
+            {v._count.documents}
+          </span>
+        </span>
+      ),
+    },
+    {
+      key: "status",
+      header: "Status",
+      cardLabel: "Status",
+      cell: (v) => <StatusChip status={v.status} />,
+    },
+    {
+      key: "submitted",
+      header: "Submitted",
+      priority: "md",
+      cardLabel: "Submitted",
+      cell: (v) => <span className="nums text-slate-500">{fmtDate(v.createdAt)}</span>,
+    },
+  ];
+
   return (
     <>
       <BrandHero
@@ -109,21 +163,45 @@ export default async function DashboardPage() {
       />
 
       <div className="space-y-6 p-6 sm:p-8">
-        {/* KPI bento */}
+        {/* KPI bento — every tile drills into the list it summarizes. */}
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
-          <Link href="/scm/vendors" className="block rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas">
-            <StatCard label="Total vendors" value={<CountUp value={total} />} tone="brand" spark={100} icon={<Building2 className="h-[18px] w-[18px]" />} />
-          </Link>
-          <Link href="/scm/vendors?status=SUBMITTED" className="block rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas">
-            <StatCard label="Awaiting review" value={<CountUp value={awaiting} />} tone="amber" spark={pct(awaiting)} icon={<Clock className="h-[18px] w-[18px]" />} />
-          </Link>
-          <Link href="/scm/vendors?status=APPROVED" className="block rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas">
-            <StatCard label="Approved" value={<CountUp value={approved} />} tone="emerald" spark={pct(approved)} icon={<CheckCircle className="h-[18px] w-[18px]" />} />
-          </Link>
-          <Link href="/scm/invites" className="block rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas">
-            <StatCard label="Pending invites" value={<CountUp value={pendingInvites} />} tone="blue" icon={<Mail className="h-[18px] w-[18px]" />} />
-          </Link>
-          <StatCard label="This month" value={<CountUp value={thisMonth} />} tone="slate" icon={<CalendarDays className="h-[18px] w-[18px]" />} />
+          <StatCard
+            label="Total vendors"
+            value={<CountUp value={total} />}
+            tone="brand"
+            spark={100}
+            icon={<Building2 className="h-[18px] w-[18px]" />}
+            href="/scm/vendors"
+          />
+          <StatCard
+            label="Awaiting review"
+            value={<CountUp value={awaiting} />}
+            tone="amber"
+            spark={pct(awaiting)}
+            icon={<Clock className="h-[18px] w-[18px]" />}
+            href="/scm/vendors?status=SUBMITTED"
+          />
+          <StatCard
+            label="Approved"
+            value={<CountUp value={approved} />}
+            tone="emerald"
+            spark={pct(approved)}
+            icon={<CheckCircle className="h-[18px] w-[18px]" />}
+            href="/scm/vendors?status=APPROVED"
+          />
+          <StatCard
+            label="Pending invites"
+            value={<CountUp value={pendingInvites} />}
+            tone="blue"
+            icon={<Mail className="h-[18px] w-[18px]" />}
+            href="/scm/invites?status=PENDING"
+          />
+          <StatCard
+            label="This month"
+            value={<CountUp value={thisMonth} />}
+            tone="slate"
+            icon={<CalendarDays className="h-[18px] w-[18px]" />}
+          />
         </div>
 
         {/* Charts */}
@@ -161,7 +239,7 @@ export default async function DashboardPage() {
 
         {VENDOR_WRITE.includes(viewer.role) && <InviteForm />}
 
-        <Card>
+        <Card className="overflow-hidden">
           <CardHeader
             title="Recent vendors"
             action={
@@ -174,68 +252,30 @@ export default async function DashboardPage() {
               </Link>
             }
           />
-          {recent.length === 0 ? (
-            <EmptyState
-              icon={<Inbox className="h-6 w-6" />}
-              title="No vendors yet"
-              description="Invite a vendor above to get started — their submissions will appear here."
-            />
-          ) : (
-            <CardBody className="pt-0">
-              <div className="overflow-x-auto">
-                <Table>
-                  <thead>
-                    <tr className={theadRowCls}>
-                      <th className={thCls}>Company</th>
-                      <th className={thCls}>Email</th>
-                      <th className={thCls}>GST</th>
-                      <th className={thCls}>Services</th>
-                      <th className={thCls}>Status</th>
-                      <th className={thCls}>Submitted</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {recent.map((v) => (
-                      <tr key={v.id} className={trCls}>
-                        <td className={tdCls}>
-                          <Link
-                            href={`/scm/vendors/${v.id}`}
-                            className="font-medium text-slate-900 transition-colors hover:text-brand-700"
-                          >
-                            {v.companyName}
-                          </Link>
-                        </td>
-                        <td className={tdCls}>
-                          <span className="text-slate-600">{v.email}</span>
-                        </td>
-                        <td className={tdCls}>
-                          <span className="nums text-slate-600">{v.gstNo || "—"}</span>
-                        </td>
-                        <td className={tdCls}>
-                          <span className="nums text-slate-500">{v._count.services}</span>
-                        </td>
-                        <td className={tdCls}>
-                          <Badge value={v.status} />
-                        </td>
-                        <td className={tdCls}>
-                          <span className="nums text-slate-500">{fmtDate(v.createdAt)}</span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              </div>
-            </CardBody>
-          )}
+          <DataTable
+            rows={recent}
+            columns={recentColumns}
+            rowKey={(v) => v.id}
+            href={(v) => `/scm/vendors/${v.id}`}
+            empty={
+              <EmptyState
+                icon={<Inbox className="h-6 w-6" />}
+                title="No vendors yet"
+                description="Invite a vendor above to get started — their submissions will appear here."
+              />
+            }
+          />
         </Card>
 
-        <ComingSoon items={[
-          { label: "Purchase Requisition", icon: ClipboardList, desc: "Raise and track material requisitions." },
-          { label: "RFQ", icon: FileText, desc: "Request quotations from vendors." },
-          { label: "Purchase Order", icon: ReceiptText, desc: "Issue and manage purchase orders." },
-          { label: "GRN", icon: Truck, desc: "Goods receipt against POs." },
-          { label: "Inventory", icon: Boxes, desc: "Materials receipt, store and issue." },
-        ]} />
+        <ComingSoon
+          items={[
+            { label: "Purchase Requisition", icon: ClipboardList, desc: "Raise and track material requisitions." },
+            { label: "RFQ", icon: FileText, desc: "Request quotations from vendors." },
+            { label: "Purchase Order", icon: ReceiptText, desc: "Issue and manage purchase orders." },
+            { label: "GRN", icon: Truck, desc: "Goods receipt against POs." },
+            { label: "Inventory", icon: Boxes, desc: "Materials receipt, store and issue." },
+          ]}
+        />
       </div>
     </>
   );

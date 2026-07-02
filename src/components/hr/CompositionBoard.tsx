@@ -55,10 +55,10 @@ export default function CompositionBoard({
   const total = data.reduce((s, b) => s + b.count, 0);
 
   return (
-    <Card>
+    <Card className="h-full">
       <CardHeader title="Workforce composition" subtitle="Active headcount" />
-      <CardBody>
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+      <CardBody className="px-6 py-5">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <Segmented
             ariaLabel="Composition dimension"
             options={OPTIONS}

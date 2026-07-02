@@ -4,7 +4,7 @@ import { Users, Wallet, CalendarCheck, UserMinus, Clock, FolderKanban, CalendarC
 import { prisma } from "@/lib/prisma";
 import { requirePageRole, HR_VIEW } from "@/lib/rbac";
 import { fmtINR } from "@/lib/format";
-import { BrandHero } from "@/components/chrome";
+import { BrandHero, CanvasAtmosphere } from "@/components/chrome";
 import { StatCard, Skeleton, Card, CardHeader, CardBody } from "@/components/ui";
 import { DeltaBadge } from "@/components/Charts";
 import { pctDelta } from "@/lib/hr-forecast";
@@ -120,28 +120,34 @@ export default async function HrPage({
 
   return (
     <>
-      <BrandHero variant="mint" size="sm" wave={false} eyebrow="Human Resources" title="HR Dashboard" subtitle="Workforce, payroll and attendance — with trend projections." className="px-6 pb-7 pt-9 sm:px-8">
-        <div className="mt-4 flex flex-wrap items-center gap-2">
+      <BrandHero variant="mint" size="sm" wave={false} eyebrow="Human Resources" title="HR Dashboard" subtitle="Workforce, payroll and attendance — with trend projections." className="px-4 pb-6 pt-8 sm:px-6">
+        <div className="mt-3 flex flex-wrap items-center gap-2">
           <span className="text-xs font-medium uppercase tracking-wide text-slate-500">Viewing</span>
           <MonthPicker year={refYear} month={refMonth} basePath="/hr" />
         </div>
       </BrandHero>
-      <div className="space-y-5 p-6 sm:p-8">
+      <div className="relative isolate space-y-4 p-4 sm:p-6">
+        {/* Whisper-quiet backdrop — dots/blobs live in the gutters BEHIND the
+            opaque cards (see CanvasAtmosphere), never behind data itself. */}
+        <CanvasAtmosphere />
         {/* 12-col bento (lg+) — 3 rows, each pair of cells summing to 12 columns so the
             grid packs with zero dead space; single column on mobile, same row order.
             Row 1: KPI cluster (8) + Leave-burn rings (4). Row 2: Trends (8) + Project
             utilization (4). Row 3: Workforce composition (7) + "Today" pulse card (5). */}
-        <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
           {/* Row 1A — KPI cluster. Deltas paint before the heavier sections below
               stream in. Headcount/payroll/attendance-rate/attrition re-anchor to the
               reference month above; present/on-leave live in the Today pulse card
               (Row 3B) and stay real-time "today" regardless of the picker. */}
           <div className="lg:col-span-8">
-            <div className="grid grid-cols-2 gap-4">
-              <StatCard tone="brand" icon={<Users className="h-4 w-4" />} label={`Headcount · ${cur.label} ${refYear}`}
+            {/* h-full + grid-rows-2 so the 2×2 cluster always fills the row the
+                taller Leave-burn card sets — no dead canvas under the tiles. Each
+                tile distributes its content (label top, number bottom). */}
+            <div className="grid h-full grid-cols-2 grid-rows-2 gap-4">
+              <StatCard className="flex flex-col justify-between" tone="brand" icon={<Users className="h-4 w-4" />} label={`Headcount · ${cur.label} ${refYear}`}
                 href="/hr/employees?status=ACTIVE"
                 value={<span className="flex flex-wrap items-baseline gap-2"><span>{headcountCur}</span>{showHeadcountDelta && <DeltaBadge value={headcountDelta} />}</span>} />
-              <StatCard tone="emerald" icon={<Wallet className="h-4 w-4" />} label={`Payroll · ${periods[lastActual].label} ${periods[lastActual].year}`}
+              <StatCard className="flex flex-col justify-between" tone="emerald" icon={<Wallet className="h-4 w-4" />} label={`Payroll · ${periods[lastActual].label} ${periods[lastActual].year}`}
                 href={`/hr/payout?year=${periods[lastActual].year}&month=${periods[lastActual].month}`}
                 value={
                   <>
@@ -152,7 +158,7 @@ export default async function HrPage({
                     {payrollAnchorOngoing && <p className="mt-1 text-xs text-slate-500">so far this month</p>}
                   </>
                 } />
-              <StatCard tone="blue" icon={<CalendarCheck className="h-4 w-4" />} label={isCurrentRefMonth ? "Attendance rate (MTD)" : `Attendance rate · ${cur.label}`}
+              <StatCard className="flex flex-col justify-between" tone="blue" icon={<CalendarCheck className="h-4 w-4" />} label={isCurrentRefMonth ? "Attendance rate (MTD)" : `Attendance rate · ${cur.label}`}
                 href={`/hr/attendance?year=${refYear}&month=${refMonth}`}
                 spark={attCurHasRows ? attCur.rate : undefined}
                 value={
@@ -168,7 +174,7 @@ export default async function HrPage({
                     )}
                   </>
                 } />
-              <StatCard tone="amber" icon={<UserMinus className="h-4 w-4" />} label={`Attrition · ${cur.label} ${refYear}`}
+              <StatCard className="flex flex-col justify-between" tone="amber" icon={<UserMinus className="h-4 w-4" />} label={`Attrition · ${cur.label} ${refYear}`}
                 href="/hr/employees?status=INACTIVE"
                 value={<span className="flex flex-wrap items-baseline gap-2"><span>{leaversCur}</span>{showAttritionDelta && <DeltaBadge value={attritionDelta} invert />}</span>} />
             </div>
@@ -210,7 +216,7 @@ export default async function HrPage({
           <div className="lg:col-span-5">
             <Card className="h-full">
               <CardHeader title="Today" subtitle={todayHasRows ? `${presentToday} present · ${onLeaveToday} on leave` : "Attendance not marked yet"} />
-              <CardBody className="space-y-5">
+              <CardBody className="space-y-4 px-6 py-5">
                 <div className="grid grid-cols-2 gap-3">
                   <Link
                     href={`/hr/attendance?year=${todayY}&month=${todayM}`}
@@ -240,7 +246,7 @@ export default async function HrPage({
                   </Link>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 border-t border-slate-100 pt-4">
+                <div className="grid grid-cols-2 gap-2 border-t border-slate-100 pt-3">
                   {quickLinks.map(({ href, label, icon: Icon }) => (
                     <Link
                       key={href}
