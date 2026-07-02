@@ -139,7 +139,7 @@ export default async function DashboardPage() {
               subtitle="New vendors per month (last 6 months)"
             />
             <CardBody>
-              <AreaChart data={months} />
+              <AreaChart data={months} ariaLabel="New vendor registrations over the last 6 months" />
             </CardBody>
           </Card>
 

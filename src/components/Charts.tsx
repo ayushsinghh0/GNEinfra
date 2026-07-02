@@ -20,7 +20,7 @@ function smoothPath(pts: { x: number; y: number }[]) {
 
 export function AreaChart({
   data,
-  ariaLabel = "New vendor registrations over the last 6 months",
+  ariaLabel = "Trend chart",
 }: {
   data: { label: string; value: number }[];
   ariaLabel?: string;
@@ -32,6 +32,11 @@ export function AreaChart({
   const innerH = H - pad.t - pad.b;
   const max = Math.max(1, ...data.map((d) => d.value));
   const baseY = pad.t + innerH;
+  // No live width to measure (server-rendered SVG) — thin x-axis labels deterministically
+  // once there are enough points to collide (e.g. a 12-month window) rather than at every
+  // point, which crowds narrow viewports. The last point's label always stays so the most
+  // recent period is never hidden.
+  const labelStep = data.length > 8 ? 2 : 1;
 
   const pts = data.map((d, i) => {
     const x = pad.l + (data.length <= 1 ? innerW / 2 : (i / (data.length - 1)) * innerW);
@@ -86,16 +91,18 @@ export function AreaChart({
 
       {pts.map((p, i) => (
         <g key={i}>
-          {/* Persistent value label — visible on touch/keyboard/everyone (no hover-only). */}
-          {p.value > 0 && (
-            <text x={p.x} y={p.y - 12} textAnchor="middle" fontSize="11" fontWeight="700" fill="#0f766e" className="nums">
-              {p.value}
+          {/* Persistent value label — visible on touch/keyboard/everyone (no hover-only).
+              Always rendered, including a genuine "0" — omitting it made a real zero data
+              point look unlabelled/missing. */}
+          <text x={p.x} y={p.y - 12} textAnchor="middle" fontSize="11" fontWeight="700" fill="#0f766e" className="nums">
+            {p.value}
+          </text>
+          <circle cx={p.x} cy={p.y} r="3.5" fill="#fff" stroke="#0d9488" strokeWidth="2" />
+          {(i % labelStep === 0 || i === pts.length - 1) && (
+            <text x={p.x} y={H - 8} textAnchor="middle" fontSize="11" fill="#64748b">
+              {p.label}
             </text>
           )}
-          <circle cx={p.x} cy={p.y} r="3.5" fill="#fff" stroke="#0d9488" strokeWidth="2" />
-          <text x={p.x} y={H - 8} textAnchor="middle" fontSize="11" fill="#64748b">
-            {p.label}
-          </text>
         </g>
       ))}
     </svg>
@@ -120,6 +127,9 @@ export function ForecastArea({
     y: pad.t + innerH - (d.value / max) * innerH,
     label: d.label, value: d.value, forecast: !!d.forecast,
   }));
+  // Same deterministic label-thinning as AreaChart — payroll/headcount series run up to
+  // 13 points (12 actual + forecast tail) and collide on narrow viewports otherwise.
+  const labelStep = pts.length > 8 ? 2 : 1;
   const fi = pts.findIndex((p) => p.forecast);
   const actual = fi === -1 ? pts : pts.slice(0, fi);
   const forecast = fi === -1 ? [] : pts.slice(Math.max(0, fi - 1)); // start at last actual to connect
@@ -158,9 +168,11 @@ export function ForecastArea({
       {pts.map((p, i) => (
         <g key={i}>
           <circle cx={p.x} cy={p.y} r="3" fill="#fff" stroke={p.forecast ? "#94a3b8" : "#0d9488"} strokeWidth="2" />
-          <text x={p.x} y={H - 8} textAnchor="middle" fontSize="11" fill={p.forecast ? "#94a3b8" : "#64748b"}>
-            {p.label}
-          </text>
+          {(i % labelStep === 0 || i === pts.length - 1) && (
+            <text x={p.x} y={H - 8} textAnchor="middle" fontSize="11" fill={p.forecast ? "#94a3b8" : "#64748b"}>
+              {p.label}
+            </text>
+          )}
         </g>
       ))}
     </svg>
@@ -274,11 +286,16 @@ export function MonthlyBars({
   data: { label: string; value: number }[];
 }) {
   const max = Math.max(1, ...data.map((d) => d.value));
+  // Same deterministic thinning as the SVG charts, for consistency if this is ever fed a
+  // longer (e.g. 12-month) series — each bar's column is fixed-width and truncates its own
+  // label, so collisions aren't the everyday case, but a real zero still needs to read as
+  // "0" rather than a blank cell.
+  const labelStep = data.length > 8 ? 2 : 1;
   return (
     <div className="flex h-44 items-end gap-3">
       {data.map((d, i) => (
         <div key={i} className="flex h-full flex-1 flex-col items-center justify-end gap-1.5">
-          <span className="nums text-[11px] font-semibold text-slate-600">{d.value || ""}</span>
+          <span className="nums text-[11px] font-semibold text-slate-600">{d.value}</span>
           <div
             className="grow-bar w-full max-w-12 rounded-t-md bg-gradient-to-t from-brand-600 to-brand-300"
             style={{
@@ -286,7 +303,9 @@ export function MonthlyBars({
               animationDelay: `${i * 60}ms`,
             }}
           />
-          <span className="w-full truncate text-center text-[11px] text-slate-400" title={d.label}>{d.label}</span>
+          <span className="w-full truncate text-center text-[11px] text-slate-400" title={d.label}>
+            {i % labelStep === 0 || i === data.length - 1 ? d.label : ""}
+          </span>
         </div>
       ))}
     </div>
