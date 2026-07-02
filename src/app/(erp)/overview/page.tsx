@@ -3,7 +3,7 @@ import Link from "next/link";
 import { requirePageRole, OVERSIGHT } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
 import { fmtDate } from "@/lib/format";
-import { BrandHero } from "@/components/chrome";
+import { BrandHero, CanvasAtmosphere } from "@/components/chrome";
 import {
   StatCard,
   Card,
@@ -167,7 +167,8 @@ export default async function OverviewPage() {
         className="px-6 pb-7 pt-9 sm:px-8"
       />
 
-      <div className="space-y-6 p-6 sm:p-8">
+      <div className="relative isolate space-y-6 p-6 sm:p-8">
+        <CanvasAtmosphere />
         {/* Cross-department pulse */}
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           <StatCard

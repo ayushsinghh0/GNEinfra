@@ -6,7 +6,7 @@ import { fmtDate } from "@/lib/format";
 import InviteForm from "@/components/InviteForm";
 import CountUp from "@/components/CountUp";
 import { AreaChart, Donut } from "@/components/Charts";
-import { BrandHero } from "@/components/chrome";
+import { BrandHero, CanvasAtmosphere } from "@/components/chrome";
 import { DataTable, type Column } from "@/components/DataTable";
 import {
   Building2,
@@ -162,7 +162,8 @@ export default async function DashboardPage() {
         className="px-6 pb-7 pt-9 sm:px-8"
       />
 
-      <div className="space-y-6 p-6 sm:p-8">
+      <div className="relative isolate space-y-6 p-6 sm:p-8">
+        <CanvasAtmosphere />
         {/* KPI bento — every tile drills into the list it summarizes. */}
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
           <StatCard
