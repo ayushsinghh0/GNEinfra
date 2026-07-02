@@ -26,11 +26,13 @@ Two verticals are built; the rest are role-scoped "coming soon" shells:
   analytics dashboard. It was reworked in the **"Connected" redesign** (branch `hr-connected-redesign`,
   unmerged) so every record cross-links and no list scrolls sideways — see the dedicated section below.
 
-> **Branches:** `multi-role-erp` (this branch) carries the full multi-role ERP + HR module and is the
-> **currently-deployed / live** branch — the production site at `erp.ayushraj.site` runs it (cut over
-> from `vendor-only` on 2026-06-29). `vendor-only` is the older vendor-registration-only branch — no
-> longer live, kept as a rollback target. `main` holds historical Phase-2 reference code
-> (BOQ/DPR/procurement/Excel I/O). Don't reintroduce Phase-2 here unless asked.
+> **Branches (rewired 2026-07-02):** **`main` is the branch of record** — it was fast-forwarded to the
+> complete product (multi-role ERP + the fully-redesigned HR module, all four "Connected" phases) and
+> is what's pushed to GitHub. Work here. `multi-role-erp` is what the production box at
+> `erp.ayushraj.site` still RUNS but it is now **behind `main`** — the next deploy should use
+> `BRANCH=main` (see Deployment). `hr-connected-redesign` is merged into `main` (same commits);
+> `hr-connected-redesign-timeline` is an obsolete backdated copy (safe to delete); `vendor-only` is the
+> old vendor-only rollback relic.
 
 ## Commands
 
@@ -52,6 +54,13 @@ npx prisma generate  # regenerate the Prisma client after editing schema.prisma
 gates; run both before claiming done. Local dev expects `docker compose up -d` (Postgres on
 **5433**, Mailpit inbox on **8025**, MinIO on 9001). After deleting/clearing `.next`, a stale
 type cache can fail the build referencing routes that no longer exist — `rm -rf .next` and rebuild.
+
+⚠️ **Never run `npm run build` while `npm run dev` is running** — they share `.next`, and a
+concurrent build wedges the dev server's Turbopack cache (every page hangs until the dev process is
+killed and `.next` cleared). When a dev server is up, gate with `npx tsc --noEmit` + `npm run lint`
+only. Also: after many hot reloads the dev client's router can wedge (Link clicks silently do
+nothing while direct URLs work) — a hard refresh (Ctrl+Shift+R) fixes it; neither issue exists in
+production.
 
 ## Architecture & conventions
 
@@ -157,10 +166,11 @@ Premium-**light** design language. Don't hand-roll one-off styles — compose th
 
 ## HR module — "Connected" redesign
 
-The HR module was rebuilt so every record cross-links and no list scrolls sideways. **Compose these
-conventions — don't re-hand-roll tables/links/status colors.** Full design + task plans live in
+The HR module was rebuilt across four phases (all COMPLETE and merged to `main`) so every record
+cross-links, no list scrolls sideways, and the dashboard/charts are honest and dense. **Compose these
+conventions — don't re-hand-roll tables/links/status colors/keys.** Design + per-phase task plans:
 `docs/superpowers/specs/2026-07-01-hr-connected-redesign-design.md` and
-`docs/superpowers/plans/2026-07-01-hr-connected-redesign-phase1.md` (+ `…-phase2.md`).
+`docs/superpowers/plans/2026-07-0{1,2}-hr-*-phase{1,2,3,4}.md`.
 
 - **Employee-360 hub**: `/hr/employees/[id]` is a Next.js **`(hub)` route group**. `(hub)/layout.tsx`
   renders a persistent identity header + snapshot chips + route-tabs (Overview / Attendance / Assets /
@@ -192,12 +202,40 @@ conventions — don't re-hand-roll tables/links/status colors.** Full design + t
   preserve them. Cells key off `date.getUTCDate()` (attendance is stored at UTC midnight).
 - **Payroll LOP** (`src/lib/hr-lop.ts`): `attendanceLop(empId, year, month, casualQuota, sickQuota)`
   derives per-month loss-of-pay days = absent + ½·half-day + leave/sick **over the annual quota**
-  (YTD-aware); rate = monthly gross ÷ days-in-month. The printed slip uses it; Phase 2 folds an editable
-  `"Loss of Pay"` deduction (via `PayrollRecord.extraLines`, no schema change) into the payout editor.
-- **Phase 2 (in progress)** adds bulk payroll (batch save-all/auto-split-all), saved-view pills, per-employee
-  allocation guardrails (≤100% across concurrent projects, server-enforced), and a **Cmd-K command palette**
-  (`/api/hr/search` returns a SHAPED payload — never raw Employee rows, which carry salary/bank/PAN).
-  **No schema migration** in either phase — LOP rides `extraLines`, allocation aggregates existing `allocationPct`.
+  (YTD-aware); rate = monthly gross ÷ days-in-month. The printed slip uses it, and the payout editor
+  pre-fills an EDITABLE `"Loss of Pay"` deduction (a reserved `PayrollRecord.extraLines` label — no
+  schema change; server re-sums lines via `computePayrollTotals`, so the client can't fudge totals).
+- **Payroll ops:** `POST /api/hr/payroll/batch` (HR_WRITE, one `$transaction`, per-row server recompute)
+  powers Save-all; Auto-split-all sits in the payout toolbar behind a ConfirmDialog; the payout stat
+  strip gets FULL-MONTH `monthTotals` as props so a `?view=pending|saved` filter never contradicts it.
+- **⚠️ REMOUNT-KEY RULE (a real data-corruption class, hit twice):** any client component that seeds
+  `useState` from server props and is rendered by a page with mutable `searchParams` MUST be keyed on
+  that state — `PayrollEditor key={year-month-view-employeeId}`, `AttendanceGrid key={y-m-employeeId}`,
+  edit forms `key={id}`. Without it, a soft navigation swaps the server data while the client stays
+  frozen — and a later save pairs NEW params with STALE rows. Apply this to every new seeded component.
+- **Guards & feedback:** `useUnsavedGuard(dirty, msg)` (`src/components/hr/useUnsavedGuard.ts`) is the
+  shared unsaved-changes guard (beforeunload + capture-phase link-click confirm) — used by
+  AttendanceGrid + EmployeeForm; reuse it, don't duplicate. Every `/hr` route segment has a
+  `loading.tsx` (shared `RouteLoading` skeleton) — add one to any NEW route so navigation never feels
+  dead. Branded 404s exist (`app/not-found.tsx` public, `(erp)/not-found.tsx` in-shell).
+- **Dashboard honesty + bento:** `/hr` is a 12-col bento (KPI cluster / leave-burn rings / sparkline
+  stat-tab Trends / utilization / composition donut / Today-pulse card), streamed via per-cell
+  Suspense. KPI rules (do NOT regress): no DeltaBadge without a real baseline; a partially-processed
+  current month says "so far this month" instead of a red %; zero attendance rows → "—" + "Not marked
+  yet" hints, never an alarming 0%. Chart primitives (`src/components/Charts.tsx`, shared with SCM —
+  additive changes only): wide 1000-unit viewBox, value labels only first/max/last, all-zero series →
+  "No data in this range", least-squares forecast SUPPRESSED when degenerate; `RingGauge`,
+  `DistributionBar`, `SegmentDonut`, `Sparkline`, `BarList` are the bespoke building blocks.
+- **Cmd-K palette** (`src/components/CommandPalette.tsx`, mounted in the `(erp)` layout with
+  `canSearch`/`canWrite` booleans — never import server-only `rbac.ts` client-side): HR_VIEW-scoped
+  (non-HR roles get no palette and no key listener), searches via `/api/hr/search` which returns a
+  SHAPED payload — never raw Employee rows (they carry salary/bank/PAN). A sidebar search button
+  (role-gated) is its visible affordance.
+- **More URL-as-state:** attendance Calendar/Table toggle = `?grid=table`; payout view = `?view=`
+  (payout URLs carry `year/month`, which `buildQuery` does NOT serialize — payout builds its URLs
+  manually; keep it that way). `endDate ≥ startDate` is enforced client-side AND via zod `.refine`
+  on `projectSchema`/`assignmentSchema`.
+  **No schema migration in any phase** — LOP rides `extraLines`, allocation aggregates `allocationPct`.
 
 ## Database & migrations
 
@@ -240,7 +278,9 @@ Deployed cheaply: **single AWS EC2** (Ubuntu, pm2) + **Neon** free Postgres + **
 auto-HTTPS (`:80/:443 → :3000`). See `deploy/`:
 - `bootstrap.sh` — one-command fresh-box setup (installs Node/Caddy/pm2/cron, builds, configures).
 - `redeploy.sh` — `git pull → npm ci → migrate deploy → db:seed → build → pm2 reload`. ⚠️ It defaults
-  `BRANCH=vendor-only`; the box is now on `multi-role-erp`, so run `BRANCH=multi-role-erp ./deploy/redeploy.sh`.
+  `BRANCH=vendor-only`; the box currently runs `multi-role-erp`, which is now **behind `main`** — the
+  next deploy should be `BRANCH=main ./deploy/redeploy.sh` (no new migrations are needed; the entire
+  redesign was schema-free).
   ⚠️ On the tiny t3.micro `npm ci` can OOM-kill / fill the disk — for small pushes prefer `npm install`
   (+ `npm cache clean --force`, and don't add big swapfiles — disk is ~85% full), and run the deploy
   **detached** (`nohup … > ~/deploy.log &`, then poll the log) since SSH (port 22) throttles during the build.
