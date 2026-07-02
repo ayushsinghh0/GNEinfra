@@ -271,7 +271,19 @@ export default async function PayoutPage({
             description="Add employees to start processing payroll."
           />
         ) : (
-          <PayrollEditor rows={visibleRows} year={year} month={month} canWrite={canWrite} lastMonth={lastMonth} />
+          <PayrollEditor
+            // Remount whenever the roster-defining URL state changes (month, view
+            // pill, employee scope). The editor seeds its row state at mount, so
+            // WITHOUT this key a soft navigation would leave it frozen on stale
+            // rows — and save() would pair the NEW year/month with OLD figures
+            // (same data-corruption class as the attendance month-key fix).
+            key={`${year}-${month}-${view ?? "all"}-${employeeId ?? "all"}`}
+            rows={visibleRows}
+            year={year}
+            month={month}
+            canWrite={canWrite}
+            lastMonth={lastMonth}
+          />
         )}
       </div>
     </>
