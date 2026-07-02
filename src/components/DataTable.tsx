@@ -78,12 +78,26 @@ export function DataTable<T>({
           const title = columns.find((c) => c.titleInCard) ?? columns[0];
           const rest = columns.filter((c) => c !== title && c.cardLabel);
           const body = (
-            <Card className="p-4">
+            // Whole-card tap target via a STRETCHED overlay link (a sibling of the
+            // content, not a wrapper) so a cell's own link (EntityLink, at `relative
+            // z-10`) is never nested inside it — nested <a> is invalid HTML.
+            <Card className="relative p-4">
+              {href && (
+                <Link
+                  href={href(row)}
+                  aria-label="Open"
+                  tabIndex={-1}
+                  className="absolute inset-0 z-0"
+                />
+              )}
               <div className="mb-2 flex items-start justify-between gap-2">
                 <div className="min-w-0">{title.cell(row)}</div>
               </div>
               <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5">
                 {rest.map((c) => (
+                  // Plain cells stay BELOW the overlay so a tap on them navigates via
+                  // the stretched link; a cell needing its own click keeps `relative
+                  // z-10` inside its `cell` (column config), same as the desktop table.
                   <div key={c.key} className="min-w-0">
                     <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">{c.cardLabel}</dt>
                     <dd className="truncate text-sm text-slate-700">{c.cell(row)}</dd>
@@ -92,7 +106,7 @@ export function DataTable<T>({
               </dl>
             </Card>
           );
-          return <li key={rowKey(row)}>{href ? <Link href={href(row)} className="block">{body}</Link> : body}</li>;
+          return <li key={rowKey(row)}>{body}</li>;
         })}
       </ul>
     </>
