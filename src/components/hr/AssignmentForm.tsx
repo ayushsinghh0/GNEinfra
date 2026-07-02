@@ -2,7 +2,7 @@
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Field, Input, Select } from "@/components/ui";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, UserPlus } from "lucide-react";
 
 type Project = { id: string; name: string; code: string };
 type Employee = { id: string; empId: string; name: string };
@@ -117,71 +117,80 @@ export default function AssignmentForm(props: AssignmentFormProps) {
     committedPct != null && enteredPct != null && committedPct + enteredPct > 100;
 
   return (
-    <form onSubmit={submit} className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-4">
-      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{copy.heading}</p>
+    <form onSubmit={submit} className="mt-4 rounded-xl border border-slate-200 bg-slate-50/60 p-4 space-y-4">
+      <div className="flex items-center gap-2">
+        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-brand-50 text-brand-600">
+          <UserPlus className="h-4 w-4" />
+        </span>
+        <p className="text-sm font-semibold text-slate-700">{copy.heading}</p>
+      </div>
       {error && (
         <div role="alert" className="flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2.5 text-sm text-rose-700">
           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" /><span>{error}</span>
         </div>
       )}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <Field label={copy.selectLabel} required htmlFor="af-select">
-          <Select id="af-select" value={selectedId} onChange={(e) => setSelectedId(e.target.value)}>
-            {props.mode === "byProject"
-              ? props.projects.map((p) => (
-                  <option key={p.id} value={p.id}>{p.name} ({p.code})</option>
-                ))
-              : props.employees.map((emp) => (
-                  <option key={emp.id} value={emp.id}>{emp.empId} — {emp.name}</option>
-                ))}
-          </Select>
-        </Field>
-        <Field label="Role on Project" htmlFor="af-role">
-          <Input id="af-role" type="text" value={roleOnProject} onChange={(e) => setRoleOnProject(e.target.value)} placeholder="e.g. Site Engineer" />
-        </Field>
-        <Field
-          label="Allocation %"
-          htmlFor="af-alloc"
-          hint={
-            committedPct != null && remainingPct != null
-              ? `committed ${committedPct}% · remaining ${remainingPct}%`
-              : undefined
-          }
-        >
-          <Input
-            id="af-alloc"
-            type="number"
-            min={0}
-            max={100}
-            value={allocationPct}
-            onChange={(e) => setAllocationPct(e.target.value)}
-            placeholder="0–100"
-          />
-        </Field>
-        <Field label="Start Date" required htmlFor="af-start">
-          <Input
-            id="af-start"
-            type="date"
-            value={startDate}
-            onChange={(e) => { setStartDate(e.target.value); setDateError(null); }}
-            required
-          />
-        </Field>
-        <Field
-          label="End Date"
-          htmlFor="af-end"
-          error={dateError ?? undefined}
-          errorId={dateError ? "af-end-error" : undefined}
-        >
-          <Input
-            id="af-end"
-            type="date"
-            value={endDate}
-            onChange={(e) => { setEndDate(e.target.value); setDateError(null); }}
-            aria-invalid={dateError ? true : undefined}
-            aria-describedby={dateError ? "af-end-error" : undefined}
-          />
-        </Field>
+      <div className="space-y-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <Field label={copy.selectLabel} required htmlFor="af-select">
+            <Select id="af-select" value={selectedId} onChange={(e) => setSelectedId(e.target.value)}>
+              {props.mode === "byProject"
+                ? props.projects.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name} ({p.code})</option>
+                  ))
+                : props.employees.map((emp) => (
+                    <option key={emp.id} value={emp.id}>{emp.empId} — {emp.name}</option>
+                  ))}
+            </Select>
+          </Field>
+          <Field label="Role on Project" htmlFor="af-role">
+            <Input id="af-role" type="text" value={roleOnProject} onChange={(e) => setRoleOnProject(e.target.value)} placeholder="e.g. Site Engineer" />
+          </Field>
+          <Field
+            label="Allocation %"
+            htmlFor="af-alloc"
+            hint={
+              committedPct != null && remainingPct != null
+                ? `committed ${committedPct}% · remaining ${remainingPct}%`
+                : undefined
+            }
+          >
+            <Input
+              id="af-alloc"
+              type="number"
+              min={0}
+              max={100}
+              value={allocationPct}
+              onChange={(e) => setAllocationPct(e.target.value)}
+              placeholder="0–100"
+            />
+          </Field>
+        </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <Field label="Start Date" required htmlFor="af-start">
+            <Input
+              id="af-start"
+              type="date"
+              value={startDate}
+              onChange={(e) => { setStartDate(e.target.value); setDateError(null); }}
+              required
+            />
+          </Field>
+          <Field
+            label="End Date"
+            htmlFor="af-end"
+            error={dateError ?? undefined}
+            errorId={dateError ? "af-end-error" : undefined}
+          >
+            <Input
+              id="af-end"
+              type="date"
+              value={endDate}
+              onChange={(e) => { setEndDate(e.target.value); setDateError(null); }}
+              aria-invalid={dateError ? true : undefined}
+              aria-describedby={dateError ? "af-end-error" : undefined}
+            />
+          </Field>
+        </div>
       </div>
       {wouldOverAllocate && (
         <p className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-xs text-amber-700">
@@ -192,7 +201,7 @@ export default function AssignmentForm(props: AssignmentFormProps) {
           </span>
         </p>
       )}
-      <div>
+      <div className="flex justify-end">
         <Button type="submit" size="sm" disabled={busy}>{busy ? "Assigning…" : copy.buttonIdle}</Button>
       </div>
     </form>

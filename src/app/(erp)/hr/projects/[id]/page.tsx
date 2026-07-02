@@ -56,6 +56,7 @@ export default async function ProjectDetailPage({
 
   const tl = projectTimeline(project.status, project.startDate, project.endDate);
   const stats = assignmentStats(project.assignments, project.startDate, project.endDate);
+  const hasFullTimeline = tl.pct !== null && project.startDate && project.endDate;
 
   // Cross-project committed % per assignee (not just this project) — how many of this
   // project's team are over-allocated across ALL their active assignments.
@@ -153,19 +154,35 @@ export default async function ProjectDetailPage({
             <div className="flex flex-wrap items-center gap-2">
               <StatusChip status={project.status} />
               <span className="text-sm text-slate-500">{project.client ?? "No client"}</span>
-              <span className="nums ml-auto text-sm text-slate-600">
-                {fmtDateOnly(project.startDate) ?? "—"} → {fmtDateOnly(project.endDate) ?? "—"}
-              </span>
+              {hasFullTimeline && (
+                <span className="nums ml-auto text-sm text-slate-600">
+                  {fmtDateOnly(project.startDate)} → {fmtDateOnly(project.endDate)}
+                </span>
+              )}
             </div>
             <div className="mt-4">
               <div className="mb-1.5 flex items-center justify-between text-xs text-slate-500">
                 <span>Timeline</span>
-                <span className="font-medium text-slate-600">{tl.label}</span>
+                {hasFullTimeline && <span className="font-medium text-slate-600">{tl.label}</span>}
               </div>
-              {tl.pct === null ? (
-                <div className="h-2 rounded-full bg-slate-100" />
+              {hasFullTimeline ? (
+                <ProgressBar value={tl.pct as number} tone={tl.tone} />
+              ) : project.startDate ? (
+                <p className="nums text-xs text-slate-400">Started {fmtDateOnly(project.startDate)}</p>
+              ) : project.endDate ? (
+                <p className="nums text-xs text-slate-400">Ends {fmtDateOnly(project.endDate)}</p>
               ) : (
-                <ProgressBar value={tl.pct} tone={tl.tone} />
+                <p className="text-xs text-slate-400">
+                  Dates not set
+                  {canWrite && (
+                    <>
+                      {" — "}
+                      <Link href={`/hr/projects/${id}/edit`} className="font-medium text-brand-700 hover:underline">
+                        add them via Edit
+                      </Link>
+                    </>
+                  )}
+                </p>
               )}
             </div>
           </CardBody>
@@ -179,7 +196,18 @@ export default async function ProjectDetailPage({
             tone={overAllocatedCount > 0 ? "rose" : "blue"}
             icon={<Gauge className="h-4 w-4" />}
           />
-          <StatCard label="Duration" value={stats.durationDays != null ? `${stats.durationDays}d` : "—"} tone="amber" icon={<CalendarRange className="h-4 w-4" />} />
+          <StatCard
+            label="Duration"
+            value={
+              stats.durationDays != null ? (
+                `${stats.durationDays}d`
+              ) : (
+                <span className="text-lg font-medium text-slate-400">Not set</span>
+              )
+            }
+            tone="amber"
+            icon={<CalendarRange className="h-4 w-4" />}
+          />
           <StatCard label="Roles" value={stats.roleCount} tone="emerald" icon={<Layers className="h-4 w-4" />} />
         </div>
 

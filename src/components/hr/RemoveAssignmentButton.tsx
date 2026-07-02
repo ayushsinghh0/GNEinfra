@@ -1,8 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui";
-import { X } from "lucide-react";
+import { UserMinus } from "lucide-react";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { toast } from "@/components/Toast";
 
@@ -31,18 +30,16 @@ export default function RemoveAssignmentButton({ assignmentId }: { assignmentId:
 
   return (
     <>
-      <Button
+      <button
         type="button"
-        variant="ghost"
-        size="sm"
         onClick={() => setConfirmOpen(true)}
         disabled={busy}
         title="Remove assignment"
         aria-label="Remove assignment"
-        className="text-rose-500 hover:text-rose-700 hover:bg-rose-50 px-2"
+        className="press touch-manipulation inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-slate-400 outline-none transition-all hover:bg-rose-50 hover:text-rose-600 focus-visible:ring-2 focus-visible:ring-rose-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:opacity-50 disabled:pointer-events-none"
       >
-        <X className="h-3.5 w-3.5" />
-      </Button>
+        <UserMinus className="h-4 w-4" aria-hidden="true" />
+      </button>
       <ConfirmDialog
         open={confirmOpen}
         title="Remove assignment?"
