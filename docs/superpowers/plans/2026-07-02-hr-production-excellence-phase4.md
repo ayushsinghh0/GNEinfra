@@ -62,3 +62,24 @@
 
 ## Self-review
 Evidence items 1–6 map to Tasks 1–5; the unseen-page risk is covered by Task 6's audit sweep; Task 7 gates. No schema/RBAC surface anywhere.
+
+## Task 8: Dashboard bento densification (owner reference-driven, added 2026-07-02)
+Owner reference: packed analytics bentos (dense 12-col grids, mini-sparklines inside stat tiles,
+multi-series charts with legends, ring gauges, zero dead space). Re-compose /hr from a vertical
+stack of full-width sections into a deliberate bento — AFTER Task 6 + the cards redesign land
+(shared files).
+
+- **A. Bento grid (`hr/page.tsx`):** 12-col at `lg`: Row 1 = KPI 2×3 cluster (span 8) + Leave-burn
+  rings card (span 4). Row 2 = Trends board (span 8) + Project utilization (span 4). Row 3 =
+  Workforce composition (span 7) + a compact "Today" pulse/quick-nav card (span 5). Tighten dashboard
+  spacing one notch (gap-5, p-5 cards, space-y-5) — dense, not cramped. Mobile: single column, same order.
+- **B. Trends metric tabs → mini stat-tab cards (`TrendBoard.tsx`):** replace the Segmented metric
+  pills with four compact selectable stat cards (label + current value `.nums` + tiny inline
+  sparkline drawn from the series data already in props); selected card = active chart. Add a small
+  legend row under the chart (actual ● / projection ◌ dashed). Reference: "Inventory Health 93% + bars".
+- **C. KPI tiles:** wire the existing `spark` prop where honest data exists (attendance rate, processed
+  share); keep KPI-honesty rules from Task 2 (no fake sparks).
+- **D. Quick links → slim strip:** 4 compact icon+label chips in one row (or folded into the Row-3
+  pulse card) — not four huge half-empty cards.
+- Constraints: bespoke SVG only; Soft-Wave light; `.nums`; works WITH the new RingGauge/DistributionBar
+  cards; no query changes beyond passing already-fetched values; tsc+lint gate (dev server running).
