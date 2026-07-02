@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { requirePageRole, HR_VIEW, HR_WRITE } from "@/lib/rbac";
 import { MONTHS, type PayrollExtraLine } from "@/lib/hr-validation";
 import { computeLop } from "@/lib/hr-lop";
-import { PageHeader, EmptyState } from "@/components/ui";
+import { PageHeader, EmptyState, Chip } from "@/components/ui";
 import PayrollEditor, { type PayrollRow } from "@/components/hr/PayrollEditor";
 import MonthPicker from "@/components/hr/MonthPicker";
 import ScopedFilterChip from "@/components/hr/ScopedFilterChip";
@@ -247,7 +247,12 @@ export default async function PayoutPage({
       </PageHeader>
 
       <div className="p-6 sm:p-8">
-        <div className="mb-6">
+        {/* Toolbar: the view pills get a quiet label so they read as a filter
+            control (not a floating decoration), plus a context chip while a
+            view is active — the stat strip below stays full-month truth, so
+            this chip is the only place that names what's actually on screen. */}
+        <div className="mb-6 flex flex-wrap items-center gap-3">
+          <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">View</span>
           <PayoutViewPills
             year={year}
             month={month}
@@ -255,6 +260,11 @@ export default async function PayoutPage({
             view={view}
             counts={{ all: rows.length, pending: pendingCount, saved: savedCount }}
           />
+          {view && (
+            <Chip>
+              Showing {view === "pending" ? "Pending" : "Saved"} · {visibleRows.length} of {rows.length}
+            </Chip>
+          )}
         </div>
         {scopedEmployee && (
           <ScopedFilterChip
@@ -283,6 +293,7 @@ export default async function PayoutPage({
             month={month}
             canWrite={canWrite}
             lastMonth={lastMonth}
+            monthTotals={{ total: rows.length, pending: pendingCount, saved: savedCount }}
           />
         )}
       </div>

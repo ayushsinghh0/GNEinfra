@@ -1,14 +1,19 @@
 "use client";
 
-import { type ReactNode, useMemo, useState } from "react";
+import { type ReactNode, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { BadgeIndianRupee, ChevronRight, Copy, Plus, Printer, Search, Trash2, Wand2 } from "lucide-react";
 import { computePayrollTotals, type PayrollExtraLine, type PayrollLineKind } from "@/lib/hr-validation";
 import { fmtINR } from "@/lib/format";
-import { Button, StatCard, StatusChip, cn } from "@/components/ui";
+import { Avatar, Button, StatCard, StatusChip, cn } from "@/components/ui";
 import SlideOver from "@/components/SlideOver";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { toast } from "@/components/Toast";
+
+/** Full-month roster truth (computed BEFORE any view-pill filter is applied,
+ * in payout/page.tsx) — so the stat strip never contradicts the "Pending N" /
+ * "Saved N" counts shown on the view pills above the editor. */
+export type PayoutMonthTotals = { total: number; pending: number; saved: number };
 
 export type PayrollRow = {
   emp: { id: string; empId: string; name: string };
@@ -107,16 +112,22 @@ export default function PayrollEditor({
   month,
   canWrite,
   lastMonth,
+  monthTotals,
 }: {
   rows: PayrollRow[];
   year: number;
   month: number;
   canWrite: boolean;
   lastMonth?: Record<string, Pick<PayrollRow, NumericKey>>;
+  monthTotals: PayoutMonthTotals;
 }) {
-  const [rows, setRows] = useState<RowState[]>(
+  const [rows, setRows] = useState<RowState[]>(() =>
     initial.map((r) => ({ ...r, saving: false, savedId: r.recordId, dirty: false, error: null }))
   );
+  // Snapshot of the seeded rows, captured once at mount — the reset target for
+  // "Discard all" (never mutated; setRows always replaces row objects, never
+  // this ref, so it stays a true initial snapshot for the editor's lifetime).
+  const initialRowsRef = useRef<RowState[]>(rows);
   const [openIdx, setOpenIdx] = useState<number | null>(null);
   const [query, setQuery] = useState("");
   const [confirmSplitAll, setConfirmSplitAll] = useState(false);
@@ -182,16 +193,39 @@ export default function PayrollEditor({
     toast(`Auto-split applied for ${rows.length} employee${rows.length === 1 ? "" : "s"}`, "success");
   }
 
+  // Reset only DIRTY rows back to their as-mounted snapshot — saved rows (and
+  // rows nobody touched) are left alone.
+  function discardAll() {
+    const n = rows.reduce((count, r) => count + (r.dirty ? 1 : 0), 0);
+    if (n === 0) return;
+    setRows((prev) => prev.map((r, i) => (r.dirty ? initialRowsRef.current[i] : r)));
+    toast(`Discarded ${n} unsaved change${n === 1 ? "" : "s"}`, "success");
+  }
+
+  // Per-row totals computed ONCE per render and shared by the stat strip's
+  // aggregate + every list row (previously each called computePayrollTotals
+  // independently — 2x the work on every keystroke across the whole roster).
+  const perRowTotals = useMemo(() => {
+    const map = new Map<string, ReturnType<typeof computePayrollTotals>>();
+    for (const r of rows) map.set(r.emp.id, computePayrollTotals(r));
+    return map;
+  }, [rows]);
+
   const totals = useMemo(() => {
-    let payable = 0, earnings = 0, processed = 0;
+    let payable = 0, earnings = 0;
     for (const r of rows) {
-      const t = computePayrollTotals(r);
+      const t = perRowTotals.get(r.emp.id)!;
       payable += t.payableAmount;
       earnings += t.totalEarnings;
-      if (r.savedId) processed++;
     }
-    return { payable, earnings, processed, pending: rows.length - processed };
-  }, [rows]);
+    return { payable, earnings };
+  }, [rows, perRowTotals]);
+
+  // The editor only ever receives the view-filtered subset (visibleRows from
+  // payout/page.tsx) as `initial`, so rows.length never changes after mount —
+  // comparing it to the full-month total tells us whether a view pill (or
+  // employee scope) has narrowed what's on screen.
+  const scoped = rows.length !== monthTotals.total;
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -207,15 +241,30 @@ export default function PayrollEditor({
 
   return (
     <div className="space-y-5">
-      {/* Stat strip */}
+      {/* Stat strip — Processed/Pending always reflect the FULL month roster
+          (monthTotals, computed before any view-pill filter), so they never
+          contradict the pill counts above. The money tiles reflect the live,
+          possibly-filtered rows on screen — captioned when that's narrower
+          than the full month so the number reads honestly. */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard label="Total payout" value={fmtINR(totals.payable)} icon={<BadgeIndianRupee className="h-4 w-4" />} tone="brand" />
-        <StatCard label="Total earnings" value={fmtINR(totals.earnings)} tone="emerald" />
-        <StatCard label="Processed" value={`${totals.processed}/${rows.length}`} tone="blue" spark={rows.length ? (totals.processed / rows.length) * 100 : 0} />
-        <StatCard label="Pending" value={totals.pending} tone="amber" />
+        <StatCard
+          label="Total payout"
+          value={<MoneyValue amount={totals.payable} scoped={scoped} />}
+          icon={<BadgeIndianRupee className="h-4 w-4" />}
+          tone="brand"
+        />
+        <StatCard label="Total earnings" value={<MoneyValue amount={totals.earnings} scoped={scoped} />} tone="emerald" />
+        <StatCard
+          label="Processed"
+          value={`${monthTotals.saved}/${monthTotals.total}`}
+          tone="blue"
+          spark={monthTotals.total ? (monthTotals.saved / monthTotals.total) * 100 : 0}
+        />
+        <StatCard label="Pending" value={monthTotals.pending} tone="amber" />
       </div>
 
-      {/* Search */}
+      {/* Toolbar — search + (canWrite) Auto-split all, moved up from the footer
+          so it's available regardless of whether anything is dirty. */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative max-w-xs flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -226,6 +275,11 @@ export default function PayrollEditor({
             className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-brand focus:ring-[3px] focus:ring-brand/20"
           />
         </div>
+        {canWrite && (
+          <Button variant="secondary" size="sm" onClick={() => setConfirmSplitAll(true)} disabled={rows.length === 0}>
+            <Wand2 className="h-4 w-4" /> Auto-split all
+          </Button>
+        )}
       </div>
 
       {/* Employee list */}
@@ -241,33 +295,59 @@ export default function PayrollEditor({
         </div>
         <ul className="divide-y divide-slate-100">
           {filtered.map(({ r, idx }) => {
-            const { payableAmount, totalEarnings } = computePayrollTotals(r);
+            const { payableAmount, totalEarnings } = perRowTotals.get(r.emp.id)!;
             const untouched = !r.savedId && !r.dirty && totalEarnings === 0;
+            const noCtc = r.ctc == null;
             return (
-              <li key={r.emp.id} className="flex items-center gap-3 px-3 py-2 transition-colors hover:bg-brand-50/40 sm:px-5">
+              <li key={r.emp.id} className="relative flex items-center gap-3 px-3 py-2 transition-colors hover:bg-brand-50/40 sm:px-5">
+                {/* Whole-row click target: a stretched, transparent button BEHIND the
+                    row content (z-0) — same pattern as DataTable's RowLinkOverlay,
+                    just a button (opens the SlideOver) instead of a Link. Content
+                    that needs its OWN click target (the profile link, print/edit
+                    icons) sits at `relative z-10` so it stays independently
+                    clickable instead of falling through to this overlay. */}
                 <button
                   type="button"
                   onClick={() => setOpenIdx(idx)}
-                  className="grid flex-1 grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-xl py-1.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-brand/30 sm:grid-cols-[minmax(0,1fr)_7rem_8rem_6rem]"
-                >
-                  <span className="min-w-0">
-                    <span className="flex min-w-0 items-center gap-2">
-                      <span className="truncate font-medium text-slate-900">{r.emp.name}</span>
-                      <StatusChip status={payrollStatus(r.dirty, !!r.savedId)} className="shrink-0 sm:hidden" />
-                    </span>
-                    <span className="block truncate text-xs text-slate-400">
-                      <span className="nums">{r.emp.empId}</span> · {r.designation || "—"}
+                  aria-label={`Open payslip for ${r.emp.name}`}
+                  className="absolute inset-0 z-0 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand/30"
+                />
+                <div className="grid flex-1 grid-cols-[minmax(0,1fr)_auto] items-center gap-4 py-1.5 sm:grid-cols-[minmax(0,1fr)_7rem_8rem_6rem]">
+                  <span className="flex min-w-0 items-center gap-2.5">
+                    <Avatar name={r.emp.name} size="sm" className="pointer-events-none" />
+                    <span className="min-w-0">
+                      <span className="flex min-w-0 items-center gap-2">
+                        <span className="truncate font-medium text-slate-900">{r.emp.name}</span>
+                        <StatusChip status={payrollStatus(r.dirty, !!r.savedId)} className="shrink-0 sm:hidden" />
+                      </span>
+                      {/* Profile deep-link — a REAL <Link>, so it must sit ABOVE the
+                          row-opener overlay (relative z-10) and stop the click from
+                          reaching it, or it'd open the editor instead of navigating. */}
+                      <Link
+                        href={`/hr/employees/${r.emp.id}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="relative z-10 -ml-1 -my-1.5 inline-flex max-w-full items-center truncate rounded px-1 py-1.5 text-xs text-slate-400 outline-none hover:text-brand-700 hover:underline focus-visible:ring-2 focus-visible:ring-brand/30"
+                      >
+                        <span className="truncate">
+                          <span className="nums font-mono">{r.emp.empId}</span> · {r.designation || "—"}
+                        </span>
+                      </Link>
                     </span>
                   </span>
-                  <span className="nums hidden text-right text-sm text-slate-500 sm:block">{fmtINR(r.ctc)}</span>
+                  <span
+                    className="nums hidden text-right text-sm text-slate-500 sm:block"
+                    title={noCtc ? "No CTC on the employee record" : undefined}
+                  >
+                    {fmtINR(r.ctc)}
+                  </span>
                   <span className={cn("nums text-right text-sm font-semibold", untouched ? "text-slate-300" : "text-teal-700")}>
                     {untouched ? "—" : fmtINR(payableAmount)}
                   </span>
                   <span className="hidden justify-center sm:flex">
                     <StatusChip status={payrollStatus(r.dirty, !!r.savedId)} />
                   </span>
-                </button>
-                <div className="flex w-16 shrink-0 items-center justify-end gap-1">
+                </div>
+                <div className="relative z-10 flex w-16 shrink-0 items-center justify-end gap-1">
                   {r.savedId ? (
                     <Link
                       href={`/hr/payout/${r.savedId}/print`}
@@ -291,27 +371,21 @@ export default function PayrollEditor({
         {filtered.length === 0 && <p className="px-5 py-10 text-center text-sm text-slate-400">No employees match “{query}”.</p>}
       </div>
 
-      {/* Bulk actions — sticky footer, mirrors the attendance grid's save bar */}
-      {canWrite && (
+      {/* Bulk save bar — only surfaces when there's something to act on. No
+          more permanent "All changes saved" bar sitting on screen at all
+          times; Auto-split all lives in the toolbar above instead. */}
+      {canWrite && dirtyCount > 0 && (
         <div className="sticky bottom-4 z-10 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 shadow-[var(--shadow-pop)] backdrop-blur">
           <span className="text-sm text-slate-500">
-            {dirtyCount > 0 ? (
-              <>
-                <span className="font-semibold text-slate-800">{dirtyCount}</span> unsaved change{dirtyCount === 1 ? "" : "s"}
-              </>
-            ) : (
-              "All changes saved"
-            )}
+            <span className="font-semibold text-slate-800">{dirtyCount}</span> unsaved change{dirtyCount === 1 ? "" : "s"}
           </span>
           <div className="flex items-center gap-2">
-            <Button variant="secondary" size="sm" onClick={() => setConfirmSplitAll(true)} disabled={rows.length === 0}>
-              <Wand2 className="h-4 w-4" /> Auto-split all
+            <Button variant="ghost" size="sm" onClick={discardAll} disabled={anySaving}>
+              Discard all
             </Button>
-            {dirtyCount > 0 && (
-              <Button size="sm" onClick={saveAll} disabled={anySaving}>
-                {anySaving ? "Saving…" : `Save all (${dirtyCount})`}
-              </Button>
-            )}
+            <Button size="sm" onClick={saveAll} disabled={anySaving}>
+              {anySaving ? "Saving…" : `Save all (${dirtyCount})`}
+            </Button>
           </div>
         </div>
       )}
@@ -489,6 +563,18 @@ function EditorBody({
         />
       </label>
     </div>
+  );
+}
+
+// Stat-tile money value — appends a small "of shown rows" caption when the
+// editor's live rows are a view-filtered subset of the full month (so the
+// number doesn't silently read as the whole month's total when it isn't).
+function MoneyValue({ amount, scoped }: { amount: number; scoped: boolean }) {
+  return (
+    <>
+      {fmtINR(amount)}
+      {scoped && <span className="mt-1 block text-xs font-normal text-slate-400">of shown rows</span>}
+    </>
   );
 }
 
