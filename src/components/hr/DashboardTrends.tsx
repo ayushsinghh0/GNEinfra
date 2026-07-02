@@ -7,14 +7,16 @@ type Bar = { label: string; count: number; href?: string };
 
 // Streamed independently of the HR dashboard's KPI band (see hr/page.tsx) — this is the
 // heaviest slice of the dashboard's data: 12x monthly aggregate/groupBy loops for payroll,
-// headcount, attendance and leave. It re-derives `periods` from `today` (pure, cheap)
+// headcount, attendance and leave. Takes the reference year/month (not a Date) so this
+// component computes its own `asOf` anchor and re-derives `periods` from it (pure, cheap)
 // rather than receiving the page's already-computed array, so this Suspense boundary can
 // resolve fully on its own without waiting on (or blocking) the KPI band or the
 // composition/utilization band, which each run their own slice of the same underlying
-// queries. Values computed here are byte-identical to the pre-streaming version — only
-// which component fetches them, and when, has changed.
-export default async function DashboardTrends({ today }: { today: Date }) {
-  const { periods, nextLabel } = getPeriods(today);
+// queries. The 12-month trend window ENDS at the reference month (year/month) rather than
+// always ending at "now" — the dashboard's MonthPicker re-anchors it.
+export default async function DashboardTrends({ year, month }: { year: number; month: number }) {
+  const asOf = new Date(Date.UTC(year, month - 1, 1));
+  const { periods, cur, nextLabel } = getPeriods(asOf);
 
   // Payroll series (12) → anchor on last non-zero month, forecast the rest.
   const payrollSeries = await Promise.all(periods.map((p) =>
@@ -42,10 +44,12 @@ export default async function DashboardTrends({ today }: { today: Date }) {
   const attendancePoints = periods.map((p, i) => ({ label: p.label, value: monthly[i].rate }));
   const leavePoints = periods.map((p, i) => ({ label: p.label, value: monthly[i].leaveDays }));
 
-  // Project allocation (for the "Projects" trend metric).
+  // Project allocation (for the "Projects" trend metric) — assignments still active as of
+  // the reference month's end (`cur.end`, the same exclusive month-end boundary the
+  // headcount series above uses), not literally "today".
   const projects = await prisma.project.findMany({
     where: { status: "ACTIVE" },
-    select: { id: true, name: true, _count: { select: { assignments: { where: { employee: { status: "ACTIVE" }, OR: [{ endDate: null }, { endDate: { gte: today } }] } } } } },
+    select: { id: true, name: true, _count: { select: { assignments: { where: { employee: { status: "ACTIVE" }, OR: [{ endDate: null }, { endDate: { gte: cur.end } }] } } } } },
     orderBy: { name: "asc" },
   });
   const projectBars: Bar[] = projects.map((p) => ({ label: p.name, count: p._count.assignments, href: `/hr/projects/${p.id}` }));

@@ -11,15 +11,36 @@ import { pctDelta } from "@/lib/hr-forecast";
 import { getPeriods, periodKey, monthlyAttendanceStats } from "@/lib/hr-dashboard";
 import DashboardTrends from "@/components/hr/DashboardTrends";
 import DashboardComposition from "@/components/hr/DashboardComposition";
+import MonthPicker from "@/components/hr/MonthPicker";
 
 export const dynamic = "force-dynamic";
 
-export default async function HrPage() {
+export default async function HrPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ year?: string; month?: string }>;
+}) {
   await requirePageRole(HR_VIEW);
 
   const today = new Date();
   const todayUTC = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
-  const { periods, cur, prev, Y, Mo } = getPeriods(todayUTC);
+  const todayY = today.getUTCFullYear();
+  const todayM = today.getUTCMonth() + 1;
+
+  // Reference month picker (MonthPicker, mirrors attendance/payout) — defaults to the
+  // current month, clamped like every other HR month-scoped page. This is the "as-of"
+  // anchor for the trend window + the payroll / attrition / headcount-at-month-end KPIs
+  // below (each re-derives its `periods`/`cur`/`prev` from it). It does NOT drive the
+  // "present/on-leave today" pulse metrics, which stay real-time "today" regardless of
+  // the picker — labeled honestly ("today", linking to today's actual attendance date)
+  // rather than silently relabeled under a past reference month.
+  const sp = await searchParams;
+  const refYear = Math.max(2000, Math.min(2100, Number(sp.year) || todayY));
+  const refMonth = Math.max(1, Math.min(12, Number(sp.month) || todayM));
+  const isCurrentRefMonth = refYear === todayY && refMonth === todayM;
+  const refAnchor = new Date(Date.UTC(refYear, refMonth - 1, 1));
+
+  const { periods, cur, prev } = getPeriods(refAnchor);
 
   // Lightweight KPI query set — scoped to just the current + previous period (rather
   // than the full 12-month series the streamed sections below compute for their charts),
@@ -29,7 +50,6 @@ export default async function HrPage() {
   // data, re-fetched at the granularity each part actually needs (correctness over
   // dedupe).
   const [
-    activeCount,
     attTodayG,
     leaversCur,
     leaversPrev,
@@ -39,7 +59,6 @@ export default async function HrPage() {
     attCur,
     attPrev,
   ] = await Promise.all([
-    prisma.employee.count({ where: { status: "ACTIVE" } }),
     prisma.attendanceRecord.groupBy({ by: ["status"], where: { date: todayUTC }, _count: { _all: true } }),
     prisma.employee.count({ where: { leavingDate: { gte: cur.start, lt: cur.end } } }),
     prisma.employee.count({ where: { leavingDate: { gte: prev.start, lt: prev.end } } }),
@@ -86,34 +105,52 @@ export default async function HrPage() {
 
   return (
     <>
-      <BrandHero variant="mint" size="sm" wave={false} eyebrow="Human Resources" title="HR Dashboard" subtitle="Workforce, payroll and attendance — with trend projections." className="px-6 pb-7 pt-9 sm:px-8" />
+      <BrandHero variant="mint" size="sm" wave={false} eyebrow="Human Resources" title="HR Dashboard" subtitle="Workforce, payroll and attendance — with trend projections." className="px-6 pb-7 pt-9 sm:px-8">
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <span className="text-xs font-medium uppercase tracking-wide text-slate-500">Viewing</span>
+          <MonthPicker year={refYear} month={refMonth} basePath="/hr" />
+          {!isCurrentRefMonth && (
+            <Link
+              href="/hr"
+              className="press inline-flex h-8 items-center rounded-xl px-3 text-sm font-medium text-brand-700 ring-1 ring-inset ring-brand-200 hover:bg-brand-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
+            >
+              This month
+            </Link>
+          )}
+        </div>
+      </BrandHero>
       <div className="space-y-8 p-6 sm:p-8">
-        {/* KPI bento with deltas — paints before the heavier sections below stream in */}
+        {/* KPI bento with deltas — paints before the heavier sections below stream in.
+            Headcount/payroll/attendance-rate/attrition re-anchor to the reference month
+            above; present/on-leave stay real-time "today" (see comment above `refYear`). */}
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
-          <StatCard tone="brand" icon={<Users className="h-4 w-4" />} label="Active headcount"
+          <StatCard tone="brand" icon={<Users className="h-4 w-4" />} label={`Headcount · ${cur.label}`}
             href="/hr/employees?status=ACTIVE"
-            value={<span className="flex flex-wrap items-baseline gap-2"><span>{activeCount}</span><DeltaBadge value={headcountDelta} /></span>} />
+            value={<span className="flex flex-wrap items-baseline gap-2"><span>{headcountCur}</span><DeltaBadge value={headcountDelta} /></span>} />
           <StatCard tone="emerald" icon={<Wallet className="h-4 w-4" />} label={`Payroll · ${periods[lastActual].label}`}
             href={`/hr/payout?year=${periods[lastActual].year}&month=${periods[lastActual].month}`}
             value={<span className="flex flex-wrap items-baseline gap-2"><span>{fmtINR(costAnchor)}</span><DeltaBadge value={costDelta} /></span>} />
-          <StatCard tone="blue" icon={<CalendarCheck className="h-4 w-4" />} label="Attendance rate (MTD)"
-            href={`/hr/attendance?year=${Y}&month=${Mo}`}
+          <StatCard tone="blue" icon={<CalendarCheck className="h-4 w-4" />} label={isCurrentRefMonth ? "Attendance rate (MTD)" : `Attendance rate · ${cur.label}`}
+            href={`/hr/attendance?year=${refYear}&month=${refMonth}`}
             value={<span className="flex flex-wrap items-baseline gap-2"><span>{attCur.rate}%</span><DeltaBadge value={attRateDelta} /></span>} />
           <StatCard tone="emerald" icon={<CalendarCheck className="h-4 w-4" />} label="Present today"
-            href={`/hr/attendance?year=${Y}&month=${Mo}`} value={presentToday} />
+            href={`/hr/attendance?year=${todayY}&month=${todayM}`} value={presentToday} />
           <StatCard tone="amber" icon={<Clock className="h-4 w-4" />} label="On leave today"
-            href={`/hr/attendance?year=${Y}&month=${Mo}`} value={onLeaveToday} />
-          <StatCard tone="amber" icon={<UserMinus className="h-4 w-4" />} label="Attrition this month"
+            href={`/hr/attendance?year=${todayY}&month=${todayM}`} value={onLeaveToday} />
+          <StatCard tone="amber" icon={<UserMinus className="h-4 w-4" />} label={`Attrition · ${cur.label}`}
             href="/hr/employees?status=INACTIVE"
             value={<span className="flex flex-wrap items-baseline gap-2"><span>{leaversCur}</span><DeltaBadge value={attritionDelta} invert /></span>} />
         </div>
 
-        {/* Pill-driven trend board — heaviest section (12x monthly aggregations), streamed */}
+        {/* Pill-driven trend board — heaviest section (12x monthly aggregations), streamed.
+            Window ends at the reference month, not necessarily "now". */}
         <Suspense fallback={<Skeleton className="h-[420px] w-full rounded-2xl" />}>
-          <DashboardTrends today={todayUTC} />
+          <DashboardTrends year={refYear} month={refMonth} />
         </Suspense>
 
-        {/* Utilization + leave burn + workforce composition, streamed */}
+        {/* Utilization + leave burn + workforce composition, streamed. Kept as a
+            current-snapshot ("now") rather than re-anchored to the reference month —
+            it's workforce composition/utilization, not a monthly KPI. */}
         <Suspense
           fallback={
             <div className="space-y-6">
@@ -139,7 +176,7 @@ export default async function HrPage() {
           ))}
         </div>
 
-        <p className="text-center text-[11px] text-slate-400">&quot;Projected&quot; values are least-squares trend extrapolations, not guarantees · {netPayrollMonth ? `${fmtINR(netPayrollMonth)} processed this month` : "no payroll processed yet this month"}</p>
+        <p className="text-center text-[11px] text-slate-400">&quot;Projected&quot; values are least-squares trend extrapolations, not guarantees · {netPayrollMonth ? `${fmtINR(netPayrollMonth)} processed ${isCurrentRefMonth ? "this month" : `in ${cur.label} ${refYear}`}` : `no payroll processed ${isCurrentRefMonth ? "yet this month" : `in ${cur.label} ${refYear}`}`}</p>
       </div>
     </>
   );
