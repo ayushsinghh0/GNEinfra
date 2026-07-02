@@ -16,6 +16,31 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid input" }, { status: 400 });
   }
   const d = parsed.data;
+
+  // Server-authoritative guardrail: an employee can't be committed over 100%
+  // across concurrent (active) project assignments. Null incoming allocation
+  // never blocks (it doesn't add to anyone's committed %).
+  if (typeof d.allocationPct === "number") {
+    const now = new Date();
+    const todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+    const agg = await prisma.projectAssignment.aggregate({
+      where: {
+        employeeId: d.employeeId,
+        OR: [{ endDate: null }, { endDate: { gte: todayUTC } }],
+      },
+      _sum: { allocationPct: true },
+    });
+    const committed = agg._sum.allocationPct ?? 0;
+    if (committed + d.allocationPct > 100) {
+      return NextResponse.json(
+        {
+          error: `Over-allocated: employee is already committed at ${committed}% across active projects; ${d.allocationPct}% more exceeds 100%.`,
+        },
+        { status: 409 },
+      );
+    }
+  }
+
   try {
     const assignment = await prisma.projectAssignment.create({
       data: {

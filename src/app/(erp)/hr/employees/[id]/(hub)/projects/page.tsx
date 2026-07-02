@@ -7,6 +7,7 @@ import { fmtDateOnly } from "@/lib/format";
 import { DetailSection, EntityLink, EmptyState, btn } from "@/components/ui";
 import AssignProjectForm from "@/components/hr/AssignProjectForm";
 import RemoveAssignmentButton from "@/components/hr/RemoveAssignmentButton";
+import { activeAllocation } from "@/lib/hr-projects";
 import { getEmployee } from "../_data";
 
 export const dynamic = "force-dynamic";
@@ -30,6 +31,9 @@ export default async function EmployeeProjectsTab({
     }),
   ]);
   if (!emp) notFound();
+
+  const committedPct = activeAllocation(emp.projectAssignments);
+  const remainingPct = Math.max(0, 100 - committedPct);
 
   return (
     <div className="space-y-6">
@@ -73,7 +77,14 @@ export default async function EmployeeProjectsTab({
           </div>
         )}
 
-        {canWrite && <AssignProjectForm employeeId={id} projects={activeProjects} />}
+        {canWrite && (
+          <AssignProjectForm
+            employeeId={id}
+            projects={activeProjects}
+            committedPct={committedPct}
+            remainingPct={remainingPct}
+          />
+        )}
       </DetailSection>
     </div>
   );

@@ -68,14 +68,28 @@ export function assignmentStats(
   endDate: Date | null,
 ) {
   const teamSize = assignments.length;
-  const totalAllocation = assignments.reduce((s, a) => s + (a.allocationPct ?? 0), 0);
   const roles = new Set(
     assignments.map((a) => a.roleOnProject).filter((r): r is string => !!r),
   );
   return {
     teamSize,
-    totalAllocation,
     roleCount: roles.size,
     durationDays: durationDays(startDate, endDate),
   };
+}
+
+/**
+ * Sum of allocationPct across a single employee's ACTIVE assignment rows (endDate
+ * null or on/after `asOf`, default today at UTC midnight). Null allocationPct
+ * contributes 0 — never blocks/undercounts as NaN.
+ */
+export function activeAllocation(
+  rows: { allocationPct: number | null; endDate: Date | null }[],
+  asOf: Date = new Date(),
+): number {
+  const cutoff = Date.UTC(asOf.getUTCFullYear(), asOf.getUTCMonth(), asOf.getUTCDate());
+  return rows.reduce((sum, r) => {
+    const active = r.endDate == null || r.endDate.getTime() >= cutoff;
+    return active ? sum + (r.allocationPct ?? 0) : sum;
+  }, 0);
 }

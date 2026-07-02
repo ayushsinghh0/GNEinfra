@@ -19,7 +19,7 @@ import {
 import { DataTable, type Column } from "@/components/DataTable";
 import AssignEmployeeForm from "@/components/hr/AssignEmployeeForm";
 import RemoveAssignmentButton from "@/components/hr/RemoveAssignmentButton";
-import { projectTimeline, assignmentStats } from "@/lib/hr-projects";
+import { projectTimeline, assignmentStats, activeAllocation } from "@/lib/hr-projects";
 
 export const dynamic = "force-dynamic";
 
@@ -56,6 +56,25 @@ export default async function ProjectDetailPage({
 
   const tl = projectTimeline(project.status, project.startDate, project.endDate);
   const stats = assignmentStats(project.assignments, project.startDate, project.endDate);
+
+  // Cross-project committed % per assignee (not just this project) — how many of this
+  // project's team are over-allocated across ALL their active assignments.
+  const assigneeIds = project.assignments.map((a) => a.employeeId);
+  const crossProjectRows = assigneeIds.length
+    ? await prisma.projectAssignment.findMany({
+        where: { employeeId: { in: assigneeIds } },
+        select: { employeeId: true, allocationPct: true, endDate: true },
+      })
+    : [];
+  const rowsByEmployee = new Map<string, { allocationPct: number | null; endDate: Date | null }[]>();
+  for (const row of crossProjectRows) {
+    const arr = rowsByEmployee.get(row.employeeId);
+    if (arr) arr.push(row);
+    else rowsByEmployee.set(row.employeeId, [row]);
+  }
+  const overAllocatedCount = assigneeIds.filter(
+    (id) => activeAllocation(rowsByEmployee.get(id) ?? []) > 100,
+  ).length;
 
   type AssignmentRow = (typeof project.assignments)[number];
   const rosterColumns: Column<AssignmentRow>[] = [
@@ -154,7 +173,12 @@ export default async function ProjectDetailPage({
 
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           <StatCard label="Team size" value={stats.teamSize} tone="brand" icon={<Users className="h-4 w-4" />} />
-          <StatCard label="Total allocation" value={`${stats.totalAllocation}%`} tone="blue" icon={<Gauge className="h-4 w-4" />} />
+          <StatCard
+            label="Over-allocated"
+            value={overAllocatedCount}
+            tone={overAllocatedCount > 0 ? "rose" : "blue"}
+            icon={<Gauge className="h-4 w-4" />}
+          />
           <StatCard label="Duration" value={stats.durationDays != null ? `${stats.durationDays}d` : "—"} tone="amber" icon={<CalendarRange className="h-4 w-4" />} />
           <StatCard label="Roles" value={stats.roleCount} tone="emerald" icon={<Layers className="h-4 w-4" />} />
         </div>
