@@ -101,6 +101,7 @@ export default async function EmployeesPage({
     {
       key: "status",
       header: "Status",
+      cardLabel: "Status",
       cell: (e) => (
         <span className="relative z-10">
           <StatusChip status={e.status} />

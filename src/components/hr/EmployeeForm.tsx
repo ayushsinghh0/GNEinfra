@@ -64,9 +64,9 @@ export default function EmployeeForm({ id, initial }: { id?: string; initial?: V
     doSave();
   }
 
-  const Txt = (k: string, label: string, req = false, type = "text") => (
+  const Txt = (k: string, label: string, req = false, type = "text", inputMode?: "numeric" | "decimal" | "text") => (
     <Field label={label} required={req} htmlFor={k}>
-      <Input id={k} type={type} value={v[k]} onChange={set(k)} />
+      <Input id={k} type={type} value={v[k]} onChange={set(k)} inputMode={inputMode} />
     </Field>
   );
 
@@ -103,11 +103,11 @@ export default function EmployeeForm({ id, initial }: { id?: string; initial?: V
       </Section>
 
       <Section title="Compensation">
-        {Txt("totalCtc", "Total CTC (₹)")}
-        {Txt("salary", "Salary (₹)")}
-        {Txt("lta", "LTA (₹)")}
-        {Txt("specialAllowance", "Special Allowance (₹)")}
-        {Txt("conveyance", "Conveyance (₹)")}
+        {Txt("totalCtc", "Total CTC (₹)", false, "text", "numeric")}
+        {Txt("salary", "Salary (₹)", false, "text", "numeric")}
+        {Txt("lta", "LTA (₹)", false, "text", "numeric")}
+        {Txt("specialAllowance", "Special Allowance (₹)", false, "text", "numeric")}
+        {Txt("conveyance", "Conveyance (₹)", false, "text", "numeric")}
       </Section>
 
       <Section title="Statutory & Leave">

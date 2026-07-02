@@ -376,14 +376,25 @@ export function StatCard({
       )}
     </>
   );
-  const cls = cn(
-    cardCls,
-    "lift p-5",
-    (href || onClick) && "block w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40",
-    className
-  );
-  if (href) return <Link href={href} className={cls}>{inner}</Link>;
-  if (onClick) return <button type="button" onClick={onClick} className={cls}>{inner}</button>;
+  if (href) {
+    const cls = cn(
+      cardCls,
+      "lift p-5",
+      href && "block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40",
+      className
+    );
+    return <Link href={href} className={cls}>{inner}</Link>;
+  }
+  if (onClick) {
+    const cls = cn(
+      cardCls,
+      "lift p-5",
+      "w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40",
+      className
+    );
+    return <button type="button" onClick={onClick} className={cls}>{inner}</button>;
+  }
+  const cls = cn(cardCls, "lift p-5", className);
   return <div className={cls}>{inner}</div>;
 }
 

@@ -317,7 +317,7 @@ export default function PayrollEditor({
       )}
 
       <ConfirmDialog
-        open={confirmSplitAll}
+        open={canWrite && confirmSplitAll}
         title="Auto-split all from CTC?"
         message={`Overwrite earnings for all ${rows.length} employees from their CTC? Unsaved changes will be replaced.`}
         confirmLabel="Auto-split all"
@@ -410,7 +410,7 @@ function EditorBody({
               <div className="relative">
                 <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-slate-400">₹</span>
                 <input
-                  type="number" min={0} value={gross}
+                  type="number" min={0} inputMode="numeric" value={gross}
                   onChange={(e) => setGross(Math.max(0, Math.floor(Number(e.target.value) || 0)))}
                   className="nums h-10 w-full rounded-xl border border-slate-200 bg-white pl-7 pr-3 text-right text-sm outline-none focus:border-brand focus:ring-[3px] focus:ring-brand/20"
                 />
@@ -554,7 +554,7 @@ function ExtraLines({
               <div className="relative">
                 <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-sm text-slate-400">₹</span>
                 <input
-                  type="number" min={0} step={1} value={l.amount} disabled={!canWrite}
+                  type="number" min={0} step={1} inputMode="numeric" value={l.amount} disabled={!canWrite}
                   onChange={(e) => update(i, { amount: Math.max(0, Math.floor(Number(e.target.value) || 0)) })}
                   className="nums h-9 w-28 rounded-lg border border-slate-200 bg-white pl-6 pr-2 text-right text-sm text-slate-900 outline-none focus:border-brand focus:ring-[3px] focus:ring-brand/20 disabled:bg-slate-50"
                 />
@@ -579,7 +579,7 @@ function MoneyRow({ label, value, onChange, disabled }: { label: string; value: 
       <div className="relative">
         <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-slate-400">₹</span>
         <input
-          type="number" min={0} step={1} value={value} disabled={disabled}
+          type="number" min={0} step={1} inputMode="numeric" value={value} disabled={disabled}
           onChange={(e) => onChange(Math.floor(Number(e.target.value) || 0))}
           className="nums h-9 w-36 rounded-lg border border-slate-200 bg-white pl-7 pr-2.5 text-right text-sm text-slate-900 outline-none focus:border-brand focus:ring-[3px] focus:ring-brand/20 disabled:bg-slate-50 disabled:text-slate-400"
         />

@@ -4,17 +4,17 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Segmented from "@/components/Segmented";
 import { buildQuery, type ParsedListParams } from "@/lib/hr-filters";
 
-const DEFAULT_PRESERVE = ["q", "category", "location", "employeeId", "sort"];
+const DEFAULT_PRESERVE: (keyof ParsedListParams)[] = ["q", "category", "location", "employeeId", "sort"];
 
 export interface SavedViewPillsProps {
   /** List page path the pills navigate within, e.g. "/hr/employees". */
   basePath: string;
   /** Query param the pills drive — defaults to "status". */
-  param?: string;
+  param?: keyof ParsedListParams;
   /** Pill options; `value: ""` renders as the "All" pill. */
   views: { value: string; label: string }[];
   /** Other param names to carry through unchanged when a pill is clicked. */
-  preserve?: string[];
+  preserve?: (keyof ParsedListParams)[];
 }
 
 /**
