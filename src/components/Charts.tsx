@@ -590,18 +590,136 @@ export type DistributionSegment = { label: string; value: number; href?: string 
 
 // Static, ordered palette shared by the bar fill, the legend dots, and any
 // caller-side ranked list that wants matching dot colors (e.g. CompositionBoard's
-// detail rows) — index 5 (slate-300) is the color that lands on the grouped
-// "Other" bucket once segments exceed DISTRIBUTION_MAX.
+// detail rows and SegmentDonut's arcs) — two shades per hue (light for the first
+// pass through the family, dark for the second) so up to 9 real categories each
+// get a genuinely distinct color before repeating. slate-300, now the LAST entry,
+// is the color that lands on the grouped "Other" bucket once segments exceed
+// DISTRIBUTION_MAX (DistributionBar only — SegmentDonut/CompositionBoard never
+// group into "Other", they cycle the palette instead).
 export const DISTRIBUTION_COLORS = [
   "bg-brand-500",
   "bg-emerald-400",
   "bg-sky-400",
   "bg-violet-400",
   "bg-amber-400",
+  "bg-brand-700",
+  "bg-emerald-600",
+  "bg-sky-600",
+  "bg-violet-600",
   "bg-slate-300",
 ] as const;
 
+// Stroke-color twin of DISTRIBUTION_COLORS (same order, same index) for SVG arcs
+// (SegmentDonut) — Tailwind can't derive a `stroke-*` class from a `bg-*` string,
+// so this parallel static list keeps arcs and legend dots pixel-matched by index.
+export const DISTRIBUTION_STROKES = [
+  "stroke-brand-500",
+  "stroke-emerald-400",
+  "stroke-sky-400",
+  "stroke-violet-400",
+  "stroke-amber-400",
+  "stroke-brand-700",
+  "stroke-emerald-600",
+  "stroke-sky-600",
+  "stroke-violet-600",
+  "stroke-slate-300",
+] as const;
+
 const DISTRIBUTION_MAX = 6;
+
+/* ── Segment donut (multi-segment SVG donut + centered total) ────────────
+   Generalizes RingGauge's rotate(-90) + stroke-dasharray arc technique from a
+   single value to N proportional segments: same track-circle-plus-overlaid-arc
+   idea, just one stroked circle per segment, each dasharray'd to its own share
+   of the circumference and dashoffset'd to start where the previous one ended.
+   Segments are colored by array index from DISTRIBUTION_STROKES so a caller's
+   dot-legend (indexed into DISTRIBUTION_COLORS the same way) always matches its
+   arc — index parity is why zero-value entries are NOT filtered out before
+   mapping (that would shift every later index out of sync with the caller's
+   list); they simply contribute a zero-length, invisible arc instead. A single
+   real (non-zero) segment renders a seamless full ring (no gap to notch), and
+   an empty/all-zero `segments` renders a plain slate-100 track with no arcs at
+   all. The whole graphic is one `role="img"` with a summarizing aria-label;
+   every part inside (arcs, track, the center value overlay) is aria-hidden so
+   nothing is announced twice. */
+export function SegmentDonut({
+  segments,
+  centerValue,
+  centerLabel,
+  size = 160,
+  ariaLabel,
+}: {
+  segments: { label: string; value: number }[];
+  centerValue: string | number;
+  centerLabel?: string;
+  size?: number; // px
+  ariaLabel?: string;
+}) {
+  const strokeW = 14;
+  const r = 50 - strokeW / 2;
+  const C = 2 * Math.PI * r;
+  const total = segments.reduce((s, x) => s + Math.max(0, x.value), 0);
+  // A visible seam only makes sense between two-or-more real slices — one
+  // real segment (however many zero-value entries ride along beside it) still
+  // reads as a single full ring, and an all-zero set has nothing to seam.
+  const positiveCount = segments.filter((s) => s.value > 0).length;
+  const gapPx = positiveCount > 1 ? 0.012 * C : 0;
+
+  let acc = 0;
+  const arcs = segments.map((s, i) => {
+    const frac = total > 0 ? Math.max(0, s.value) / total : 0;
+    const len = Math.max(0, frac * C - gapPx);
+    const offset = -(acc * C);
+    acc += frac;
+    return { key: `${s.label}-${i}`, len, offset, cls: DISTRIBUTION_STROKES[i % DISTRIBUTION_STROKES.length] };
+  });
+
+  const summary =
+    ariaLabel ??
+    (total > 0
+      ? `${centerLabel ? `${centerLabel} ` : ""}${centerValue} — ${segments
+          .filter((s) => s.value > 0)
+          .map((s) => `${s.label} ${Math.round((s.value / total) * 100)}%`)
+          .join(", ")}`
+      : `${centerLabel ? `${centerLabel} ` : ""}${centerValue}`);
+
+  return (
+    <div className="relative inline-flex shrink-0 items-center justify-center" style={{ width: size, height: size }}>
+      <svg viewBox="0 0 100 100" width={size} height={size} role="img" aria-label={summary}>
+        <g transform="rotate(-90 50 50)" aria-hidden="true">
+          <circle cx="50" cy="50" r={r} fill="none" className="stroke-slate-100" strokeWidth={strokeW} />
+          {total > 0 &&
+            arcs.map((a) =>
+              a.len > 0 ? (
+                <circle
+                  key={a.key}
+                  cx="50"
+                  cy="50"
+                  r={r}
+                  fill="none"
+                  strokeWidth={strokeW}
+                  strokeLinecap="round"
+                  strokeDasharray={`${a.len} ${Math.max(0, C - a.len)}`}
+                  strokeDashoffset={a.offset}
+                  className={cn(
+                    a.cls,
+                    "motion-safe:transition-[stroke-dashoffset] motion-safe:duration-700 motion-safe:ease-out motion-reduce:transition-none"
+                  )}
+                />
+              ) : null
+            )}
+        </g>
+      </svg>
+      <div
+        className="pointer-events-none absolute inset-0 grid place-content-center px-2 text-center"
+        aria-hidden="true"
+      >
+        <div className="nums text-2xl font-semibold leading-none text-slate-900">{centerValue}</div>
+        {centerLabel && <div className="mt-1 text-[11px] font-medium text-slate-400">{centerLabel}</div>}
+      </div>
+    </div>
+  );
+}
 
 export function DistributionBar({ segments }: { segments: DistributionSegment[] }) {
   const clean = segments.filter((s) => s.value > 0);
