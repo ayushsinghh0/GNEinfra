@@ -1,7 +1,7 @@
 import { FolderKanban } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Card, CardHeader, CardBody, ProgressBar, EmptyState } from "@/components/ui";
-import { BarList } from "@/components/Charts";
+import { BarList, RingGauge } from "@/components/Charts";
 import CompositionBoard from "@/components/hr/CompositionBoard";
 
 type Bar = { label: string; count: number; href?: string };
@@ -46,6 +46,9 @@ export default async function DashboardComposition({ today }: { today: Date }) {
   const totalSickQuota = activeEmployees.reduce((s, e) => s + e.sickLeaveQuota, 0);
   const casualBurn = totalCasualQuota ? Math.round((casualYear / totalCasualQuota) * 100) : 0;
   const sickBurn = totalSickQuota ? Math.round((sickYear / totalSickQuota) * 100) : 0;
+  const totalQuota = totalCasualQuota + totalSickQuota;
+  const totalUsed = casualYear + sickYear;
+  const combinedBurn = totalQuota ? Math.round((totalUsed / totalQuota) * 100) : 0;
 
   // Project allocation.
   const benchCount = Math.max(0, activeCount - assigned.length);
@@ -78,20 +81,35 @@ export default async function DashboardComposition({ today }: { today: Date }) {
         </Card>
         <Card>
           <CardHeader title="Leave burn (this year)" subtitle={`Days taken vs total annual quota · across ${activeCount} active employees`} />
-          <CardBody className="space-y-5">
-            <div>
-              <div className="mb-1.5 flex items-center justify-between text-sm">
-                <span className="text-slate-600">Casual leave</span>
-                <span className="nums text-slate-700">{casualYear} / {totalCasualQuota} <span className="text-slate-400">({casualBurn}%)</span></span>
+          <CardBody>
+            <div className="grid gap-6 sm:grid-cols-[auto_1fr] sm:items-center">
+              <div className="flex justify-center gap-6 sm:justify-start">
+                <RingGauge
+                  value={casualBurn}
+                  tone="amber"
+                  label="Casual leave"
+                  sublabel={`${casualYear} of ${totalCasualQuota} days`}
+                />
+                <RingGauge
+                  value={sickBurn}
+                  tone="brand"
+                  label="Sick leave"
+                  sublabel={`${sickYear} of ${totalSickQuota} days`}
+                />
               </div>
-              <ProgressBar value={casualBurn} tone="amber" />
-            </div>
-            <div>
-              <div className="mb-1.5 flex items-center justify-between text-sm">
-                <span className="text-slate-600">Sick leave</span>
-                <span className="nums text-slate-700">{sickYear} / {totalSickQuota} <span className="text-slate-400">({sickBurn}%)</span></span>
+              <div className="space-y-3 border-t border-slate-100 pt-5 sm:border-t-0 sm:border-l sm:pl-6 sm:pt-0">
+                <div>
+                  <div className="text-xs font-medium text-slate-500">Total leave used</div>
+                  <div className="nums mt-1 text-[28px] font-semibold leading-none text-slate-900">
+                    {totalUsed}
+                    <span className="ml-1.5 text-sm font-normal text-slate-400">of {totalQuota} quota days</span>
+                  </div>
+                </div>
+                <ProgressBar value={combinedBurn} tone="brand" />
+                <p className="text-xs text-slate-400">
+                  <span className="nums">{combinedBurn}%</span> burned across <span className="nums">{activeCount}</span> active employees
+                </p>
               </div>
-              <ProgressBar value={sickBurn} tone="brand" />
             </div>
           </CardBody>
         </Card>

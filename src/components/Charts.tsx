@@ -3,6 +3,7 @@
 // and on-brand. All motion is CSS and gated on prefers-reduced-motion.
 
 import Link from "next/link";
+import { cn } from "@/components/ui";
 
 /* ── Smooth area + line trend ───────────────────────────────────────────── */
 function smoothPath(pts: { x: number; y: number }[]) {
@@ -460,6 +461,190 @@ export function BarList({
           <div key={item.label}>{row}</div>
         );
       })}
+    </div>
+  );
+}
+
+/* ── Ring gauge (bespoke SVG donut-style % ring) ──────────────────────────
+   Generic, reusable — a background track + a rounded-linecap arc for `value`%,
+   with the percentage centered in the ring and a label/sublabel beneath. Tone
+   maps to STATIC stroke/fill class lists (Tailwind can't see interpolated
+   class names), so every tone this component supports must be listed in both
+   maps below. Pure SVG + CSS (no client JS) so it stays server-renderable. */
+export type RingTone = "brand" | "amber" | "emerald" | "sky" | "violet" | "rose";
+
+const RING_STROKE: Record<RingTone, string> = {
+  brand: "stroke-brand-500",
+  amber: "stroke-amber-500",
+  emerald: "stroke-emerald-500",
+  sky: "stroke-sky-500",
+  violet: "stroke-violet-500",
+  rose: "stroke-rose-500",
+};
+
+// Text tone one step darker than the stroke for contrast/legibility, mirroring
+// the darkness convention StatCard's STAT_TONES already uses (700 for brand,
+// 600 for the rest).
+const RING_FILL: Record<RingTone, string> = {
+  brand: "fill-brand-700",
+  amber: "fill-amber-600",
+  emerald: "fill-emerald-600",
+  sky: "fill-sky-600",
+  violet: "fill-violet-600",
+  rose: "fill-rose-600",
+};
+
+export function RingGauge({
+  value,
+  label,
+  sublabel,
+  tone = "brand",
+  size = 96,
+}: {
+  value: number; // 0–100
+  label: string;
+  sublabel?: string;
+  tone?: RingTone;
+  size?: number; // px
+}) {
+  const v = Math.max(0, Math.min(100, Math.round(value)));
+  const strokeW = 10;
+  const r = 50 - strokeW / 2;
+  const C = 2 * Math.PI * r;
+  const dash = (v / 100) * C;
+
+  return (
+    <div className="flex flex-col items-center text-center" style={{ width: size }}>
+      <svg viewBox="0 0 100 100" width={size} height={size} role="img" aria-label={`${label}: ${v}%`}>
+        {/* Rotate just the ring geometry (not the text) so the arc starts at 12 o'clock
+            while the center label stays upright. */}
+        <g transform="rotate(-90 50 50)">
+          <circle cx="50" cy="50" r={r} fill="none" className="stroke-slate-100" strokeWidth={strokeW} />
+          {v > 0 && (
+            <circle
+              cx="50"
+              cy="50"
+              r={r}
+              fill="none"
+              strokeWidth={strokeW}
+              strokeLinecap="round"
+              strokeDasharray={C}
+              strokeDashoffset={C - dash}
+              className={cn(
+                RING_STROKE[tone],
+                "motion-safe:transition-[stroke-dashoffset] motion-safe:duration-700 motion-safe:ease-out motion-reduce:transition-none"
+              )}
+            />
+          )}
+        </g>
+        <text
+          x="50"
+          y="54"
+          textAnchor="middle"
+          dominantBaseline="middle"
+          fontSize="22"
+          fontWeight="700"
+          className={cn("nums", RING_FILL[tone])}
+        >
+          {v}%
+        </text>
+      </svg>
+      <div className="mt-2 text-xs font-semibold text-slate-700">{label}</div>
+      {sublabel && <div className="nums text-[11px] text-slate-400">{sublabel}</div>}
+    </div>
+  );
+}
+
+/* ── Distribution bar (segmented 100% bar + color-keyed legend) ──────────
+   One horizontal bar sliced proportionally by `segments`, plus a wrapping
+   legend below with a color dot + label + count + pct per segment. Legend
+   items are Link-wrapped (44px tap target) when `href` is given. More than
+   DISTRIBUTION_MAX segments collapse the tail into a non-linked "Other"
+   bucket so the bar/legend never turn into an unreadable rainbow. */
+export type DistributionSegment = { label: string; value: number; href?: string };
+
+// Static, ordered palette shared by the bar fill, the legend dots, and any
+// caller-side ranked list that wants matching dot colors (e.g. CompositionBoard's
+// detail rows) — index 5 (slate-300) is the color that lands on the grouped
+// "Other" bucket once segments exceed DISTRIBUTION_MAX.
+export const DISTRIBUTION_COLORS = [
+  "bg-brand-500",
+  "bg-emerald-400",
+  "bg-sky-400",
+  "bg-violet-400",
+  "bg-amber-400",
+  "bg-slate-300",
+] as const;
+
+const DISTRIBUTION_MAX = 6;
+
+export function DistributionBar({ segments }: { segments: DistributionSegment[] }) {
+  const clean = segments.filter((s) => s.value > 0);
+  if (clean.length === 0) return null;
+
+  const display: DistributionSegment[] =
+    clean.length > DISTRIBUTION_MAX
+      ? [
+          ...clean.slice(0, DISTRIBUTION_MAX - 1),
+          { label: "Other", value: clean.slice(DISTRIBUTION_MAX - 1).reduce((s, x) => s + x.value, 0) },
+        ]
+      : clean;
+
+  const total = display.reduce((s, x) => s + x.value, 0) || 1;
+
+  return (
+    <div>
+      <div
+        className="flex h-3 w-full overflow-hidden rounded-full bg-slate-100"
+        role="img"
+        aria-label={`Distribution: ${display.map((s) => `${s.label} ${Math.round((s.value / total) * 100)}%`).join(", ")}`}
+      >
+        {display.map((seg, i) => {
+          const pct = (seg.value / total) * 100;
+          return (
+            <div
+              key={seg.label}
+              className={cn(
+                "h-full",
+                DISTRIBUTION_COLORS[i % DISTRIBUTION_COLORS.length],
+                i > 0 && "border-l-2 border-white"
+              )}
+              style={{ width: `${pct}%` }}
+              title={`${seg.label}: ${seg.value} (${Math.round(pct)}%)`}
+            />
+          );
+        })}
+      </div>
+      <ul className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5">
+        {display.map((seg, i) => {
+          const pct = Math.round((seg.value / total) * 100);
+          const content = (
+            <>
+              <span
+                className={cn("h-2.5 w-2.5 shrink-0 rounded-full", DISTRIBUTION_COLORS[i % DISTRIBUTION_COLORS.length])}
+                aria-hidden="true"
+              />
+              <span className="truncate text-slate-600 group-hover:text-brand-700">{seg.label}</span>
+              <span className="nums font-semibold text-slate-700">{seg.value}</span>
+              <span className="nums text-xs text-slate-400">({pct}%)</span>
+            </>
+          );
+          return (
+            <li key={seg.label}>
+              {seg.href ? (
+                <Link
+                  href={seg.href}
+                  className="group -mx-1.5 flex min-h-11 items-center gap-1.5 rounded-lg px-1.5 text-sm motion-safe:transition-colors hover:bg-slate-50"
+                >
+                  {content}
+                </Link>
+              ) : (
+                <span className="flex min-h-11 items-center gap-1.5 px-1.5 text-sm">{content}</span>
+              )}
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }
