@@ -131,7 +131,10 @@ export const projectSchema = z.object({
   status: z.enum(PROJECT_STATUSES).default("ACTIVE"),
   startDate: optDate,
   endDate: optDate,
-});
+}).refine(
+  (d) => !d.startDate || !d.endDate || d.endDate >= d.startDate,
+  { message: "End date cannot be before start date", path: ["endDate"] }
+);
 
 export const assignmentSchema = z.object({
   employeeId: z.string().min(1, "Employee is required"),
@@ -143,7 +146,10 @@ export const assignmentSchema = z.object({
   ),
   startDate: z.string().min(1, "Start date is required"),
   endDate: optDate,
-});
+}).refine(
+  (d) => !d.endDate || d.endDate >= d.startDate,
+  { message: "End date cannot be before start date", path: ["endDate"] }
+);
 
 // Server-authoritative totals — earnings sum, deductions sum, net payable.
 export function computePayrollTotals(p: {

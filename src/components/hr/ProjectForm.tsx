@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { Button, Field, Input, Select } from "@/components/ui";
 import { PROJECT_STATUSES } from "@/lib/hr-validation";
 import { AlertCircle } from "lucide-react";
+import { toast } from "@/components/Toast";
 
 type Values = Record<string, string>;
 const EMPTY: Values = {
@@ -14,13 +15,32 @@ export default function ProjectForm({ id, initial }: { id?: string; initial?: Va
   const router = useRouter();
   const [v, setV] = useState<Values>({ ...EMPTY, ...(initial ?? {}) });
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
-  const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+  const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setV((s) => ({ ...s, [k]: e.target.value }));
+    setFieldErrors((fe) => {
+      if (!fe[k]) return fe;
+      const next = { ...fe };
+      delete next[k];
+      return next;
+    });
+  };
 
   async function submit(e: FormEvent) {
     e.preventDefault();
-    setError(null); setBusy(true);
+    setError(null);
+
+    // Client-side pre-check mirroring the server's `.refine` on projectSchema
+    // (src/lib/hr-validation.ts) — same rule, checked before the round-trip.
+    if (v.startDate && v.endDate && v.endDate < v.startDate) {
+      setFieldErrors({ endDate: "End date cannot be before start date" });
+      setError("Please fix the highlighted field.");
+      document.getElementById("endDate")?.focus();
+      return;
+    }
+
+    setBusy(true);
     try {
       const res = await fetch(id ? `/api/hr/projects/${id}` : "/api/hr/projects", {
         method: id ? "PATCH" : "POST",
@@ -29,18 +49,31 @@ export default function ProjectForm({ id, initial }: { id?: string; initial?: Va
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "Could not save");
-      router.push("/hr/projects");
+      toast("Project saved", "success");
+      const projectId = id ?? data.project?.id;
+      router.push(projectId ? `/hr/projects/${projectId}` : "/hr/projects");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not save");
     } finally { setBusy(false); }
   }
 
-  const Txt = (k: string, label: string, req = false, type = "text") => (
-    <Field label={label} required={req} htmlFor={k}>
-      <Input id={k} type={type} value={v[k]} onChange={set(k)} />
-    </Field>
-  );
+  const Txt = (k: string, label: string, req = false, type = "text") => {
+    const err = fieldErrors[k];
+    const errId = `${k}-error`;
+    return (
+      <Field label={label} required={req} htmlFor={k} error={err} errorId={err ? errId : undefined}>
+        <Input
+          id={k}
+          type={type}
+          value={v[k]}
+          onChange={set(k)}
+          aria-invalid={err ? true : undefined}
+          aria-describedby={err ? errId : undefined}
+        />
+      </Field>
+    );
+  };
 
   return (
     <form onSubmit={submit} className="space-y-6">

@@ -52,11 +52,23 @@ export default function AssignmentForm(props: AssignmentFormProps) {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [dateError, setDateError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   async function submit(e: FormEvent) {
     e.preventDefault();
     setError(null);
+
+    // Client-side pre-check mirroring the server's `.refine` on
+    // assignmentSchema (src/lib/hr-validation.ts) — same rule, checked
+    // before the round-trip.
+    if (startDate && endDate && endDate < startDate) {
+      setDateError("End date cannot be before start date");
+      document.getElementById("af-end")?.focus();
+      return;
+    }
+    setDateError(null);
+
     setBusy(true);
     try {
       const employeeId = props.mode === "byProject" ? props.employeeId : selectedId;
@@ -147,10 +159,28 @@ export default function AssignmentForm(props: AssignmentFormProps) {
           />
         </Field>
         <Field label="Start Date" required htmlFor="af-start">
-          <Input id="af-start" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} required />
+          <Input
+            id="af-start"
+            type="date"
+            value={startDate}
+            onChange={(e) => { setStartDate(e.target.value); setDateError(null); }}
+            required
+          />
         </Field>
-        <Field label="End Date" htmlFor="af-end">
-          <Input id="af-end" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+        <Field
+          label="End Date"
+          htmlFor="af-end"
+          error={dateError ?? undefined}
+          errorId={dateError ? "af-end-error" : undefined}
+        >
+          <Input
+            id="af-end"
+            type="date"
+            value={endDate}
+            onChange={(e) => { setEndDate(e.target.value); setDateError(null); }}
+            aria-invalid={dateError ? true : undefined}
+            aria-describedby={dateError ? "af-end-error" : undefined}
+          />
         </Field>
       </div>
       {wouldOverAllocate && (
