@@ -2,6 +2,7 @@ import * as React from "react";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { statusMeta } from "@/lib/hr-status";
+import CopyButton from "@/components/CopyButton";
 
 // Tiny class combiner (no dependency needed).
 export function cn(...parts: Array<string | false | null | undefined>) {
@@ -566,15 +567,29 @@ export const trCls =
   "group relative border-b border-slate-100 last:border-0 transition-colors hover:bg-brand-50/40 before:absolute before:inset-y-0 before:left-0 before:w-0.5 before:bg-brand before:opacity-0 before:transition-opacity hover:before:opacity-100";
 
 /* ── KeyValue (responsive description list) ────────────────────────────────── */
-export function KeyValue({ items, cols = 2 }: { items: { label: string; value: React.ReactNode; mono?: boolean }[]; cols?: 1 | 2 }) {
+export function KeyValue({
+  items,
+  cols = 2,
+}: {
+  items: { label: string; value: React.ReactNode; mono?: boolean; copy?: boolean }[];
+  cols?: 1 | 2;
+}) {
   return (
     <dl className={cn("grid gap-x-8 gap-y-0", cols === 2 ? "sm:grid-cols-2" : "grid-cols-1")}>
-      {items.map((it, i) => (
-        <div key={i} className="flex flex-col gap-0.5 border-b border-slate-100 py-2.5 sm:flex-row sm:items-baseline sm:gap-4">
-          <dt className="w-40 shrink-0 text-[13px] font-medium text-slate-500">{it.label}</dt>
-          <dd className={cn("text-sm text-slate-800", it.mono && "nums font-mono text-xs")}>{it.value ?? "—"}</dd>
-        </div>
-      ))}
+      {items.map((it, i) => {
+        // Nullish (not just falsy) — an explicit "" or 0 value still renders normally;
+        // only a genuinely-missing value gets the de-emphasized dash.
+        const empty = it.value === null || it.value === undefined;
+        return (
+          <div key={i} className="flex flex-col gap-0.5 border-b border-slate-100 py-2.5 sm:flex-row sm:items-baseline sm:gap-4">
+            <dt className="w-40 shrink-0 text-[13px] font-medium text-slate-500">{it.label}</dt>
+            <dd className={cn("flex items-center gap-0.5 text-sm text-slate-800", it.mono && "nums font-mono text-xs")}>
+              {empty ? <span className="text-slate-300">—</span> : it.value}
+              {it.copy && !empty && <CopyButton text={String(it.value)} />}
+            </dd>
+          </div>
+        );
+      })}
     </dl>
   );
 }

@@ -326,9 +326,9 @@ export default function PayrollEditor({
                       <Link
                         href={`/hr/employees/${r.emp.id}`}
                         onClick={(e) => e.stopPropagation()}
-                        className="relative z-10 -ml-1 -my-1.5 inline-flex max-w-full items-center truncate rounded px-1 py-1.5 text-xs text-slate-400 outline-none hover:text-brand-700 hover:underline focus-visible:ring-2 focus-visible:ring-brand/30"
+                        className="relative z-10 -ml-1 -my-1.5 flex min-w-0 items-center rounded px-1 py-1.5 text-xs text-slate-400 outline-none hover:text-brand-700 hover:underline focus-visible:ring-2 focus-visible:ring-brand/30"
                       >
-                        <span className="truncate">
+                        <span className="min-w-0 truncate">
                           <span className="nums font-mono">{r.emp.empId}</span> · {r.designation || "—"}
                         </span>
                       </Link>

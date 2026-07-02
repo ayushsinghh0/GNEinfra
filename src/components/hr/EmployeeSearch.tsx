@@ -1,9 +1,9 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useTransition, FormEvent } from "react";
+import { useEffect, useRef, useState, useTransition, type FormEvent } from "react";
 import { Search } from "lucide-react";
-import { Button, Select, Spinner, inputCls, cn } from "@/components/ui";
+import { Select, Spinner, inputCls, cn } from "@/components/ui";
 import { buildQuery } from "@/lib/hr-filters";
 
 const STATUSES = ["", "ACTIVE", "INACTIVE"];
@@ -27,7 +27,21 @@ export default function EmployeeSearch() {
     setStatus(urlStatus);
   }
 
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Cancel a pending search debounce on unmount so an orphaned timer can't fire
+  // router.push() after the user has navigated away — mirrors ProjectFilters.
+  useEffect(
+    () => () => {
+      if (timer.current) clearTimeout(timer.current);
+    },
+    []
+  );
+
   function apply(nextQ: string, nextStatus: string) {
+    // Any explicit apply (Enter / status change) cancels a still-pending debounce,
+    // so a stale timer can't clobber the value just applied.
+    if (timer.current) clearTimeout(timer.current);
     // Preserve any ?category=/?location= scope the page arrived with (e.g. a
     // dashboard composition-bar deep-link) — a search/status change must not
     // silently drop it, mirroring AssetStatusFilter/ProjectFilters.
@@ -51,6 +65,14 @@ export default function EmployeeSearch() {
     });
   }
 
+  // Debounced auto-apply as the user types — mirrors AssetSearch/ProjectFilters
+  // (300ms). Enter still applies immediately via the form's onSubmit.
+  function onQChange(v: string) {
+    setQ(v);
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => apply(v, status), 300);
+  }
+
   function onSubmit(e: FormEvent) {
     e.preventDefault();
     apply(q, status);
@@ -66,8 +88,9 @@ export default function EmployeeSearch() {
         )}
         <input
           value={q}
-          onChange={(e) => setQ(e.target.value)}
+          onChange={(e) => onQChange(e.target.value)}
           placeholder="Search name, EMP ID, designation or email…"
+          aria-label="Search employees"
           className={cn(inputCls, "pl-9")}
         />
       </div>
@@ -86,10 +109,6 @@ export default function EmployeeSearch() {
           </option>
         ))}
       </Select>
-      <Button type="submit" variant="primary" className="sm:w-auto" disabled={isPending}>
-        {isPending ? <Spinner className="border-white/40 border-t-white" /> : <Search className="h-4 w-4" />}
-        Search
-      </Button>
     </form>
   );
 }

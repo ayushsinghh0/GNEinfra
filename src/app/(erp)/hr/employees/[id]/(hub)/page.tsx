@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronRight, Laptop, FolderKanban, BadgeIndianRupee } from "lucide-react";
+import { ChevronRight, Laptop, FolderKanban, BadgeIndianRupee, IdCard, Contact, Wallet, Landmark } from "lucide-react";
 import { requirePageRole, HR_VIEW } from "@/lib/rbac";
 import { fmtINR, fmtDateOnly } from "@/lib/format";
 import { MONTHS } from "@/lib/hr-validation";
@@ -47,10 +47,10 @@ export default async function EmployeeOverviewPage({
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <DetailSection title="Identity & Role">
+        <DetailSection title="Identity & Role" icon={<IdCard className="h-4 w-4 text-slate-400" />}>
           <KeyValue
             items={[
-              { label: "EMP ID", value: emp.empId, mono: true },
+              { label: "EMP ID", value: emp.empId, mono: true, copy: true },
               { label: "Name", value: emp.name },
               { label: "Designation", value: emp.designation },
               { label: "Category", value: emp.empCategory },
@@ -61,7 +61,7 @@ export default async function EmployeeOverviewPage({
           />
         </DetailSection>
 
-        <DetailSection title="Contact & Personal">
+        <DetailSection title="Contact & Personal" icon={<Contact className="h-4 w-4 text-slate-400" />}>
           <KeyValue
             items={[
               { label: "Mail ID", value: emp.mailId },
@@ -75,7 +75,7 @@ export default async function EmployeeOverviewPage({
           />
         </DetailSection>
 
-        <DetailSection title="Compensation">
+        <DetailSection title="Compensation" icon={<Wallet className="h-4 w-4 text-slate-400" />}>
           <KeyValue
             items={[
               { label: "Total CTC", value: fmtINR(emp.totalCtc) },
@@ -85,17 +85,22 @@ export default async function EmployeeOverviewPage({
               { label: "Conveyance", value: fmtINR(emp.conveyance) },
             ]}
           />
+          {emp.totalCtc != null && (
+            <p className="nums mt-2.5 px-1 text-xs text-slate-400">
+              Monthly gross ≈ {fmtINR(Math.round(emp.totalCtc / 12))}
+            </p>
+          )}
         </DetailSection>
 
-        <DetailSection title="Statutory & Leave">
+        <DetailSection title="Statutory & Leave" icon={<Landmark className="h-4 w-4 text-slate-400" />}>
           <KeyValue
             items={[
-              { label: "Bank A/C No", value: emp.bankAccountNo, mono: true },
+              { label: "Bank A/C No", value: emp.bankAccountNo, mono: true, copy: true },
               { label: "Bank Name", value: emp.bankName },
-              { label: "IFSC", value: emp.ifsc, mono: true },
-              { label: "PAN", value: emp.panNo, mono: true },
-              { label: "UAN", value: emp.uan, mono: true },
-              { label: "ESIC No", value: emp.esicNo, mono: true },
+              { label: "IFSC", value: emp.ifsc, mono: true, copy: true },
+              { label: "PAN", value: emp.panNo, mono: true, copy: true },
+              { label: "UAN", value: emp.uan, mono: true, copy: true },
+              { label: "ESIC No", value: emp.esicNo, mono: true, copy: true },
             ]}
           />
         </DetailSection>
