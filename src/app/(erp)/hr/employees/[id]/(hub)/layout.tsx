@@ -45,8 +45,15 @@ export default async function EmployeeHubLayout({
   const year = new Date().getUTCFullYear();
   const balances = await leaveBalances(emp.id, year, emp.casualLeaveQuota, emp.sickLeaveQuota);
 
+  // UTC-midnight cutoff — MUST match hr-projects.ts's activeAllocation(),
+  // which the Projects tab uses for "X% committed". endDate is stored at
+  // UTC midnight; comparing against a full `new Date()` timestamp (today's
+  // time-of-day) instead of a date-only cutoff made an assignment ending
+  // "today" read as already-ended here but still-active there — the chip
+  // undercounted by one, with the drift varying by server time-of-day.
   const today = new Date();
-  const activeProjects = emp.projectAssignments.filter((a) => !a.endDate || a.endDate >= today).length;
+  const cutoff = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
+  const activeProjects = emp.projectAssignments.filter((a) => !a.endDate || a.endDate.getTime() >= cutoff).length;
 
   const latestPayroll = emp.payrolls[0];
   const lastPay = latestPayroll

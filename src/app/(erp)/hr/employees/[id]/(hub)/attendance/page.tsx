@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { CalendarDays } from "lucide-react";
@@ -10,6 +11,13 @@ import AttendanceCalendar from "@/components/hr/AttendanceCalendar";
 import { getEmployee } from "../_data";
 
 export const dynamic = "force-dynamic";
+
+// See (hub)/page.tsx's generateMetadata comment — same per-tab title fix.
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const emp = await getEmployee(id);
+  return { title: emp ? `${emp.name} · Attendance` : "Employee" };
+}
 
 // Mirrors the pre-hub employee detail page's summary chip palette.
 const SUMMARY_CHIPS = [

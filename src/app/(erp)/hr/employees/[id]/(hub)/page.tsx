@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronRight, Laptop, FolderKanban, BadgeIndianRupee } from "lucide-react";
@@ -8,6 +9,17 @@ import { KeyValue, DetailSection, EntityLink, EmptyState } from "@/components/ui
 import { getEmployee } from "./_data";
 
 export const dynamic = "force-dynamic";
+
+// Per-tab document title — the hub's <h1> always renders emp.name regardless
+// of active tab, so without this, switching Overview→Attendance→Assets→
+// Projects→Payroll never changed document.title, giving assistive tech no
+// cue the page changed under the route-tabs. getEmployee is React-cache()d,
+// so this second call dedupes with the page body's below (one query/request).
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const emp = await getEmployee(id);
+  return { title: emp ? `${emp.name} · Overview` : "Employee" };
+}
 
 function ViewAll({ href }: { href: string }) {
   return (
