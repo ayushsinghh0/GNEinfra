@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CalendarCheck2, Eraser, Search, Users } from "lucide-react";
 import { Button, EmptyState, EntityLink, StatCard, cn } from "@/components/ui";
+import { toast } from "@/components/Toast";
 import { ATTENDANCE_STATUSES, type AttendanceStatusValue } from "@/lib/hr-validation";
 import { STATUS, WD } from "./attendance-status";
 import AttendanceCalendar from "./AttendanceCalendar";
@@ -116,8 +117,9 @@ export default function AttendanceGrid({
         body: JSON.stringify({ year, month, entries, clears }),
       });
       if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || "Save failed");
+      toast("Attendance saved", "success");
       router.refresh();
-    } catch { alert("Could not save attendance."); }
+    } catch { toast("Could not save attendance.", "error"); }
     finally { setBusy(false); }
   }
 
