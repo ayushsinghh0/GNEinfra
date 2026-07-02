@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { requirePageRole, HR_VIEW, HR_WRITE } from "@/lib/rbac";
 import { fmtDateOnly } from "@/lib/format";
 import EmployeeSearch from "@/components/hr/EmployeeSearch";
+import SavedViewPills from "@/components/hr/SavedViewPills";
 import { DataTable, type Column } from "@/components/DataTable";
 import {
   PageHeader,
@@ -131,7 +132,20 @@ export default async function EmployeesPage({
 
       <div className="p-8 space-y-6">
         <Card>
-          <CardBody className="p-4">
+          <CardBody className="space-y-3 p-4">
+            {/* All/Active/Inactive saved-view pills — a quicker path to the same
+                `?status=` param EmployeeSearch's dropdown drives; both compose via
+                buildQuery so search/category/location scope is never dropped.
+                On-leave/Exited presets aren't built — EmployeeStatus has no
+                backing values for them without a schema migration (out of scope). */}
+            <SavedViewPills
+              basePath="/hr/employees"
+              views={[
+                { value: "", label: "All" },
+                { value: "ACTIVE", label: "Active" },
+                { value: "INACTIVE", label: "Inactive" },
+              ]}
+            />
             <Suspense fallback={<div className="h-10" />}>
               <EmployeeSearch />
             </Suspense>

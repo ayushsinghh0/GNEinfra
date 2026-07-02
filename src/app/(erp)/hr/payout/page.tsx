@@ -9,17 +9,20 @@ import { PageHeader, EmptyState } from "@/components/ui";
 import PayrollEditor, { type PayrollRow } from "@/components/hr/PayrollEditor";
 import MonthPicker from "@/components/hr/MonthPicker";
 import ScopedFilterChip from "@/components/hr/ScopedFilterChip";
+import PayoutViewPills from "@/components/hr/PayoutViewPills";
 
 const emptyStatusCounts = (): Record<AttendanceStatus, number> => ({
   PRESENT: 0, ABSENT: 0, LEAVE: 0, SICK: 0, HALF_DAY: 0, HOLIDAY: 0, WEEK_OFF: 0,
 });
+
+const VALID_VIEW = new Set(["pending", "saved"]);
 
 export const dynamic = "force-dynamic";
 
 export default async function PayoutPage({
   searchParams,
 }: {
-  searchParams: Promise<{ year?: string; month?: string; employeeId?: string }>;
+  searchParams: Promise<{ year?: string; month?: string; employeeId?: string; view?: string }>;
 }) {
   const viewer = await requirePageRole(HR_VIEW);
   const canWrite = HR_WRITE.includes(viewer.role);
@@ -29,6 +32,7 @@ export default async function PayoutPage({
   const year = Math.max(2000, Math.min(2100, Number(sp.year) || now.getUTCFullYear()));
   const month = Math.max(1, Math.min(12, Number(sp.month) || now.getUTCMonth() + 1));
   const employeeId = sp.employeeId?.trim() || undefined;
+  const view = sp.view && VALID_VIEW.has(sp.view) ? sp.view : undefined;
 
   const prevMonth = month === 1 ? 12 : month - 1;
   const prevYear = month === 1 ? year - 1 : year;
@@ -199,6 +203,19 @@ export default async function PayoutPage({
     };
   });
 
+  // All/Pending/Saved saved-view filter (Task 6). "Pending" = a blank slip with
+  // no PayrollRecord yet this month (recordId null); "Saved" = already processed.
+  // Counts reflect the full (year/month/employeeId-scoped) roster regardless of
+  // `view`, so the pills' counts don't shift under the filter that's applied.
+  const pendingCount = rows.filter((r) => r.recordId === null).length;
+  const savedCount = rows.length - pendingCount;
+  const visibleRows =
+    view === "pending"
+      ? rows.filter((r) => r.recordId === null)
+      : view === "saved"
+        ? rows.filter((r) => r.recordId !== null)
+        : rows;
+
   const monthLabel = `${MONTHS[month - 1]} ${year}`;
 
   return (
@@ -229,6 +246,15 @@ export default async function PayoutPage({
       </PageHeader>
 
       <div className="p-6 sm:p-8">
+        <div className="mb-6">
+          <PayoutViewPills
+            year={year}
+            month={month}
+            employeeId={employeeId}
+            view={view}
+            counts={{ all: rows.length, pending: pendingCount, saved: savedCount }}
+          />
+        </div>
         {scopedEmployee && (
           <ScopedFilterChip
             name={scopedEmployee.name}
@@ -244,7 +270,7 @@ export default async function PayoutPage({
             description="Add employees to start processing payroll."
           />
         ) : (
-          <PayrollEditor rows={rows} year={year} month={month} canWrite={canWrite} lastMonth={lastMonth} />
+          <PayrollEditor rows={visibleRows} year={year} month={month} canWrite={canWrite} lastMonth={lastMonth} />
         )}
       </div>
     </>
