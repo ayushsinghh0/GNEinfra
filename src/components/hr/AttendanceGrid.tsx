@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CalendarCheck2, Eraser, Search, Users } from "lucide-react";
-import { Button, EmptyState, EntityLink, StatCard, cn } from "@/components/ui";
+import { Button, EmptyState, EntityLink, ProgressBar, StatCard, cn } from "@/components/ui";
 import { toast } from "@/components/Toast";
 import { ATTENDANCE_STATUSES, type AttendanceStatusValue } from "@/lib/hr-validation";
 import { STATUS, WD } from "./attendance-status";
@@ -179,6 +179,16 @@ export default function AttendanceGrid({
     return pillEmployees;
   }, [pillEmployees, selectedEmp]);
 
+  // Calendar mode shows one big paintable month for a single employee when
+  // either they're explicitly pinned via the filter pills, or the roster
+  // itself is scoped to exactly one employee (e.g. /hr/attendance?employeeId=…).
+  // Declared here (ahead of `totals`/`scopedTally`) so both the stat strip and
+  // the calendar-mode summary panel below can branch on it.
+  const singleEmp: Emp | null =
+    filtered.length === 1 && (selectedEmp === filtered[0].id || employees.length === 1)
+      ? filtered[0]
+      : null;
+
   // Table-mode only: click a day column header to apply the current brush to
   // that day for every currently-shown (filtered) employee — a fast path for
   // marking a HOLIDAY/WEEK_OFF across the whole roster at once.
@@ -214,8 +224,51 @@ export default function AttendanceGrid({
     return { present, absent, leave, unmarked };
   }, [grid, employees, days, year, month, daysInMonth]);
 
+  // Same shape as `totals` above, narrowed to a single employee — feeds BOTH
+  // the person-framed stat strip and the "This month" summary panel in
+  // calendar mode. Always returns a concrete (never-null) object so callers
+  // don't need non-null assertions; when no single employee is in scope the
+  // counts are simply all zero and nothing renders that reads them.
+  const scopedTally = useMemo(() => {
+    const empId = singleEmp?.id;
+    const now = new Date();
+    const tY = now.getUTCFullYear(), tM = now.getUTCMonth() + 1, tD = now.getUTCDate();
+    const isFutureMonth = year > tY || (year === tY && month > tM);
+    const isPastMonth = year < tY || (year === tY && month < tM);
+    const elapsedThrough = isFutureMonth ? 0 : isPastMonth ? daysInMonth : Math.min(daysInMonth, tD);
+
+    let present = 0, absent = 0, leaveSick = 0, unmarked = 0, marked = 0;
+    if (empId) {
+      for (const { d, weekend } of days) {
+        const s = grid[key(empId, d)] ?? "";
+        if (s) marked++;
+        if (s === "PRESENT") present++;
+        else if (s === "ABSENT") absent++;
+        else if (s === "LEAVE" || s === "SICK") leaveSick++;
+        if (!s && !weekend && d <= elapsedThrough) unmarked++;
+      }
+    }
+    return { present, absent, leaveSick, unmarked, marked };
+  }, [singleEmp, grid, days, year, month, daysInMonth]);
+
   const tally = (empId: string, s: AttendanceStatusValue) =>
     days.reduce((n, { d }) => n + (grid[key(empId, d)] === s ? 1 : 0), 0);
+
+  // Status breakdown for the "This month" summary panel — every status with a
+  // nonzero count, PLUS Present/Absent even at 0 (the two anyone scanning the
+  // panel most wants to see), in ATTENDANCE_STATUSES order. The remaining
+  // zero-count statuses collapse into a single muted chip row instead of a
+  // wall of empty rows.
+  function statusBreakdown(empId: string) {
+    const shown: { s: AttendanceStatusValue; n: number }[] = [];
+    const zero: AttendanceStatusValue[] = [];
+    for (const s of ATTENDANCE_STATUSES) {
+      const n = tally(empId, s);
+      if (n > 0 || s === "PRESENT" || s === "ABSENT") shown.push({ s, n });
+      else zero.push(s);
+    }
+    return { shown, zero };
+  }
 
   // All 7 statuses, tinted per STATUS[s] (falls back to a neutral chip at 0).
   function renderTally(empId: string) {
@@ -243,23 +296,32 @@ export default function AttendanceGrid({
 
   const BRUSHES: Brush[] = [...ATTENDANCE_STATUSES, "ERASE"];
 
-  // Calendar mode shows one big paintable month for a single employee when
-  // either they're explicitly pinned via the filter pills, or the roster
-  // itself is scoped to exactly one employee (e.g. /hr/attendance?employeeId=…).
-  const singleEmp: Emp | null =
-    filtered.length === 1 && (selectedEmp === filtered[0].id || employees.length === 1)
-      ? filtered[0]
-      : null;
+  // Calendar-mode single-employee panel content, computed once here so both
+  // the two-column layout and (if ever needed) other consumers read the same
+  // values a paint stroke just produced.
+  const breakdown: { shown: { s: AttendanceStatusValue; n: number }[]; zero: AttendanceStatusValue[] } =
+    singleEmp ? statusBreakdown(singleEmp.id) : { shown: [], zero: [] };
 
   return (
     <div className="space-y-5">
-      {/* Stat strip */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <StatCard label="Employees" value={employees.length} icon={<Users className="h-4 w-4" />} tone="brand" />
-        <StatCard label="Present days" value={totals.present} icon={<CalendarCheck2 className="h-4 w-4" />} tone="emerald" />
-        <StatCard label="Absent days" value={totals.absent} tone="rose" />
-        <StatCard label="Unmarked" value={totals.unmarked} tone="slate" />
-      </div>
+      {/* Stat strip — person-framed when exactly one employee is in scope
+          (mirrors `singleEmp` below, e.g. a pinned pill or ?employeeId=…),
+          roster-wide otherwise. "Employees 1" is noise once it's one person. */}
+      {singleEmp ? (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <StatCard label="Present" value={scopedTally.present} icon={<CalendarCheck2 className="h-4 w-4" />} tone="emerald" />
+          <StatCard label="Absent" value={scopedTally.absent} tone="rose" />
+          <StatCard label="Leave + Sick" value={scopedTally.leaveSick} tone="amber" />
+          <StatCard label="Unmarked" value={scopedTally.unmarked} tone="slate" />
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <StatCard label="Employees" value={employees.length} icon={<Users className="h-4 w-4" />} tone="brand" />
+          <StatCard label="Present days" value={totals.present} icon={<CalendarCheck2 className="h-4 w-4" />} tone="emerald" />
+          <StatCard label="Absent days" value={totals.absent} tone="rose" />
+          <StatCard label="Unmarked" value={totals.unmarked} tone="slate" />
+        </div>
+      )}
 
       {/* Toolbar: legend/brush picker + view toggle + search */}
       <div className="rounded-2xl bg-white p-4 shadow-[var(--shadow-card)]">
@@ -398,25 +460,72 @@ export default function AttendanceGrid({
       ) : view === "calendar" ? (
         singleEmp ? (
           <div className="rounded-2xl bg-white p-3 shadow-[var(--shadow-card)] sm:p-5">
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-              <EntityLink href={`/hr/employees/${singleEmp.id}`} name={singleEmp.name} code={singleEmp.empId} />
-              {employees.length > 1 && (
-                <Button variant="ghost" size="sm" onClick={() => setSelectedEmp(null)}>
-                  <Users className="h-3.5 w-3.5" /> All employees
-                </Button>
-              )}
-            </div>
-            <AttendanceCalendar
-              year={year}
-              month={month}
-              daysInMonth={daysInMonth}
-              cells={calendarCells(singleEmp.id)}
-              canWrite={canWrite}
-              onCellDown={(d) => cellDown(singleEmp.id, d)}
-              onCellEnter={(d) => cellEnter(singleEmp.id, d)}
-            />
-            <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-100 pt-4">
-              {renderTally(singleEmp.id)}
+            <div className="grid gap-8 lg:grid-cols-[minmax(0,26rem)_1fr]">
+              {/* LEFT: identity + the paint-enabled calendar (unchanged behavior) */}
+              <div>
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                  <EntityLink href={`/hr/employees/${singleEmp.id}`} name={singleEmp.name} code={singleEmp.empId} />
+                  {employees.length > 1 && (
+                    <Button variant="ghost" size="sm" onClick={() => setSelectedEmp(null)}>
+                      <Users className="h-3.5 w-3.5" /> All employees
+                    </Button>
+                  )}
+                </div>
+                <AttendanceCalendar
+                  year={year}
+                  month={month}
+                  daysInMonth={daysInMonth}
+                  cells={calendarCells(singleEmp.id)}
+                  canWrite={canWrite}
+                  onCellDown={(d) => cellDown(singleEmp.id, d)}
+                  onCellEnter={(d) => cellEnter(singleEmp.id, d)}
+                />
+              </div>
+
+              {/* RIGHT: live "This month" summary — derived entirely from `grid`
+                  via `scopedTally`/`breakdown`, so it updates as the calendar
+                  is painted. Stacks below the calendar on mobile. */}
+              <div className="border-t border-slate-100 pt-6 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-8">
+                <h3 className="font-display text-sm font-semibold text-slate-700">This month</h3>
+
+                <p className="mt-3">
+                  <span className="nums text-[28px] font-semibold leading-none text-slate-900">{scopedTally.marked}</span>{" "}
+                  <span className="text-sm font-medium text-slate-400">of {daysInMonth} days marked</span>
+                </p>
+                <ProgressBar value={daysInMonth > 0 ? (scopedTally.marked / daysInMonth) * 100 : 0} className="mt-3" />
+
+                <div className="mt-6 space-y-2.5">
+                  {breakdown.shown.map(({ s, n }) => {
+                    const pct = scopedTally.marked > 0 ? (n / scopedTally.marked) * 100 : 0;
+                    return (
+                      <div key={s} className="flex items-center gap-3">
+                        <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", STATUS[s].swatch)} aria-hidden="true" />
+                        <span className="w-16 shrink-0 text-sm text-slate-600">{STATUS[s].label}</span>
+                        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-100">
+                          <div
+                            className={cn("h-full rounded-full motion-safe:transition-all duration-500", STATUS[s].swatch)}
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                        <span className="nums w-5 shrink-0 text-right text-sm font-semibold text-slate-800">{n}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {breakdown.zero.length > 0 && (
+                  <p className="mt-3 text-xs text-slate-400">
+                    {breakdown.zero.map((s) => `${STATUS[s].label} 0`).join(" · ")}
+                  </p>
+                )}
+
+                {canWrite && scopedTally.unmarked > 0 && (
+                  <p className="mt-5 text-xs text-slate-500">
+                    <span className="nums font-medium text-slate-600">{scopedTally.unmarked}</span> day{scopedTally.unmarked === 1 ? "" : "s"} unmarked
+                    {" "}— click days on the calendar to mark {scopedTally.unmarked === 1 ? "it" : "them"}.
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         ) : (
