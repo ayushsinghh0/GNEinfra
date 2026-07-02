@@ -3,7 +3,7 @@
 import { MapPin, Briefcase, Layers, Clock, Users } from "lucide-react";
 import { useState } from "react";
 import { Card, CardHeader, CardBody, EmptyState } from "@/components/ui";
-import { MonthlyBars, BarList } from "@/components/Charts";
+import { BarList } from "@/components/Charts";
 import Segmented from "@/components/Segmented";
 
 type Bar = { label: string; count: number };
@@ -47,7 +47,6 @@ export default function CompositionBoard({
   const data = dim === "tenure" ? all : [...all].sort((a, b) => b.count - a.count);
   const total = data.reduce((s, b) => s + b.count, 0);
   const max = Math.max(1, ...data.map((b) => b.count));
-  const chartData = data.slice(0, 8).map((b) => ({ label: b.label, value: b.count }));
 
   return (
     <Card>
@@ -72,11 +71,13 @@ export default function CompositionBoard({
             description="Once active employees are on record, their breakdown by this dimension will appear here."
           />
         ) : (
-          <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
-            <MonthlyBars data={chartData} />
-            <div className="lg:border-l lg:border-slate-100 lg:pl-6">
-              <BarList items={data.map((b) => ({ label: b.label, value: b.count, max, href: hrefFor(dim, b.label) }))} />
-            </div>
+          // ONE representation: the linked horizontal bar list (scales to any n,
+          // rows deep-link into the filtered employees list). The gradient column
+          // chart that used to sit beside it duplicated the same numbers and read
+          // as sparse islands at small n. Width-capped so 2-3 rows don't stretch
+          // into absurdly wide bars on large screens.
+          <div className="max-w-2xl">
+            <BarList items={data.map((b) => ({ label: b.label, value: b.count, max, href: hrefFor(dim, b.label) }))} />
           </div>
         )}
       </CardBody>

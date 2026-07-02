@@ -1,22 +1,23 @@
 "use client";
 import { useMemo, useState } from "react";
-import { Wallet, Users, CalendarCheck, Plane, FolderKanban } from "lucide-react";
+import { Wallet, Users, CalendarCheck, Plane } from "lucide-react";
 import Segmented from "@/components/Segmented";
-import { AreaChart, ForecastArea, BarList } from "@/components/Charts";
-import { Card, CardHeader, CardBody, EmptyState } from "@/components/ui";
+import { AreaChart, ForecastArea } from "@/components/Charts";
+import { Card, CardHeader, CardBody } from "@/components/ui";
 
 type Point = { label: string; value: number; forecast?: boolean };
-type Bar = { label: string; count: number; href?: string };
 
+// Time-series metrics only. Project allocation is NOT a trend — it lives in the
+// "Project utilization" card (DashboardComposition), its single home; a Projects
+// tab here used to duplicate that card's exact bars.
 export type TrendSeries = {
   payroll: Point[];       // 12 actual + forecast tail (forecast:true)
   headcount: Point[];     // 12 actual + 1 forecast
   attendance: Point[];    // 12 actual (no forecast)
   leave: Point[];         // 12 actual (no forecast)
-  projects: Bar[];        // current allocation per project
 };
 
-type Metric = "payroll" | "headcount" | "attendance" | "leave" | "projects";
+type Metric = "payroll" | "headcount" | "attendance" | "leave";
 type Range = "6" | "12";
 
 const METRICS = [
@@ -24,7 +25,6 @@ const METRICS = [
   { value: "headcount" as Metric, label: "Headcount", icon: <Users className="h-4 w-4" /> },
   { value: "attendance" as Metric, label: "Attendance", icon: <CalendarCheck className="h-4 w-4" /> },
   { value: "leave" as Metric, label: "Leave", icon: <Plane className="h-4 w-4" /> },
-  { value: "projects" as Metric, label: "Projects", icon: <FolderKanban className="h-4 w-4" /> },
 ];
 
 // Keep the last N actual points + all forecast points.
@@ -39,7 +39,6 @@ const SUBTITLE: Record<Metric, string> = {
   headcount: "Active staff at each month-end · next month projected",
   attendance: "Monthly present-equivalent %",
   leave: "Leave + sick days taken per month",
-  projects: "Active assignments per project (today)",
 };
 
 export default function TrendBoard({ series }: { series: TrendSeries }) {
@@ -58,15 +57,13 @@ export default function TrendBoard({ series }: { series: TrendSeries }) {
         title="Trends"
         subtitle={SUBTITLE[metric]}
         action={
-          metric !== "projects" ? (
-            <Segmented<Range>
-              ariaLabel="Time range"
-              size="sm"
-              value={range}
-              onChange={setRange}
-              options={[{ value: "6", label: "6 mo" }, { value: "12", label: "12 mo" }]}
-            />
-          ) : null
+          <Segmented<Range>
+            ariaLabel="Time range"
+            size="sm"
+            value={range}
+            onChange={setRange}
+            options={[{ value: "6", label: "6 mo" }, { value: "12", label: "12 mo" }]}
+          />
         }
       />
       <CardBody className="space-y-4">
@@ -75,17 +72,6 @@ export default function TrendBoard({ series }: { series: TrendSeries }) {
         {metric === "headcount" && <ForecastArea data={headcount} idPrefix="tb-head" />}
         {metric === "attendance" && <AreaChart data={attendance} ariaLabel="Monthly attendance rate" />}
         {metric === "leave" && <AreaChart data={leave} ariaLabel="Leave and sick days taken per month" />}
-        {metric === "projects" && (
-          series.projects.length === 0 ? (
-            <EmptyState
-              icon={<FolderKanban className="h-6 w-6" />}
-              title="No active projects"
-              description="Assign employees to a project to see allocation trends here."
-            />
-          ) : (
-            <BarList items={series.projects.map((p) => ({ label: p.label, value: p.count, href: p.href }))} />
-          )
-        )}
       </CardBody>
     </Card>
   );

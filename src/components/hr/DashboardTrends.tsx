@@ -3,8 +3,6 @@ import { getPeriods, monthlyAttendanceStats } from "@/lib/hr-dashboard";
 import { linearForecast } from "@/lib/hr-forecast";
 import TrendBoard, { type TrendSeries } from "@/components/hr/TrendBoard";
 
-type Bar = { label: string; count: number; href?: string };
-
 // Streamed independently of the HR dashboard's KPI band (see hr/page.tsx) — this is the
 // heaviest slice of the dashboard's data: 12x monthly aggregate/groupBy loops for payroll,
 // headcount, attendance and leave. Takes the reference year/month (not a Date) so this
@@ -16,7 +14,7 @@ type Bar = { label: string; count: number; href?: string };
 // always ending at "now" — the dashboard's MonthPicker re-anchors it.
 export default async function DashboardTrends({ year, month }: { year: number; month: number }) {
   const asOf = new Date(Date.UTC(year, month - 1, 1));
-  const { periods, cur, nextLabel } = getPeriods(asOf);
+  const { periods, nextLabel } = getPeriods(asOf);
 
   // Payroll series (12) → anchor on last non-zero month, forecast the rest.
   const payrollSeries = await Promise.all(periods.map((p) =>
@@ -44,17 +42,9 @@ export default async function DashboardTrends({ year, month }: { year: number; m
   const attendancePoints = periods.map((p, i) => ({ label: p.label, value: monthly[i].rate }));
   const leavePoints = periods.map((p, i) => ({ label: p.label, value: monthly[i].leaveDays }));
 
-  // Project allocation (for the "Projects" trend metric) — assignments still active as of
-  // the reference month's end (`cur.end`, the same exclusive month-end boundary the
-  // headcount series above uses), not literally "today".
-  const projects = await prisma.project.findMany({
-    where: { status: "ACTIVE" },
-    select: { id: true, name: true, _count: { select: { assignments: { where: { employee: { status: "ACTIVE" }, OR: [{ endDate: null }, { endDate: { gte: cur.end } }] } } } } },
-    orderBy: { name: "asc" },
-  });
-  const projectBars: Bar[] = projects.map((p) => ({ label: p.name, count: p._count.assignments, href: `/hr/projects/${p.id}` }));
-
-  const series: TrendSeries = { payroll: payrollPoints, headcount: headcountPoints, attendance: attendancePoints, leave: leavePoints, projects: projectBars };
+  // (Project allocation intentionally NOT here — it isn't a time series. Its single
+  // home is the "Project utilization" card in DashboardComposition.)
+  const series: TrendSeries = { payroll: payrollPoints, headcount: headcountPoints, attendance: attendancePoints, leave: leavePoints };
 
   return <TrendBoard series={series} />;
 }

@@ -59,8 +59,9 @@ export default async function DashboardComposition({ today }: { today: Date }) {
 
   return (
     <>
-      {/* Utilization + leave burn */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      {/* Utilization + leave burn. items-start lets each card size to its own
+          content instead of stretching the shorter (leave burn) into empty air. */}
+      <div className="grid items-start gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader title="Project utilization" subtitle={`${utilization}% deployed · ${benchCount} on the bench · ${projects.length} active projects`} />
           <CardBody>
@@ -76,7 +77,7 @@ export default async function DashboardComposition({ today }: { today: Date }) {
           </CardBody>
         </Card>
         <Card>
-          <CardHeader title="Leave burn (this year)" subtitle="Days taken vs total annual quota" />
+          <CardHeader title="Leave burn (this year)" subtitle={`Days taken vs total annual quota · across ${activeCount} active employees`} />
           <CardBody className="space-y-5">
             <div>
               <div className="mb-1.5 flex items-center justify-between text-sm">
