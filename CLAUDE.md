@@ -28,9 +28,9 @@ Two verticals are built; the rest are role-scoped "coming soon" shells:
 
 > **Branches (rewired 2026-07-02):** **`main` is the branch of record** — it was fast-forwarded to the
 > complete product (multi-role ERP + the fully-redesigned HR module, all four "Connected" phases) and
-> is what's pushed to GitHub. Work here. `multi-role-erp` is what the production box at
-> `erp.ayushraj.site` still RUNS but it is now **behind `main`** — the next deploy should use
-> `BRANCH=main` (see Deployment). `hr-connected-redesign` is merged into `main` (same commits);
+> is what's pushed to GitHub. Work here. The production box at `erp.ayushraj.site` **runs `main`**
+> (switched during the 2026-07-02 deploy; `redeploy.sh` now defaults `BRANCH=main`). `multi-role-erp`
+> is a stale pre-switch relic; `hr-connected-redesign` is merged into `main` (same commits);
 > `hr-connected-redesign-timeline` is an obsolete backdated copy (safe to delete); `vendor-only` is the
 > old vendor-only rollback relic.
 
@@ -277,13 +277,15 @@ disabled), `SUPERADMIN_EMAIL`/`SUPERADMIN_PASSWORD` (seeded once via `npm run db
 Deployed cheaply: **single AWS EC2** (Ubuntu, pm2) + **Neon** free Postgres + **Caddy** for
 auto-HTTPS (`:80/:443 → :3000`). See `deploy/`:
 - `bootstrap.sh` — one-command fresh-box setup (installs Node/Caddy/pm2/cron, builds, configures).
-- `redeploy.sh` — `git pull → npm ci → migrate deploy → db:seed → build → pm2 reload`. ⚠️ It defaults
-  `BRANCH=vendor-only`; the box currently runs `multi-role-erp`, which is now **behind `main`** — the
-  next deploy should be `BRANCH=main ./deploy/redeploy.sh` (no new migrations are needed; the entire
-  redesign was schema-free).
-  ⚠️ On the tiny t3.micro `npm ci` can OOM-kill / fill the disk — for small pushes prefer `npm install`
-  (+ `npm cache clean --force`, and don't add big swapfiles — disk is ~85% full), and run the deploy
-  **detached** (`nohup … > ~/deploy.log &`, then poll the log) since SSH (port 22) throttles during the build.
+- `redeploy.sh` — `fetch/checkout/reset --hard origin/$BRANCH → npm install → migrate deploy →
+  db:seed → heap-capped build → pm2 reload`; defaults `BRANCH=main`. It was hardened after the
+  2026-07-02 deploy: plain `git pull` died on a stale local branch ("divergent branches"), `npm ci`
+  OOM-kills / fills the disk, and `next build`'s **TypeScript phase OOM-killed twice at the default
+  Node heap** — the script now builds with `NODE_OPTIONS=--max-old-space-size=768` so it GCs into
+  swap instead. Don't add big *permanent* swapfiles (disk ~85% full); if a build still dies, a
+  temporary `/swapfile2` (512M, `swapoff`+`rm` after) is the proven escape hatch. Run the deploy
+  **detached** (`nohup ./deploy/redeploy.sh > ~/deploy.log 2>&1 &`, then poll the log) since SSH
+  (port 22) throttles during the build.
 - `ecosystem.config.js` — pm2 config; runs the Next binary directly with a **heap cap +
   `max_memory_restart`** so a leak self-restarts instead of OOM-killing the small box.
 - `purge-cron.sh` (hourly) enforces the document TTL; `backup-db.sh` (every 6h) `pg_dump`s Neon
