@@ -82,26 +82,26 @@ export default function AssetForm({
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <Field label="Employee" required htmlFor="employeeId">
-          <Select id="employeeId" value={v.employeeId} onChange={setStr("employeeId")} required disabled={!!assetId}>
-            <option value="">Select employee…</option>
-            {employees.map((emp) => (
-              <option key={emp.id} value={emp.id}>{emp.empId} — {emp.name}</option>
-            ))}
-          </Select>
-        </Field>
-
-        {/* Auto-filled from the linked employee (read-only) */}
-        <Field label="Position" htmlFor="asset-position">
-          <Input id="asset-position" value={selected?.designation ?? ""} readOnly disabled placeholder="—" />
-        </Field>
-        <Field label="Mail ID" htmlFor="asset-mail">
-          <Input id="asset-mail" value={selected?.mailId ?? ""} readOnly disabled placeholder="—" />
-        </Field>
-        <Field label="Location" htmlFor="asset-location">
-          <Input id="asset-location" value={selected?.location ?? ""} readOnly disabled placeholder="—" />
-        </Field>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="space-y-2 sm:col-span-2">
+          <Field label="Employee" required htmlFor="employeeId">
+            <Select id="employeeId" value={v.employeeId} onChange={setStr("employeeId")} required disabled={!!assetId}>
+              <option value="">Select employee…</option>
+              {employees.map((emp) => (
+                <option key={emp.id} value={emp.id}>{emp.empId} — {emp.name}</option>
+              ))}
+            </Select>
+          </Field>
+          {/* Compact read-only context for the selected employee — replaces the
+              three always-disabled Position/Mail ID/Location mirror inputs
+              (which just showed "—" until an employee was picked). Only the
+              fields the `employees` prop actually carries are shown. */}
+          {selected && (
+            <p className="truncate rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-500">
+              {[selected.designation, selected.mailId, selected.location].filter(Boolean).join(" · ") || "No profile details on file"}
+            </p>
+          )}
+        </div>
 
         <Field label="LP Serial No" htmlFor="lpSerialNo">
           <Input id="lpSerialNo" value={v.lpSerialNo} onChange={setStr("lpSerialNo")} />

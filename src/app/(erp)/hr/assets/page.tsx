@@ -4,8 +4,8 @@ import { Package, Laptop, RotateCcw, UserX } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { requirePageRole, HR_VIEW, HR_WRITE } from "@/lib/rbac";
 import { fmtDateOnly } from "@/lib/format";
-import AssetForm from "@/components/hr/AssetForm";
 import AssetRowActions from "@/components/hr/AssetRowActions";
+import AddAssetButton from "@/components/hr/AddAssetButton";
 import AssetSearch from "@/components/hr/AssetSearch";
 import ScopedFilterChip from "@/components/hr/ScopedFilterChip";
 import AssetStatusFilter from "@/components/hr/AssetStatusFilter";
@@ -13,7 +13,6 @@ import { DataTable, type Column } from "@/components/DataTable";
 import {
   PageHeader,
   Card,
-  CardHeader,
   CardBody,
   EmptyState,
   EntityLink,
@@ -185,7 +184,9 @@ export default async function AssetsPage({
         title="Asset Register"
         subtitle={`${assets.length} record(s)`}
         breadcrumbs={[{ label: "HR", href: "/hr" }, { label: "Assets" }]}
-      />
+      >
+        {canWrite && <AddAssetButton employees={employees} />}
+      </PageHeader>
 
       <div className="p-8 space-y-6">
         {scopedEmployee && (
@@ -201,7 +202,13 @@ export default async function AssetsPage({
           <StatCard label="Total assets" value={assets.length} tone="brand" icon={<Package className="h-4 w-4" />} />
           <StatCard label="Allocated" value={allocatedCount} tone="blue" icon={<Laptop className="h-4 w-4" />} />
           <StatCard label="Returned" value={returnedCount} tone="slate" icon={<RotateCcw className="h-4 w-4" />} />
-          <StatCard label="Employees with no asset" value={noAssetEmployees} tone="amber" icon={<UserX className="h-4 w-4" />} />
+          <StatCard
+            label="Employees with no asset"
+            value={noAssetEmployees}
+            tone="amber"
+            icon={<UserX className="h-4 w-4" />}
+            href="/hr/employees"
+          />
         </div>
 
         <Card>
@@ -212,15 +219,6 @@ export default async function AssetsPage({
             </Suspense>
           </CardBody>
         </Card>
-
-        {canWrite && (
-          <Card>
-            <CardHeader title="Add asset record" />
-            <CardBody>
-              <AssetForm employees={employees} />
-            </CardBody>
-          </Card>
-        )}
 
         <Card className="overflow-hidden">
           <DataTable
