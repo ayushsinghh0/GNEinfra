@@ -110,7 +110,10 @@ export default async function AttendancePage({
           />
         ) : (
           <AttendanceGrid
-            key={`${y}-${m}`}
+            // Remount on ANY roster-defining URL state — month AND employee scope.
+            // Keying on year-month alone left stale grid state when only the
+            // ?employeeId= scope changed (same corruption class as the payout fix).
+            key={`${y}-${m}-${employeeId ?? "all"}`}
             employees={employees}
             initial={initial}
             year={y}
