@@ -458,9 +458,9 @@ export default function AttendanceGrid({
 
           <TableScroll ariaLabel="Attendance grid">
             <table className="min-w-max border-collapse text-xs select-none">
-              <thead>
+              <thead className="bg-white">
                 <tr className="border-b border-slate-200">
-                  <th scope="col" className="sticky left-0 z-10 bg-slate-50/80 px-4 py-2 text-left font-semibold uppercase tracking-wide text-slate-500">Employee</th>
+                  <th scope="col" className="sticky left-0 z-10 border-r border-slate-200 bg-slate-50/80 px-4 py-2 text-left font-semibold uppercase tracking-wide text-slate-500">Employee</th>
                   {days.map(({ d, dow, weekend, today }) => {
                     const headerContent = (
                       <>
@@ -486,8 +486,19 @@ export default function AttendanceGrid({
                       </th>
                     );
                   })}
-                  {(["PRESENT", "HALF_DAY", "LEAVE", "ABSENT"] as const).map((s) => (
-                    <th key={s} scope="col" className={cn("px-2 py-2 text-center font-bold", STATUS[s].text)} title={STATUS[s].label}>{STATUS[s].code}</th>
+                  {(["PRESENT", "HALF_DAY", "LEAVE", "ABSENT"] as const).map((s, i) => (
+                    <th
+                      key={s}
+                      scope="col"
+                      className={cn(
+                        "bg-slate-50/60 px-2 py-2 text-center font-bold",
+                        i === 0 && "border-l border-slate-200",
+                        STATUS[s].text
+                      )}
+                      title={STATUS[s].label}
+                    >
+                      {STATUS[s].code}
+                    </th>
                   ))}
                 </tr>
               </thead>
@@ -495,15 +506,15 @@ export default function AttendanceGrid({
                 {filtered.map((emp) => (
                   <tr
                     key={emp.id}
-                    className="border-b border-slate-100 last:border-0 hover:bg-slate-50/40 motion-safe:transition-colors"
+                    className="group border-b border-slate-100 last:border-0 hover:bg-slate-50/60 motion-safe:transition-colors"
                   >
-                    <th scope="row" className="sticky left-0 z-10 bg-white px-4 py-1.5 text-left font-medium text-slate-800 whitespace-nowrap group-hover:bg-slate-50">
+                    <th scope="row" className="sticky left-0 z-10 border-r border-slate-200 bg-white px-4 py-1.5 text-left font-medium text-slate-800 whitespace-nowrap group-hover:bg-slate-50">
                       <span><span className="nums text-slate-400">{emp.empId}</span> {emp.name}</span>
                     </th>
-                    {days.map(({ d, weekend }) => {
+                    {days.map(({ d, weekend, today }) => {
                       const s = grid[key(emp.id, d)] ?? "";
                       return (
-                        <td key={d} className={cn("px-0.5 py-1 text-center", weekend && "bg-slate-50/70")}>
+                        <td key={d} className={cn("px-0.5 py-1 text-center", today ? "bg-brand-50/40" : weekend && "bg-slate-50")}>
                           <button
                             type="button"
                             onPointerDown={() => cellDown(emp.id, d)}
@@ -512,20 +523,31 @@ export default function AttendanceGrid({
                             aria-label={`Day ${d}: ${s ? STATUS[s].label : "unmarked"}`}
                             className={cn(
                               "mx-auto grid h-8 w-8 place-items-center rounded-md text-[11px] font-bold transition-colors",
-                              s ? STATUS[s].cell : "text-slate-300",
-                              canWrite ? "cursor-pointer hover:ring-1 hover:ring-brand-200" : "cursor-default",
-                              !s && !weekend && "hover:bg-slate-100"
+                              s ? STATUS[s].cell : "bg-slate-50 text-slate-300",
+                              canWrite ? "cursor-pointer" : "cursor-default",
+                              canWrite && (s
+                                ? "hover:ring-1 hover:ring-brand-200"
+                                : "hover:bg-slate-100 hover:ring-1 hover:ring-slate-200")
                             )}
                           >
-                            {s ? STATUS[s].code : <span className="text-slate-200">·</span>}
+                            {s ? STATUS[s].code : "·"}
                           </button>
                         </td>
                       );
                     })}
-                    {(["PRESENT", "HALF_DAY", "LEAVE", "ABSENT"] as const).map((s) => {
+                    {(["PRESENT", "HALF_DAY", "LEAVE", "ABSENT"] as const).map((s, i) => {
                       const n = tally(emp.id, s);
                       return (
-                        <td key={s} className={cn("nums px-2 text-center font-semibold", n ? STATUS[s].text : "text-slate-300")}>{n}</td>
+                        <td
+                          key={s}
+                          className={cn(
+                            "nums bg-slate-50/60 px-2 py-1.5 text-center font-semibold",
+                            i === 0 && "border-l border-slate-200",
+                            n ? STATUS[s].text : "text-slate-300"
+                          )}
+                        >
+                          {n}
+                        </td>
                       );
                     })}
                   </tr>
