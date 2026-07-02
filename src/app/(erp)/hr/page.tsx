@@ -109,14 +109,6 @@ export default async function HrPage({
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <span className="text-xs font-medium uppercase tracking-wide text-slate-500">Viewing</span>
           <MonthPicker year={refYear} month={refMonth} basePath="/hr" />
-          {!isCurrentRefMonth && (
-            <Link
-              href="/hr"
-              className="press inline-flex h-8 items-center rounded-xl px-3 text-sm font-medium text-brand-700 ring-1 ring-inset ring-brand-200 hover:bg-brand-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
-            >
-              This month
-            </Link>
-          )}
         </div>
       </BrandHero>
       <div className="space-y-8 p-6 sm:p-8">
