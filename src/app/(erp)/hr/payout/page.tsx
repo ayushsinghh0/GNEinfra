@@ -217,6 +217,7 @@ export default async function PayoutPage({
         : rows;
 
   const monthLabel = `${MONTHS[month - 1]} ${year}`;
+  const viewParam = view ? `&view=${view}` : "";
 
   return (
     <>
@@ -229,7 +230,7 @@ export default async function PayoutPage({
           Export XLSX
         </a>
         <Link
-          href={`/hr/payout?year=${prevYear}&month=${prevMonth}`}
+          href={`/hr/payout?year=${prevYear}&month=${prevMonth}${viewParam}`}
           className="inline-flex h-8 w-8 items-center justify-center rounded-xl text-slate-500 ring-1 ring-inset ring-slate-200 hover:bg-slate-50"
           aria-label="Previous month"
         >
@@ -237,7 +238,7 @@ export default async function PayoutPage({
         </Link>
         <MonthPicker year={year} month={month} basePath="/hr/payout" />
         <Link
-          href={`/hr/payout?year=${nextYear}&month=${nextMonth}`}
+          href={`/hr/payout?year=${nextYear}&month=${nextMonth}${viewParam}`}
           className="inline-flex h-8 w-8 items-center justify-center rounded-xl text-slate-500 ring-1 ring-inset ring-slate-200 hover:bg-slate-50"
           aria-label="Next month"
         >
@@ -260,7 +261,7 @@ export default async function PayoutPage({
             name={scopedEmployee.name}
             empId={scopedEmployee.empId}
             employeeHref={`/hr/employees/${employeeId}`}
-            clearHref={`/hr/payout?year=${year}&month=${month}`}
+            clearHref={`/hr/payout?year=${year}&month=${month}${viewParam}`}
           />
         )}
         {employees.length === 0 ? (

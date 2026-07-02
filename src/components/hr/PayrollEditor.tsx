@@ -7,7 +7,6 @@ import { computePayrollTotals, type PayrollExtraLine, type PayrollLineKind } fro
 import { fmtINR } from "@/lib/format";
 import { Button, StatCard, StatusChip, cn } from "@/components/ui";
 import SlideOver from "@/components/SlideOver";
-import Segmented from "@/components/Segmented";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { toast } from "@/components/Toast";
 
@@ -120,7 +119,6 @@ export default function PayrollEditor({
   );
   const [openIdx, setOpenIdx] = useState<number | null>(null);
   const [query, setQuery] = useState("");
-  const [view, setView] = useState<"all" | "pending" | "saved">("all");
   const [confirmSplitAll, setConfirmSplitAll] = useState(false);
 
   function patch(idx: number, fields: Partial<RowState>, markDirty = true) {
@@ -199,9 +197,8 @@ export default function PayrollEditor({
     const q = query.trim().toLowerCase();
     return rows
       .map((r, idx) => ({ r, idx }))
-      .filter(({ r }) => !q || r.emp.name.toLowerCase().includes(q) || r.emp.empId.toLowerCase().includes(q))
-      .filter(({ r }) => (view === "pending" ? !r.savedId : view === "saved" ? !!r.savedId : true));
-  }, [rows, query, view]);
+      .filter(({ r }) => !q || r.emp.name.toLowerCase().includes(q) || r.emp.empId.toLowerCase().includes(q));
+  }, [rows, query]);
 
   const dirtyCount = rows.reduce((n, r) => n + (r.dirty ? 1 : 0), 0);
   const anySaving = rows.some((r) => r.saving);
@@ -215,16 +212,10 @@ export default function PayrollEditor({
         <StatCard label="Total payout" value={fmtINR(totals.payable)} icon={<BadgeIndianRupee className="h-4 w-4" />} tone="brand" />
         <StatCard label="Total earnings" value={fmtINR(totals.earnings)} tone="emerald" />
         <StatCard label="Processed" value={`${totals.processed}/${rows.length}`} tone="blue" spark={rows.length ? (totals.processed / rows.length) * 100 : 0} />
-        <StatCard
-          label="Pending"
-          value={totals.pending}
-          tone="amber"
-          onClick={() => setView((v) => (v === "pending" ? "all" : "pending"))}
-          className={cn(view === "pending" && "ring-2 ring-amber-400/60")}
-        />
+        <StatCard label="Pending" value={totals.pending} tone="amber" />
       </div>
 
-      {/* Search + view filter */}
+      {/* Search */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative max-w-xs flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -235,17 +226,6 @@ export default function PayrollEditor({
             className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 outline-none focus:border-brand focus:ring-[3px] focus:ring-brand/20"
           />
         </div>
-        <Segmented
-          ariaLabel="Filter payslips"
-          size="sm"
-          value={view}
-          onChange={setView}
-          options={[
-            { value: "all", label: "All" },
-            { value: "pending", label: "Pending" },
-            { value: "saved", label: "Saved" },
-          ]}
-        />
       </div>
 
       {/* Employee list */}

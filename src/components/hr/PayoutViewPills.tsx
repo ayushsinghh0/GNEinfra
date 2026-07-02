@@ -31,7 +31,7 @@ export default function PayoutViewPills({
 
   function push(next: ViewValue) {
     router.push(
-      `/hr/payout?year=${year}&month=${month}${employeeId ? `&employeeId=${employeeId}` : ""}${next ? `&view=${next}` : ""}`
+      `/hr/payout?year=${year}&month=${month}${employeeId ? `&employeeId=${encodeURIComponent(employeeId)}` : ""}${next ? `&view=${next}` : ""}`
     );
   }
 
