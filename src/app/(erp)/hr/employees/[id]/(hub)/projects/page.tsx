@@ -1,10 +1,10 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { FolderKanban } from "lucide-react";
+import { FolderKanban, AlertCircle } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { requirePageRole, HR_VIEW, HR_WRITE } from "@/lib/rbac";
 import { fmtDateOnly } from "@/lib/format";
-import { DetailSection, EntityLink, EmptyState, btn } from "@/components/ui";
+import { DetailSection, EntityLink, EmptyState, btn, Card, CardBody, ProgressBar } from "@/components/ui";
 import AssignProjectForm from "@/components/hr/AssignProjectForm";
 import RemoveAssignmentButton from "@/components/hr/RemoveAssignmentButton";
 import { activeAllocation } from "@/lib/hr-projects";
@@ -42,6 +42,26 @@ export default async function EmployeeProjectsTab({
           View in projects →
         </Link>
       </div>
+
+      <Card>
+        <CardBody>
+          <div className="flex items-center justify-between text-xs text-slate-500">
+            <span>Allocation</span>
+            <span className="nums font-medium text-slate-600">
+              {committedPct}% committed · {remainingPct}% remaining
+            </span>
+          </div>
+          <div className="mt-1.5">
+            <ProgressBar value={Math.min(100, committedPct)} tone={committedPct > 100 ? "amber" : "brand"} />
+          </div>
+          {committedPct > 100 && (
+            <p className="mt-2.5 flex items-center gap-1.5 text-xs font-medium text-amber-700">
+              <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+              Over-allocated across active projects
+            </p>
+          )}
+        </CardBody>
+      </Card>
 
       <DetailSection title="Project Assignments" icon={<FolderKanban className="h-4 w-4 text-slate-400" />}>
         {emp.projectAssignments.length === 0 ? (
