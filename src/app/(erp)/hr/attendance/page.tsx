@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 export default async function AttendancePage({
   searchParams,
 }: {
-  searchParams: Promise<{ year?: string; month?: string; employeeId?: string }>;
+  searchParams: Promise<{ year?: string; month?: string; employeeId?: string; grid?: string }>;
 }) {
   const viewer = await requirePageRole(HR_VIEW);
   const canWrite = HR_WRITE.includes(viewer.role);
@@ -23,6 +23,7 @@ export default async function AttendancePage({
   const year = Number(params.year) || now.getUTCFullYear();
   const month = Number(params.month) || now.getUTCMonth() + 1;
   const employeeId = params.employeeId?.trim() || undefined;
+  const initialView = params.grid === "table" ? "table" : "calendar";
 
   // Clamp to valid range
   const y = Math.max(2000, Math.min(2100, year));
@@ -120,6 +121,8 @@ export default async function AttendancePage({
             month={m}
             daysInMonth={daysInMonth}
             canWrite={canWrite}
+            employeeId={employeeId}
+            initialView={initialView}
           />
         )}
       </div>

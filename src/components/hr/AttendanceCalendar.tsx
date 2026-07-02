@@ -148,6 +148,14 @@ export default function AttendanceCalendar({
           const glyph = (
             <>
               {status === "HALF_DAY" && <HalfDaySplit />}
+              {/* Compact (small-multiples) cells are otherwise color-only —
+                  a colorblind-safe non-color signal for the other 6 statuses,
+                  matching the letter codes the table matrix and full-size
+                  calendar already use. HALF_DAY keeps its diagonal split
+                  shape above as its own non-color signal. */}
+              {compact && meta && status !== "HALF_DAY" && (
+                <span className="relative z-[1] text-[9px] font-bold leading-none">{meta.code}</span>
+              )}
               {!compact && (
                 <>
                   {meta && status !== "HALF_DAY" && (

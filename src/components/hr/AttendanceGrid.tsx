@@ -10,6 +10,7 @@ import { STATUS, WD } from "./attendance-status";
 import AttendanceCalendar from "./AttendanceCalendar";
 import Segmented from "@/components/Segmented";
 import { TableScroll } from "@/components/DataTable";
+import { useUnsavedGuard } from "./useUnsavedGuard";
 
 type Brush = AttendanceStatusValue | "ERASE";
 type Cell = AttendanceStatusValue | "";
@@ -23,6 +24,8 @@ export default function AttendanceGrid({
   month,
   daysInMonth,
   canWrite,
+  employeeId,
+  initialView = "calendar",
 }: {
   employees: Emp[];
   initial: { employeeId: string; day: number; status: AttendanceStatusValue }[];
@@ -30,6 +33,10 @@ export default function AttendanceGrid({
   month: number;
   daysInMonth: number;
   canWrite: boolean;
+  /** Current `?employeeId=` scope (if any) — preserved when the view toggle updates the URL. */
+  employeeId?: string;
+  /** Parsed from `?grid=table` server-side; defaults to "calendar". */
+  initialView?: ViewMode;
 }) {
   const router = useRouter();
   const key = (emp: string, day: number) => `${emp}:${day}`;
@@ -50,7 +57,29 @@ export default function AttendanceGrid({
   const dragRef = useRef<Cell | null>(null);
 
   const [selectedEmp, setSelectedEmp] = useState<string | null>(null);
-  const [view, setView] = useState<ViewMode>("calendar");
+
+  // Calendar/Table view is URL-driven (`?grid=table`, default calendar) so a
+  // refresh/share preserves it — mirroring the module's URL-as-state
+  // convention. `view` is optimistically updated on click (snappy toggle)
+  // AND resynced from `initialView` whenever it changes underneath us (e.g.
+  // browser back/forward) via the "adjust state during render" pattern
+  // (same technique as AttendanceCalendar's `trackedPeriod`).
+  const [view, setView] = useState<ViewMode>(initialView);
+  const [trackedView, setTrackedView] = useState(initialView);
+  if (trackedView !== initialView) {
+    setTrackedView(initialView);
+    setView(initialView);
+  }
+
+  function changeView(next: ViewMode) {
+    setView(next);
+    const qs = new URLSearchParams();
+    qs.set("year", String(year));
+    qs.set("month", String(month));
+    if (employeeId) qs.set("employeeId", employeeId);
+    if (next === "table") qs.set("grid", "table");
+    router.push(`/hr/attendance?${qs.toString()}`);
+  }
 
   // Day metadata (weekday / weekend / today) — UTC to match stored dates.
   const days = useMemo(() => {
@@ -81,57 +110,14 @@ export default function AttendanceGrid({
     return () => window.removeEventListener("pointerup", up);
   }, []);
 
-  // Unsaved-changes navigation guard — active ONLY while dirtyCount > 0,
-  // removed on save/discard (dirtyCount back to 0) or unmount. Two layers:
-  // (1) `beforeunload` covers hard nav (typed URL, refresh, tab close) — the
-  // browser shows its own generic prompt, `returnValue` is legacy-required.
-  // (2) A capture-phase `document` click listener covers in-app `<Link>`
-  // navigations (month Prev/Next, MonthPicker, ScopedFilterChip "Clear",
-  // sidebar/breadcrumbs, …) that a server-rendered page header can't see
-  // `dirtyCount` to guard itself. It walks up to the nearest `<a href>`,
-  // skips new-tab/download/hash/external targets, and — for a same-origin
-  // navigation — shows a native `confirm()`. Declining calls
-  // `preventDefault()` in the CAPTURE phase, which runs before Next.js
-  // Link's own bubble-phase click handler; Link bails out when it sees
-  // `event.defaultPrevented`, so the router never navigates.
-  // Known gap: the browser Back/Forward buttons don't fire a click (or, for
-  // client-side App Router transitions, `beforeunload`), so they aren't
-  // covered — that would need a `popstate` handler with its own history
-  // gymnastics, out of scope for this pragmatic guard.
-  useEffect(() => {
-    if (dirtyCount === 0) return;
-
-    function onBeforeUnload(e: BeforeUnloadEvent) {
-      e.preventDefault();
-      e.returnValue = "";
-    }
-
-    function onClickCapture(e: MouseEvent) {
-      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-      const target = e.target as HTMLElement | null;
-      const anchor = target?.closest("a[href]") as HTMLAnchorElement | null;
-      if (!anchor) return;
-      if (anchor.target && anchor.target !== "_self") return; // new tab/window — nothing lost here
-      if (anchor.hasAttribute("download")) return;
-      const href = anchor.getAttribute("href") || "";
-      if (!href || href.startsWith("#")) return;
-      let url: URL;
-      try { url = new URL(anchor.href); } catch { return; }
-      if (url.origin !== window.location.origin) return; // external link — leaving the app anyway
-
-      const ok = window.confirm(
-        `You have ${dirtyCount} unsaved attendance change${dirtyCount === 1 ? "" : "s"}. Leave without saving?`
-      );
-      if (!ok) e.preventDefault();
-    }
-
-    window.addEventListener("beforeunload", onBeforeUnload);
-    document.addEventListener("click", onClickCapture, true);
-    return () => {
-      window.removeEventListener("beforeunload", onBeforeUnload);
-      document.removeEventListener("click", onClickCapture, true);
-    };
-  }, [dirtyCount]);
+  // Unsaved-changes navigation guard (shared with EmployeeForm) — active
+  // ONLY while dirtyCount > 0, removed on save/discard (dirtyCount back to
+  // 0) or unmount. See useUnsavedGuard.ts for the beforeunload + capture-
+  // click implementation and its known gaps.
+  useUnsavedGuard(
+    dirtyCount > 0,
+    `You have ${dirtyCount} unsaved attendance change${dirtyCount === 1 ? "" : "s"}. Leave without saving?`
+  );
 
   function write(empId: string, day: number, value: Cell) {
     setGrid((g) => {
@@ -324,7 +310,7 @@ export default function AttendanceGrid({
               ariaLabel="Attendance view"
               size="sm"
               value={view}
-              onChange={setView}
+              onChange={changeView}
               options={[
                 { value: "calendar", label: "Calendar" },
                 { value: "table", label: "Table" },
@@ -433,7 +419,7 @@ export default function AttendanceGrid({
             </div>
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map((emp) => (
               <div
                 key={emp.id}
