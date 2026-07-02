@@ -79,13 +79,23 @@ export default async function HrPage({
   // Today / attrition.
   const presentToday = attTodayG.find((r) => r.status === "PRESENT")?._count._all ?? 0;
   const onLeaveToday = (attTodayG.find((r) => r.status === "LEAVE")?._count._all ?? 0) + (attTodayG.find((r) => r.status === "SICK")?._count._all ?? 0);
+  // Any attendance row at all for today (any status) — distinguishes "0 present because
+  // nobody's marked yet" from "0 present, and that's a real reading" (see KPI honesty notes below).
+  const todayHasRows = attTodayG.reduce((s, r) => s + r._count._all, 0) > 0;
   const attritionDelta = pctDelta(leaversCur, leaversPrev);
+  // A -100%/-∞% badge on tiny integers (e.g. 1 leaver → 0) is noise, not signal — only badge
+  // when BOTH months had at least one real leaver to compare.
+  const showAttritionDelta = leaversCur >= 1 && leaversPrev >= 1 && attritionDelta !== null;
 
   // Headcount delta (this month-end vs last).
   const headcountDelta = pctDelta(headcountCur, headcountPrev);
+  const showHeadcountDelta = headcountDelta !== null;
 
-  // Attendance rate (MTD) delta.
+  // Attendance rate (MTD) delta — only meaningful when BOTH periods actually have attendance
+  // rows; `total` (added to monthlyAttendanceStats) is free from the same groupBy query.
   const attRateDelta = pctDelta(attCur.rate, attPrev.rate);
+  const attCurHasRows = attCur.total > 0;
+  const showAttRateDelta = attCurHasRows && attPrev.total > 0 && attRateDelta !== null;
 
   // Payroll → anchor on last non-zero month (mirrors the TrendBoard payroll series'
   // "scan backward" rule), net payroll processed this month for the footer note.
@@ -95,6 +105,11 @@ export default async function HrPage({
   const costAnchor = payrollMap.get(periodKey(periods[lastActual])) ?? 0;
   const costDelta = pctDelta(costAnchor, lastActual > 0 ? (payrollMap.get(periodKey(periods[lastActual - 1])) ?? 0) : 0);
   const netPayrollMonth = payrollMap.get(periodKey(cur)) ?? 0;
+  // The anchor month is still in progress (today's calendar month, not yet closed) — comparing
+  // a partially-processed month against a fully-processed prior one is an apples-to-oranges
+  // delta, so swap the badge for an honest "so far this month" caption instead.
+  const payrollAnchorOngoing = isCurrentRefMonth && lastActual === periods.length - 1;
+  const showPayrollDelta = !payrollAnchorOngoing && costDelta !== null;
 
   const quickLinks = [
     { href: "/hr/employees", label: "Employees", icon: Users, desc: "View and manage employee records." },
@@ -118,20 +133,52 @@ export default async function HrPage({
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
           <StatCard tone="brand" icon={<Users className="h-4 w-4" />} label={`Headcount · ${cur.label} ${refYear}`}
             href="/hr/employees?status=ACTIVE"
-            value={<span className="flex flex-wrap items-baseline gap-2"><span>{headcountCur}</span><DeltaBadge value={headcountDelta} /></span>} />
+            value={<span className="flex flex-wrap items-baseline gap-2"><span>{headcountCur}</span>{showHeadcountDelta && <DeltaBadge value={headcountDelta} />}</span>} />
           <StatCard tone="emerald" icon={<Wallet className="h-4 w-4" />} label={`Payroll · ${periods[lastActual].label} ${periods[lastActual].year}`}
             href={`/hr/payout?year=${periods[lastActual].year}&month=${periods[lastActual].month}`}
-            value={<span className="flex flex-wrap items-baseline gap-2"><span>{fmtINR(costAnchor)}</span><DeltaBadge value={costDelta} /></span>} />
+            value={
+              <>
+                <span className="flex flex-wrap items-baseline gap-2">
+                  <span>{fmtINR(costAnchor)}</span>
+                  {showPayrollDelta && <DeltaBadge value={costDelta} />}
+                </span>
+                {payrollAnchorOngoing && <p className="mt-1 text-xs text-slate-500">so far this month</p>}
+              </>
+            } />
           <StatCard tone="blue" icon={<CalendarCheck className="h-4 w-4" />} label={isCurrentRefMonth ? "Attendance rate (MTD)" : `Attendance rate · ${cur.label}`}
             href={`/hr/attendance?year=${refYear}&month=${refMonth}`}
-            value={<span className="flex flex-wrap items-baseline gap-2"><span>{attCur.rate}%</span><DeltaBadge value={attRateDelta} /></span>} />
+            value={
+              <>
+                <span className="flex flex-wrap items-baseline gap-2">
+                  <span className={attCurHasRows ? undefined : "text-slate-300"}>{attCurHasRows ? `${attCur.rate}%` : "—"}</span>
+                  {showAttRateDelta && <DeltaBadge value={attRateDelta} />}
+                </span>
+                {!attCurHasRows && (
+                  <p className="mt-1 text-xs font-medium text-brand-600">
+                    {isCurrentRefMonth ? `No attendance marked for ${cur.label} yet` : `No attendance recorded for ${cur.label}`}
+                  </p>
+                )}
+              </>
+            } />
           <StatCard tone="emerald" icon={<CalendarCheck className="h-4 w-4" />} label="Present today"
-            href={`/hr/attendance?year=${todayY}&month=${todayM}`} value={presentToday} />
+            href={`/hr/attendance?year=${todayY}&month=${todayM}`}
+            value={
+              <>
+                <span className={todayHasRows ? undefined : "text-slate-300"}>{todayHasRows ? presentToday : "—"}</span>
+                {!todayHasRows && <p className="mt-1 text-xs text-slate-500">Not marked yet</p>}
+              </>
+            } />
           <StatCard tone="amber" icon={<Clock className="h-4 w-4" />} label="On leave today"
-            href={`/hr/attendance?year=${todayY}&month=${todayM}`} value={onLeaveToday} />
+            href={`/hr/attendance?year=${todayY}&month=${todayM}`}
+            value={
+              <>
+                <span className={todayHasRows ? undefined : "text-slate-300"}>{todayHasRows ? onLeaveToday : "—"}</span>
+                {!todayHasRows && <p className="mt-1 text-xs text-slate-500">Not marked yet</p>}
+              </>
+            } />
           <StatCard tone="amber" icon={<UserMinus className="h-4 w-4" />} label={`Attrition · ${cur.label} ${refYear}`}
             href="/hr/employees?status=INACTIVE"
-            value={<span className="flex flex-wrap items-baseline gap-2"><span>{leaversCur}</span><DeltaBadge value={attritionDelta} invert /></span>} />
+            value={<span className="flex flex-wrap items-baseline gap-2"><span>{leaversCur}</span>{showAttritionDelta && <DeltaBadge value={attritionDelta} invert />}</span>} />
         </div>
 
         {/* Pill-driven trend board — heaviest section (12x monthly aggregations), streamed.

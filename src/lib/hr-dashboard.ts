@@ -32,11 +32,15 @@ export function periodKey(p: { year: number; month: number }) {
 // Attendance rate (present-equivalent %) + leave/sick days taken, for one [start, end)
 // month window — one groupBy per call. Callers needing the full 12-month series run this
 // once per period; callers only needing a delta (this month vs last) call it twice.
+// `total` (sum across every status, incl. HOLIDAY/WEEK_OFF) is free from the same groupBy —
+// callers use it to tell "genuinely 0%" apart from "no attendance rows marked at all" so a
+// dashboard doesn't red-flag an empty period as a bad one (see hr/page.tsx KPI band).
 export async function monthlyAttendanceStats(start: Date, end: Date) {
   const g = await prisma.attendanceRecord.groupBy({ by: ["status"], where: { date: { gte: start, lt: end } }, _count: { _all: true } });
   const c = (s: string) => g.find((r) => r.status === s)?._count._all ?? 0;
   const worked = c("PRESENT") + c("ABSENT") + c("LEAVE") + c("SICK") + c("HALF_DAY");
   const rate = worked ? Math.round(((c("PRESENT") + 0.5 * c("HALF_DAY")) / worked) * 100) : 0;
   const leaveDays = c("LEAVE") + c("SICK");
-  return { rate, leaveDays };
+  const total = g.reduce((s, r) => s + r._count._all, 0);
+  return { rate, leaveDays, total };
 }
