@@ -5,6 +5,7 @@ import { useState, useRef, useEffect, type FormEvent } from "react";
 import { Search } from "lucide-react";
 import { inputCls, cn } from "@/components/ui";
 import Segmented from "@/components/Segmented";
+import { buildQuery } from "@/lib/hr-filters";
 
 type Status = "" | "ACTIVE" | "ON_HOLD" | "COMPLETED";
 
@@ -41,14 +42,15 @@ export default function ProjectFilters({
     // Any explicit navigation (pill click / submit) cancels a still-pending debounce,
     // so a stale timer can't revert the status the user just chose.
     if (timer.current) clearTimeout(timer.current);
-    const sp = new URLSearchParams();
     // Preserve an active ?employeeId= scope (Task 10) — a status/search change must
     // not silently drop the deep-link scope, mirroring AssetStatusFilter (Task 15).
-    if (employeeId) sp.set("employeeId", employeeId);
-    if (nextStatus) sp.set("status", nextStatus);
-    if (nextQ.trim()) sp.set("q", nextQ.trim());
-    const qs = sp.toString();
-    router.push(qs ? `/hr/projects?${qs}` : "/hr/projects");
+    router.push(
+      buildQuery("/hr/projects", {
+        employeeId: employeeId ?? undefined,
+        status: nextStatus || undefined,
+        q: nextQ.trim() || undefined,
+      })
+    );
   }
 
   function onQChange(v: string) {

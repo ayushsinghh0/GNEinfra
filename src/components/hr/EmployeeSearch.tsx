@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState, FormEvent } from "react";
 import { Search } from "lucide-react";
 import { Button, Select, inputCls, cn } from "@/components/ui";
+import { buildQuery } from "@/lib/hr-filters";
 
 const STATUSES = ["", "ACTIVE", "INACTIVE"];
 
@@ -26,11 +27,19 @@ export default function EmployeeSearch() {
   }
 
   function apply(nextQ: string, nextStatus: string) {
-    const sp = new URLSearchParams();
-    if (nextQ.trim()) sp.set("q", nextQ.trim());
-    if (nextStatus) sp.set("status", nextStatus);
-    const qs = sp.toString();
-    router.push(qs ? `/hr/employees?${qs}` : "/hr/employees");
+    // Preserve any ?category=/?location= scope the page arrived with (e.g. a
+    // dashboard composition-bar deep-link) — a search/status change must not
+    // silently drop it, mirroring AssetStatusFilter/ProjectFilters.
+    const category = params.get("category") ?? undefined;
+    const location = params.get("location") ?? undefined;
+    router.push(
+      buildQuery("/hr/employees", {
+        q: nextQ || undefined,
+        status: nextStatus || undefined,
+        category,
+        location,
+      })
+    );
   }
 
   function onSubmit(e: FormEvent) {

@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import Segmented from "@/components/Segmented";
+import { buildQuery } from "@/lib/hr-filters";
 
 type Status = "" | "ALLOCATED" | "RETURNED";
 
@@ -21,11 +22,9 @@ export default function AssetStatusFilter({
   const employeeId = params.get("employeeId");
 
   function push(next: Status) {
-    const sp = new URLSearchParams();
-    if (employeeId) sp.set("employeeId", employeeId);
-    if (next) sp.set("status", next);
-    const qs = sp.toString();
-    router.push(qs ? `/hr/assets?${qs}` : "/hr/assets");
+    router.push(
+      buildQuery("/hr/assets", { employeeId: employeeId ?? undefined, status: next || undefined })
+    );
   }
 
   const options: { value: Status; label: string }[] = [
