@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CalendarCheck2, Eraser, Search, Users } from "lucide-react";
 import { Button, EmptyState, EntityLink, StatCard, cn } from "@/components/ui";
@@ -509,7 +510,17 @@ export default function AttendanceGrid({
                     className="group border-b border-slate-100 last:border-0 hover:bg-slate-50/60 motion-safe:transition-colors"
                   >
                     <th scope="row" className="sticky left-0 z-10 border-r border-slate-200 bg-white px-4 py-1.5 text-left font-medium text-slate-800 whitespace-nowrap group-hover:bg-slate-50">
-                      <span><span className="nums text-slate-400">{emp.empId}</span> {emp.name}</span>
+                      {/* Identity cell links to the employee 360 like every other roster in
+                          the module — the cell has no paint handlers, so a Link is safe.
+                          Kept single-line (empId inline, not EntityLink's stacked layout)
+                          to preserve the matrix's tight row rhythm. */}
+                      <Link
+                        href={`/hr/employees/${emp.id}`}
+                        className="rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
+                      >
+                        <span className="nums text-slate-400">{emp.empId}</span>{" "}
+                        <span className="hover:text-brand-700 motion-safe:transition-colors">{emp.name}</span>
+                      </Link>
                     </th>
                     {days.map(({ d, weekend, today }) => {
                       const s = grid[key(emp.id, d)] ?? "";
