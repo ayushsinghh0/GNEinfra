@@ -124,10 +124,10 @@ export default async function HrPage({
             Headcount/payroll/attendance-rate/attrition re-anchor to the reference month
             above; present/on-leave stay real-time "today" (see comment above `refYear`). */}
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
-          <StatCard tone="brand" icon={<Users className="h-4 w-4" />} label={`Headcount · ${cur.label}`}
+          <StatCard tone="brand" icon={<Users className="h-4 w-4" />} label={`Headcount · ${cur.label} ${refYear}`}
             href="/hr/employees?status=ACTIVE"
             value={<span className="flex flex-wrap items-baseline gap-2"><span>{headcountCur}</span><DeltaBadge value={headcountDelta} /></span>} />
-          <StatCard tone="emerald" icon={<Wallet className="h-4 w-4" />} label={`Payroll · ${periods[lastActual].label}`}
+          <StatCard tone="emerald" icon={<Wallet className="h-4 w-4" />} label={`Payroll · ${periods[lastActual].label} ${periods[lastActual].year}`}
             href={`/hr/payout?year=${periods[lastActual].year}&month=${periods[lastActual].month}`}
             value={<span className="flex flex-wrap items-baseline gap-2"><span>{fmtINR(costAnchor)}</span><DeltaBadge value={costDelta} /></span>} />
           <StatCard tone="blue" icon={<CalendarCheck className="h-4 w-4" />} label={isCurrentRefMonth ? "Attendance rate (MTD)" : `Attendance rate · ${cur.label}`}
@@ -137,7 +137,7 @@ export default async function HrPage({
             href={`/hr/attendance?year=${todayY}&month=${todayM}`} value={presentToday} />
           <StatCard tone="amber" icon={<Clock className="h-4 w-4" />} label="On leave today"
             href={`/hr/attendance?year=${todayY}&month=${todayM}`} value={onLeaveToday} />
-          <StatCard tone="amber" icon={<UserMinus className="h-4 w-4" />} label={`Attrition · ${cur.label}`}
+          <StatCard tone="amber" icon={<UserMinus className="h-4 w-4" />} label={`Attrition · ${cur.label} ${refYear}`}
             href="/hr/employees?status=INACTIVE"
             value={<span className="flex flex-wrap items-baseline gap-2"><span>{leaversCur}</span><DeltaBadge value={attritionDelta} invert /></span>} />
         </div>
