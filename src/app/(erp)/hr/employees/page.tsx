@@ -8,6 +8,7 @@ import { fmtDateOnly } from "@/lib/format";
 import EmployeeSearch from "@/components/hr/EmployeeSearch";
 import SavedViewPills from "@/components/hr/SavedViewPills";
 import { DataTable, type Column } from "@/components/DataTable";
+import { buildQuery } from "@/lib/hr-filters";
 import {
   PageHeader,
   Card,
@@ -58,6 +59,13 @@ export default async function EmployeesPage({
   });
 
   const filterNote = category ? `Category: ${category.trim()}` : location ? `Location: ${location.trim()}` : null;
+
+  // Any filter active (vs. a genuinely empty roster) — drives which EmptyState
+  // copy/action renders below, and keeps the export scoped to what's on screen.
+  const hasFilters = Boolean(
+    (q && q.trim()) || (status && VALID_STATUS.has(status)) || (category && category.trim()) || (location && location.trim())
+  );
+  const exportHref = buildQuery("/api/hr/employees/export", { q, status, category, location });
 
   type Emp = (typeof employees)[number];
   const columns: Column<Emp>[] = [
@@ -118,7 +126,7 @@ export default async function EmployeesPage({
         breadcrumbs={[{ label: "HR", href: "/hr" }, { label: "Employees" }]}
       >
         <a
-          href="/api/hr/employees/export"
+          href={exportHref}
           className={btn("ghost", "sm")}
           download
         >
@@ -162,8 +170,23 @@ export default async function EmployeesPage({
             empty={
               <EmptyState
                 icon={<Users className="h-6 w-6" />}
-                title="No employees found"
-                description="No employees match your search. Try a different term or status filter."
+                title={hasFilters ? "No employees found" : "No employees yet"}
+                description={
+                  hasFilters
+                    ? "No employees match your search. Try a different term or status filter."
+                    : "Add your first employee to get started."
+                }
+                action={
+                  hasFilters ? (
+                    <Link href="/hr/employees" className={btn("secondary", "sm")}>
+                      Clear filters
+                    </Link>
+                  ) : canWrite ? (
+                    <Link href="/hr/employees/new" className={btn("primary", "sm")}>
+                      + Add employee
+                    </Link>
+                  ) : undefined
+                }
               />
             }
           />

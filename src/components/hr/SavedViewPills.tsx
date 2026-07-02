@@ -1,10 +1,14 @@
 "use client";
 
+import { useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Segmented from "@/components/Segmented";
+import { Spinner } from "@/components/ui";
 import { buildQuery, type ParsedListParams } from "@/lib/hr-filters";
 
-const DEFAULT_PRESERVE: (keyof ParsedListParams)[] = ["q", "category", "location", "employeeId", "sort"];
+// "dir" was missing here — latent (no sortable list reuses this component
+// yet), but any pill click would have silently reset a future ?dir= scope.
+const DEFAULT_PRESERVE: (keyof ParsedListParams)[] = ["q", "category", "location", "employeeId", "sort", "dir"];
 
 export interface SavedViewPillsProps {
   /** List page path the pills navigate within, e.g. "/hr/employees". */
@@ -33,6 +37,11 @@ export default function SavedViewPills({
   const router = useRouter();
   const params = useSearchParams();
   const active = params.get(param) ?? "";
+  // Local pending flag — Next's router already runs pushes inside a
+  // transition (so the page's loading.tsx skeleton doesn't blow away the
+  // list on a pill click), which otherwise leaves the click with zero
+  // feedback of its own for the round-trip. Mirrors EmployeeSearch.tsx.
+  const [isPending, startTransition] = useTransition();
 
   function onChange(next: string) {
     const patch: Record<string, string | undefined> = {};
@@ -42,16 +51,22 @@ export default function SavedViewPills({
     }
     // Selecting a pill always resets pagination — buildQuery drops page===1.
     patch[param] = next || undefined;
-    router.push(buildQuery(basePath, patch as Partial<ParsedListParams>));
+    const href = buildQuery(basePath, patch as Partial<ParsedListParams>);
+    startTransition(() => {
+      router.push(href);
+    });
   }
 
   return (
-    <Segmented
-      ariaLabel="Saved views"
-      options={views}
-      value={active}
-      onChange={onChange}
-      size="sm"
-    />
+    <div className="inline-flex items-center gap-2">
+      <Segmented
+        ariaLabel="Saved views"
+        options={views}
+        value={active}
+        onChange={onChange}
+        size="sm"
+      />
+      {isPending && <Spinner aria-hidden="true" />}
+    </div>
   );
 }
