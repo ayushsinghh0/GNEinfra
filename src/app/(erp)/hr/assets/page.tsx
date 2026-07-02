@@ -1,9 +1,12 @@
+import { Suspense } from "react";
+import { Prisma } from "@prisma/client";
 import { Package, Laptop, RotateCcw, UserX } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { requirePageRole, HR_VIEW, HR_WRITE } from "@/lib/rbac";
 import { fmtDateOnly } from "@/lib/format";
 import AssetForm from "@/components/hr/AssetForm";
 import AssetRowActions from "@/components/hr/AssetRowActions";
+import AssetSearch from "@/components/hr/AssetSearch";
 import ScopedFilterChip from "@/components/hr/ScopedFilterChip";
 import AssetStatusFilter from "@/components/hr/AssetStatusFilter";
 import { DataTable, type Column } from "@/components/DataTable";
@@ -26,18 +29,33 @@ const VALID_STATUS = new Set(["ALLOCATED", "RETURNED"]);
 export default async function AssetsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ employeeId?: string; status?: string }>;
+  searchParams: Promise<{ employeeId?: string; status?: string; q?: string }>;
 }) {
   const viewer = await requirePageRole(HR_VIEW);
   const canWrite = HR_WRITE.includes(viewer.role);
 
-  const { employeeId: rawEmployeeId, status: rawStatus } = await searchParams;
+  const { employeeId: rawEmployeeId, status: rawStatus, q: rawQ } = await searchParams;
   const employeeId = rawEmployeeId?.trim() || undefined;
   const statusFilter = rawStatus && VALID_STATUS.has(rawStatus) ? rawStatus : "";
+  const q = rawQ?.trim() || undefined;
+
+  const assetWhere: Prisma.EmployeeAssetWhereInput = {};
+  if (employeeId) assetWhere.employeeId = employeeId;
+  if (q) {
+    // Free-text search across serial/make-model/OEM and the owning
+    // employee's name — server-side WHERE, consistent with how the
+    // employees list builds its `q` filter (employees/page.tsx).
+    assetWhere.OR = [
+      { lpSerialNo: { contains: q, mode: "insensitive" } },
+      { makeModel: { contains: q, mode: "insensitive" } },
+      { oemName: { contains: q, mode: "insensitive" } },
+      { employee: { name: { contains: q, mode: "insensitive" } } },
+    ];
+  }
 
   const [assets, employees, scopedEmployee, noAssetEmployees] = await Promise.all([
     prisma.employeeAsset.findMany({
-      where: employeeId ? { employeeId } : undefined,
+      where: assetWhere,
       include: { employee: { select: { id: true, empId: true, name: true } } },
       orderBy: { allocatedAt: "desc" },
     }),
@@ -62,6 +80,10 @@ export default async function AssetsPage({
   const filteredAssets = statusFilter
     ? assets.filter((a) => (statusFilter === "ALLOCATED" ? !a.returnedAt : !!a.returnedAt))
     : assets;
+
+  // Any filter/scope active — distinguishes "no matches for this search" from
+  // a genuinely empty register in the EmptyState copy below.
+  const hasFilters = Boolean(q || statusFilter || employeeId);
 
   type AssetRow = (typeof assets)[number];
   const columns: Column<AssetRow>[] = [
@@ -183,9 +205,12 @@ export default async function AssetsPage({
         </div>
 
         <Card>
-          <div className="p-4">
+          <CardBody className="space-y-3 p-4">
             <AssetStatusFilter counts={{ all: assets.length, ALLOCATED: allocatedCount, RETURNED: returnedCount }} />
-          </div>
+            <Suspense fallback={<div className="h-10" />}>
+              <AssetSearch />
+            </Suspense>
+          </CardBody>
         </Card>
 
         {canWrite && (
@@ -205,11 +230,11 @@ export default async function AssetsPage({
             empty={
               <EmptyState
                 icon={<Package className="h-6 w-6" />}
-                title={assets.length === 0 ? "No asset records found" : "No assets match this filter"}
+                title={hasFilters ? "No assets match this filter" : "No asset records found"}
                 description={
-                  assets.length === 0
-                    ? "Once assets are allocated to employees, they will appear here."
-                    : "Try a different status filter."
+                  hasFilters
+                    ? "Try a different search term or status filter."
+                    : "Once assets are allocated to employees, they will appear here."
                 }
               />
             }

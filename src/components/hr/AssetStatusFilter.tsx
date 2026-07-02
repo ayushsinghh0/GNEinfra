@@ -20,10 +20,15 @@ export default function AssetStatusFilter({
   const params = useSearchParams();
   const urlStatus = (params.get("status") ?? "") as Status;
   const employeeId = params.get("employeeId");
+  const q = params.get("q");
 
   function push(next: Status) {
     router.push(
-      buildQuery("/hr/assets", { employeeId: employeeId ?? undefined, status: next || undefined })
+      buildQuery("/hr/assets", {
+        employeeId: employeeId ?? undefined,
+        q: q ?? undefined,
+        status: next || undefined,
+      })
     );
   }
 
