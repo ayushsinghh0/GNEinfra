@@ -589,15 +589,19 @@ export function KeyValue({
   cols?: 1 | 2;
 }) {
   return (
-    <dl className={cn("grid gap-x-8 gap-y-0", cols === 2 ? "sm:grid-cols-2" : "grid-cols-1")}>
+    // These lists sit inside cards that are themselves half-width from `lg` up,
+    // so a 2-up split only has room on very wide screens — go 2-up at `2xl`,
+    // single column below. Rows carry `min-w-0` + value wrapping so long emails
+    // / codes wrap within their cell instead of overflowing the card.
+    <dl className={cn("grid gap-x-8 gap-y-0", cols === 2 ? "2xl:grid-cols-2" : "grid-cols-1")}>
       {items.map((it, i) => {
         // Nullish (not just falsy) — an explicit "" or 0 value still renders normally;
         // only a genuinely-missing value gets the de-emphasized dash.
         const empty = it.value === null || it.value === undefined;
         return (
-          <div key={i} className="flex flex-col gap-0.5 border-b border-slate-100 py-2.5 sm:flex-row sm:items-baseline sm:gap-4">
-            <dt className="w-40 shrink-0 text-[13px] font-medium text-slate-500">{it.label}</dt>
-            <dd className={cn("flex items-center gap-0.5 text-sm text-slate-800", it.mono && "nums font-mono text-xs")}>
+          <div key={i} className="flex min-w-0 flex-col gap-0.5 border-b border-slate-100 py-2.5 sm:flex-row sm:items-baseline sm:gap-4">
+            <dt className="shrink-0 text-[13px] font-medium text-slate-500 sm:w-36">{it.label}</dt>
+            <dd className={cn("flex min-w-0 items-center gap-0.5 text-sm text-slate-800", it.mono ? "nums font-mono text-xs break-all" : "break-words")}>
               {empty ? <span className="text-slate-300">—</span> : it.value}
               {it.copy && !empty && <CopyButton text={String(it.value)} />}
             </dd>
