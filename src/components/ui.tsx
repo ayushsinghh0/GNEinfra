@@ -574,8 +574,11 @@ export const thCls =
 export const tdCls = "px-4 py-3.5 text-sm text-slate-700 align-middle";
 export const tdNumCls = "px-4 py-3.5 text-sm text-slate-700 align-middle text-right nums";
 export const theadRowCls = "border-b border-slate-200/80";
+// Hover accent bar comes from .row-accent (globals.css) via td:first-child::before —
+// a ::before on the <tr> itself becomes an anonymous table-cell in Chrome and
+// misaligns every column.
 export const trCls =
-  "group relative border-b border-slate-100 last:border-0 transition-colors hover:bg-brand-50/40 before:absolute before:inset-y-0 before:left-0 before:w-0.5 before:bg-brand before:opacity-0 before:transition-opacity hover:before:opacity-100";
+  "group relative border-b border-slate-100 last:border-0 transition-colors hover:bg-brand-50/40 row-accent";
 
 /* ── KeyValue (responsive description list) ────────────────────────────────── */
 export function KeyValue({

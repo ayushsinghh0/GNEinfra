@@ -147,6 +147,22 @@ body {
     radial-gradient(farthest-side at 100% 50%, rgba(15,23,42,0.12), transparent) right / 14px 100% no-repeat scroll;
 }
 
+/* Row hover accent bar for data-table rows. The bar lives on the FIRST CELL's
+   ::before (absolutely positioned against the `relative` <tr>) — never put a
+   ::before on the <tr> itself: Chrome wraps any row pseudo-element in an
+   anonymous first table-cell, shifting every column right by one. */
+.row-accent > td:first-child::before {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  width: 2px;
+  background-color: var(--color-brand);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.row-accent:hover > td:first-child::before { opacity: 1; }
+
 /* Centralized, reduced-motion-gated interaction utilities. Press relies on the
    consumer's own transition (buttons carry transition-all); tappables without
    one should add transition-transform. */

@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { cn } from "@/components/ui";
 
@@ -9,7 +10,14 @@ import { cn } from "@/components/ui";
  * Accessible right-anchored slide-over panel. Mirrors the mobile-sidebar
  * pattern (translate-x transition + blurred backdrop + Escape to close), so it
  * stays consistent with the rest of the chrome and respects reduced-motion.
+ *
+ * Rendered into document.body via a portal (same as ConfirmDialog): triggers
+ * often live inside the sticky `.glass` PageHeader, whose backdrop-filter
+ * makes it the containing block for `fixed` descendants — without the portal
+ * the backdrop and panel get trapped inside the header band.
  */
+const noopSubscribe = () => () => {};
+
 export default function SlideOver({
   open,
   onClose,
@@ -30,6 +38,9 @@ export default function SlideOver({
   className?: string;
 }) {
   const panelRef = useRef<HTMLElement>(null);
+  // Client-only render (SSR + first hydration pass → false) so the portal is
+  // never produced during SSR — mirrors Toast.tsx's isClient guard.
+  const mounted = useSyncExternalStore(noopSubscribe, () => true, () => false);
 
   useEffect(() => {
     if (!open) return;
@@ -46,7 +57,9 @@ export default function SlideOver({
     };
   }, [open, onClose]);
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <>
       <div
         className={cn(
@@ -93,6 +106,7 @@ export default function SlideOver({
         <div className="flex-1 overflow-y-auto px-6 py-5">{children}</div>
         {footer && <div className="border-t border-slate-100 bg-slate-50/60 px-6 py-4">{footer}</div>}
       </aside>
-    </>
+    </>,
+    document.body
   );
 }
