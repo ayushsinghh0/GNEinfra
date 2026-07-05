@@ -37,7 +37,11 @@ Four verticals are built; Project is still a role-scoped "coming soon" shell:
   `FINANCE_APPROVE` = MANAGER/ADMIN/SUPERADMIN** (the one deliberate exception to managers-read-only;
   the Finance initiator can never approve) → **payment marking** by `FINANCE_WRITE` → a
   **reconciliation** ledger. Three print-clean documents under `(print)/finance/invoices/[id]/…`:
-  the Tax Invoice, the NOPA, and the GNE-002 Approval Note (renders only once APPROVED). Zod in
+  the Tax Invoice, the NOPA, and the GNE-002 Approval Note (renders only once APPROVED). The
+  **company "From" block** on every printed document (incl. the HR salary slip) is the
+  `CompanyProfile` DB singleton, editable by Finance at `/finance/company` — renderers read it via
+  `getCompany()` (`src/lib/company.ts`), which falls back to the hardcoded defaults when no row
+  exists (no seed needed). Zod in
   `src/lib/finance-validation.ts`; suggested (still editable) document numbers from
   `src/lib/finance-numbers.ts` (`GNE/25-26/0001`, `NOPA/25-26/0001`); status transitions are never
   client-settable — they happen only through the dedicated `submit`/`decision`/`payment` endpoints.

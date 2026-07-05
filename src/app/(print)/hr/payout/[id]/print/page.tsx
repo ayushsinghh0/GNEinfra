@@ -7,7 +7,7 @@ import { MONTHS } from "@/lib/hr-validation";
 import { attendanceLop } from "@/lib/hr-lop";
 import { amountInWords } from "@/lib/number-to-words";
 import PrintBar from "@/components/PrintBar";
-import { COMPANY } from "@/lib/company";
+import { getCompany } from "@/lib/company";
 
 export const dynamic = "force-dynamic";
 
@@ -63,7 +63,8 @@ export default async function PayslipPrintPage({
   const extraLines = (record.extraLines as unknown as { label: string; amount: number; kind: "earning" | "deduction" }[] | null) ?? [];
   const extraEarnings = extraLines.filter((l) => l.kind === "earning");
   const extraDeductions = extraLines.filter((l) => l.kind === "deduction");
-  const companyMeta = [COMPANY.cin && `CIN ${COMPANY.cin}`, COMPANY.gstin && `GSTIN ${COMPANY.gstin}`, COMPANY.pan && `PAN ${COMPANY.pan}`].filter(Boolean).join("  ·  ");
+  const company = await getCompany();
+  const companyMeta = [company.cin && `CIN ${company.cin}`, company.gstin && `GSTIN ${company.gstin}`, company.pan && `PAN ${company.pan}`].filter(Boolean).join("  ·  ");
 
   return (
     <main className="min-h-screen bg-white">
@@ -76,7 +77,7 @@ export default async function PayslipPrintPage({
           <div className="flex items-center gap-4">
             <Image
               src="/brand/gne-infra.png"
-              alt={COMPANY.name}
+              alt={company.name}
               width={120}
               height={34}
               className="h-9 w-auto"
@@ -84,9 +85,9 @@ export default async function PayslipPrintPage({
             />
             <div>
               <div className="text-base font-bold leading-tight tracking-tight text-slate-900">
-                {COMPANY.name}
+                {company.name}
               </div>
-              {COMPANY.addressLines.map((l) => (
+              {company.addressLines.map((l) => (
                 <div key={l} className="text-[10px] leading-tight text-slate-500">{l}</div>
               ))}
               {companyMeta && <div className="mt-0.5 text-[10px] text-slate-400">{companyMeta}</div>}

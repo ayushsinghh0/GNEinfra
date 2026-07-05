@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requirePageRole, FINANCE_WRITE } from "@/lib/rbac";
 import { nextNopaNo } from "@/lib/finance-numbers";
 import { numberInWords } from "@/lib/number-to-words";
-import { COMPANY } from "@/lib/company";
+import { getCompany } from "@/lib/company";
 import NopaForm, { type NopaLineValues } from "@/components/finance/NopaForm";
 import { PageHeader, Card, CardBody } from "@/components/ui";
 
@@ -70,7 +70,7 @@ export default async function InvoiceNopaPage({
     initial = {
       nopaNo: await nextNopaNo(),
       nopaDate: today,
-      companyName: COMPANY.name,
+      companyName: (await getCompany()).name,
       plantName: "",
       partyName: invoice.billTo.split("\n")[0] ?? "",
       itemDescription: invoice.items[0]?.description ?? "",

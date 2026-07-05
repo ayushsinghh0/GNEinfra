@@ -5,7 +5,7 @@ import { getCurrentUser, FINANCE_VIEW } from "@/lib/rbac";
 import { fmtDate, fmtDateOnly, fmtINR } from "@/lib/format";
 import { amountInWords } from "@/lib/number-to-words";
 import PrintBar from "@/components/PrintBar";
-import { COMPANY } from "@/lib/company";
+import { getCompany } from "@/lib/company";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +24,7 @@ export default async function InvoicePrintPage({
     include: { items: { orderBy: { sortOrder: "asc" } } },
   });
   if (!invoice) notFound();
+  const company = await getCompany();
 
   return (
     <main className="min-h-screen bg-white">
@@ -40,24 +41,41 @@ export default async function InvoicePrintPage({
           <div>
             <Image
               src="/brand/gne-infra.png"
-              alt={COMPANY.name}
+              alt={company.name}
               width={120}
               height={34}
               className="h-9 w-auto"
               priority
             />
-            <div className="mt-2 text-sm font-bold leading-tight text-slate-900">{COMPANY.name}</div>
-            {COMPANY.addressLines.map((l) => (
+            <div className="mt-2 text-sm font-bold leading-tight text-slate-900">{company.name}</div>
+            {company.addressLines.map((l) => (
               <div key={l} className="text-[11px] leading-snug text-slate-600">{l}</div>
             ))}
             <div className="mt-1.5 space-y-0.5 text-[11px] text-slate-600">
-              <div>GSTIN: <span className="nums font-medium text-slate-800">{COMPANY.gstin}</span></div>
-              <div>PAN: <span className="nums font-medium text-slate-800">{COMPANY.pan}</span></div>
-              <div>Phone: <span className="nums">{COMPANY.phone}</span> · Email: {COMPANY.email}</div>
-              <div>
-                Bank: {COMPANY.bank.name} · A/c <span className="nums">{COMPANY.bank.accountNo}</span> · IFSC{" "}
-                <span className="nums">{COMPANY.bank.ifsc}</span>
-              </div>
+              {company.gstin && (
+                <div>GSTIN: <span className="nums font-medium text-slate-800">{company.gstin}</span></div>
+              )}
+              {company.pan && (
+                <div>PAN: <span className="nums font-medium text-slate-800">{company.pan}</span></div>
+              )}
+              {(company.phone || company.email) && (
+                <div>
+                  {company.phone && <>Phone: <span className="nums">{company.phone}</span></>}
+                  {company.phone && company.email && " · "}
+                  {company.email && <>Email: {company.email}</>}
+                </div>
+              )}
+              {(company.bank.name || company.bank.accountNo) && (
+                <div>
+                  Bank: {company.bank.name}
+                  {company.bank.accountNo && (
+                    <> · A/c <span className="nums">{company.bank.accountNo}</span></>
+                  )}
+                  {company.bank.ifsc && (
+                    <> · IFSC <span className="nums">{company.bank.ifsc}</span></>
+                  )}
+                </div>
+              )}
             </div>
           </div>
           <div className="space-y-2 border-l border-slate-200 pl-6 text-[12px]">
@@ -149,7 +167,7 @@ export default async function InvoicePrintPage({
         <div className="mt-12 flex justify-end break-inside-avoid">
           <div className="text-center">
             <div className="text-[12px] font-medium text-slate-900">
-              For Green Next Energy Infra Private Limited
+              For {company.name}
             </div>
             <div className="mt-16 border-t border-slate-400 pt-1.5 text-[11px] text-slate-500">
               Authorised Signatory

@@ -13,7 +13,7 @@ import { prisma } from "@/lib/prisma";
 import { requirePageRole, FINANCE_VIEW, FINANCE_WRITE, FINANCE_APPROVE } from "@/lib/rbac";
 import { fmtDate, fmtDateOnly, fmtINR } from "@/lib/format";
 import { amountInWords } from "@/lib/number-to-words";
-import { COMPANY } from "@/lib/company";
+import { getCompany } from "@/lib/company";
 import DecisionActions from "@/components/finance/DecisionActions";
 import PaymentActions from "@/components/finance/PaymentActions";
 import DeleteRowButton from "@/components/bd/DeleteRowButton";
@@ -86,6 +86,7 @@ export default async function InvoiceDetailPage({
     },
   });
   if (!invoice) notFound();
+  const company = await getCompany();
 
   const editable = invoice.status === "DRAFT" || invoice.status === "REJECTED";
   const pending = invoice.status === "PENDING_APPROVAL";
@@ -244,13 +245,17 @@ export default async function InvoiceDetailPage({
             <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
               <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
                 <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">From</div>
-                <div className="mt-1 text-sm font-semibold text-slate-900">{COMPANY.name}</div>
-                {COMPANY.addressLines.map((l) => (
+                <div className="mt-1 text-sm font-semibold text-slate-900">{company.name}</div>
+                {company.addressLines.map((l) => (
                   <div key={l} className="text-[12px] text-slate-500">{l}</div>
                 ))}
-                <div className="mt-1 text-[12px] text-slate-500">
-                  GSTIN {COMPANY.gstin} · PAN {COMPANY.pan}
-                </div>
+                {(company.gstin || company.pan) && (
+                  <div className="mt-1 text-[12px] text-slate-500">
+                    {[company.gstin && `GSTIN ${company.gstin}`, company.pan && `PAN ${company.pan}`]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </div>
+                )}
               </div>
               <KeyValue
                 cols={2}
@@ -279,8 +284,8 @@ export default async function InvoiceDetailPage({
             </div>
 
             {/* Items */}
-            <div className="overflow-hidden rounded-xl border border-slate-200">
-              <table className="w-full text-sm">
+            <div className="overflow-x-auto rounded-xl border border-slate-200">
+              <table className="w-full min-w-[32rem] text-sm">
                 <thead>
                   <tr className="border-b border-slate-200 bg-slate-50 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">
                     <th className="px-4 py-2.5">Description</th>

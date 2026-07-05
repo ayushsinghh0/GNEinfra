@@ -720,3 +720,24 @@ model NopaLine {
 
   @@index([nopaId])
 }
+
+// Company profile printed on document headers (tax invoice, NOPA, approval
+// note, salary slip). Single row (id "company"), editable by Finance from
+// /finance/company; src/lib/company.ts falls back to its static defaults when
+// the row is absent, so no seed is required.
+model CompanyProfile {
+  id           String  @id @default("company")
+  name         String
+  addressLines String // multiline — one address line per line
+  gstin        String?
+  pan          String?
+  cin          String?
+  email        String?
+  phone        String?
+  bankName     String?
+  accountNo    String?
+  ifsc         String?
+
+  updatedAt DateTime @updatedAt
+  updatedBy String? // display name, loose string like the invoice audit fields
+}

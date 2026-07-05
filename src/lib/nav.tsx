@@ -56,6 +56,7 @@ const FINANCE: NavSection = {
     { label: "Invoice Approval", href: "/finance/approvals", icon: PackageCheck },
     { label: "Payment", href: "/finance/payments", icon: BadgeIndianRupee },
     { label: "Reconciliation", href: "/finance/reconciliation", icon: Wallet },
+    { label: "Company Details", href: "/finance/company", icon: Building2 },
   ],
 };
 

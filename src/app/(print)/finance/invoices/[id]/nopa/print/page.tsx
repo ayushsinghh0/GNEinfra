@@ -5,7 +5,7 @@ import { getCurrentUser, FINANCE_VIEW } from "@/lib/rbac";
 import { fmtDate, fmtDateOnly, fmtINR } from "@/lib/format";
 import { amountInWords } from "@/lib/number-to-words";
 import PrintBar from "@/components/PrintBar";
-import { COMPANY } from "@/lib/company";
+import { getCompany } from "@/lib/company";
 
 export const dynamic = "force-dynamic";
 
@@ -34,6 +34,7 @@ export default async function NopaPrintPage({
   });
   if (!invoice || !invoice.nopa) notFound();
   const nopa = invoice.nopa;
+  const company = await getCompany();
 
   const approved = invoice.status === "APPROVED";
 
@@ -47,7 +48,7 @@ export default async function NopaPrintPage({
           <div className="flex items-center justify-center gap-3">
             <Image
               src="/brand/gne-infra.png"
-              alt={COMPANY.name}
+              alt={company.name}
               width={110}
               height={31}
               className="h-8 w-auto"

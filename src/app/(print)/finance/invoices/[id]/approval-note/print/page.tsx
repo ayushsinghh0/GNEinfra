@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser, FINANCE_VIEW } from "@/lib/rbac";
 import { fmtDate, fmtDateOnly, fmtINR } from "@/lib/format";
 import PrintBar from "@/components/PrintBar";
-import { COMPANY } from "@/lib/company";
+import { getCompany } from "@/lib/company";
 
 export const dynamic = "force-dynamic";
 
@@ -40,6 +40,7 @@ export default async function ApprovalNotePrintPage({
   });
   // The approval note exists only once the invoice has been approved.
   if (!invoice || invoice.status !== "APPROVED" || !invoice.decidedAt) notFound();
+  const company = await getCompany();
 
   // Slot the actual approver into the signature column their role owns.
   const deciderRole = invoice.decidedByRole ?? "";
@@ -79,13 +80,13 @@ export default async function ApprovalNotePrintPage({
           <div className="flex items-center justify-center gap-3">
             <Image
               src="/brand/gne-infra.png"
-              alt={COMPANY.name}
+              alt={company.name}
               width={110}
               height={31}
               className="h-8 w-auto"
               priority
             />
-            <div className="text-[15px] font-bold text-slate-900">{COMPANY.name}</div>
+            <div className="text-[15px] font-bold text-slate-900">{company.name}</div>
           </div>
           <div className="mt-2 text-[13px] font-bold uppercase tracking-[0.2em] text-slate-700">
             Payment Approval Note
