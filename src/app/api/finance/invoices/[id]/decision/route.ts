@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser, FINANCE_APPROVE } from "@/lib/rbac";
-import { decisionSchema } from "@/lib/finance-validation";
+import { decisionSchema, zodErrorMessage } from "@/lib/finance-validation";
 
 // Sign-off is reserved for the oversight tier (Manager / Admin / Superadmin) —
 // the Finance initiator can never approve their own invoice.
@@ -13,7 +13,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
   const { id } = await ctx.params;
   const parsed = decisionSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid input" }, { status: 400 });
+    return NextResponse.json({ error: zodErrorMessage(parsed.error) }, { status: 400 });
   }
   const d = parsed.data;
   // Conditional transition: only a PENDING_APPROVAL invoice can be decided —

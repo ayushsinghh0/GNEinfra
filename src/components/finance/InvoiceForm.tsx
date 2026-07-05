@@ -2,12 +2,20 @@
 import { useState, FormEvent, ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Field, Input, Select, Textarea, inputCls, cn } from "@/components/ui";
-import { GST_LABELS } from "@/lib/finance-validation";
+import { GST_LABELS, invoiceSchema } from "@/lib/finance-validation";
 import { fmtINR } from "@/lib/format";
 import { AlertCircle, Plus, Trash2 } from "lucide-react";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { toast } from "@/components/Toast";
 import { useUnsavedGuard } from "@/components/hr/useUnsavedGuard";
+import {
+  decimal3,
+  digitsOnly,
+  docNoChars,
+  phoneChars,
+  useLocalToday,
+  zodFieldErrors,
+} from "./form-utils";
 
 type Values = Record<string, string>;
 export type ItemValues = {
@@ -35,25 +43,11 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-const REQUIRED_FIELDS: [key: string, label: string][] = [
-  ["invoiceNo", "Invoice number"],
-  ["invoiceDate", "Invoice date"],
-  ["billTo", "Bill to"],
-];
-
+// The shared invoiceSchema (the same one the API enforces) is the single
+// validator — its issues map onto per-field error keys.
 function validate(v: Values, items: ItemValues[]): Record<string, string> {
-  const errors: Record<string, string> = {};
-  for (const [k, label] of REQUIRED_FIELDS) {
-    if (!v[k]?.trim()) errors[k] = `${label} is required`;
-  }
-  items.forEach((item, i) => {
-    if (!item.description.trim()) errors[`item-${i}-description`] = "Description is required";
-    const qty = parseFloat(item.qty);
-    if (!Number.isFinite(qty) || qty <= 0) errors[`item-${i}-qty`] = "Qty must be positive";
-    const rate = item.rate === "" ? 0 : parseInt(item.rate, 10);
-    if (!Number.isFinite(rate) || rate < 0) errors[`item-${i}-rate`] = "Whole rupees only";
-  });
-  return errors;
+  const parsed = invoiceSchema.safeParse({ ...v, items });
+  return parsed.success ? {} : zodFieldErrors(parsed.error, "items", "item");
 }
 
 // Mirror of computeInvoiceTotals for the live footer (server recomputes anyway).
@@ -68,6 +62,18 @@ function liveTotals(items: ItemValues[], gstRateStr: string) {
   const gstAmount = Number.isFinite(gstRate) ? Math.round((subtotal * gstRate) / 100) : 0;
   return { amounts, subtotal, gstAmount, total: subtotal + gstAmount };
 }
+
+type TxtOpts = {
+  req?: boolean;
+  type?: string;
+  inputMode?: "numeric" | "decimal" | "tel";
+  hint?: ReactNode;
+  placeholder?: string;
+  maxLength?: number;
+  min?: string;
+  max?: string;
+  sanitize?: (s: string) => string;
+};
 
 export default function InvoiceForm({
   id,
@@ -89,27 +95,33 @@ export default function InvoiceForm({
   const [busy, setBusy] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [discardOpen, setDiscardOpen] = useState(false);
+  // "" during SSR so the server HTML can't disagree with the browser's date.
+  const today = useLocalToday();
 
-  const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    setV((s) => ({ ...s, [k]: e.target.value }));
-    setFieldErrors((fe) => {
-      if (!fe[k]) return fe;
-      const next = { ...fe };
-      delete next[k];
-      return next;
-    });
-  };
+  const set = (k: string, sanitize?: (s: string) => string) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+      const value = sanitize ? sanitize(e.target.value) : e.target.value;
+      setV((s) => ({ ...s, [k]: value }));
+      setFieldErrors((fe) => {
+        if (!fe[k]) return fe;
+        const next = { ...fe };
+        delete next[k];
+        return next;
+      });
+    };
 
-  const setItem = (i: number, k: keyof ItemValues) => (e: React.ChangeEvent<HTMLInputElement>) => {
-    setItems((rows) => rows.map((row, j) => (j === i ? { ...row, [k]: e.target.value } : row)));
-    const errKey = `item-${i}-${k}`;
-    setFieldErrors((fe) => {
-      if (!fe[errKey]) return fe;
-      const next = { ...fe };
-      delete next[errKey];
-      return next;
-    });
-  };
+  const setItem = (i: number, k: keyof ItemValues, sanitize?: (s: string) => string) =>
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = sanitize ? sanitize(e.target.value) : e.target.value;
+      setItems((rows) => rows.map((row, j) => (j === i ? { ...row, [k]: value } : row)));
+      const errKey = `item-${i}-${k}`;
+      setFieldErrors((fe) => {
+        if (!fe[errKey]) return fe;
+        const next = { ...fe };
+        delete next[errKey];
+        return next;
+      });
+    };
 
   const dirty = JSON.stringify({ v, items }) !== seed;
   useUnsavedGuard(dirty, "You have unsaved changes on this invoice. Leave without saving?");
@@ -154,19 +166,23 @@ export default function InvoiceForm({
     doSave();
   }
 
-  const Txt = (k: string, label: string, req = false, type = "text", inputMode?: "numeric" | "decimal" | "text") => {
+  const Txt = (k: string, label: string, o: TxtOpts = {}) => {
     const err = fieldErrors[k];
     const errId = `${k}-error`;
     return (
-      <Field label={label} required={req} htmlFor={k} error={err} errorId={err ? errId : undefined}>
+      <Field label={label} required={o.req} htmlFor={k} error={err} errorId={err ? errId : undefined} hint={o.hint}>
         <Input
           id={k}
-          type={type}
+          type={o.type ?? "text"}
           value={v[k]}
-          onChange={set(k)}
-          inputMode={inputMode}
-          required={req}
-          aria-required={req || undefined}
+          onChange={set(k, o.sanitize)}
+          inputMode={o.inputMode}
+          placeholder={o.placeholder}
+          maxLength={o.maxLength}
+          min={o.min}
+          max={o.max}
+          required={o.req}
+          aria-required={o.req || undefined}
           aria-invalid={err ? true : undefined}
           aria-describedby={err ? errId : undefined}
         />
@@ -175,6 +191,10 @@ export default function InvoiceForm({
   };
 
   const totals = liveTotals(items, v.gstRate);
+  // Immediate feedback on the one field that drives the totals footer.
+  const gstErr =
+    fieldErrors.gstRate ??
+    (v.gstRate !== "" && parseInt(v.gstRate, 10) > 28 ? "GST rate must be 0–28" : undefined);
 
   return (
     <form onSubmit={submit} className="space-y-5">
@@ -185,12 +205,35 @@ export default function InvoiceForm({
       )}
 
       <Section title="Invoice">
-        {Txt("invoiceNo", "Invoice no", true)}
-        {Txt("invoiceDate", "Invoice date", true, "date")}
-        {Txt("orderNo", "Order no")}
-        {Txt("orderDate", "Order date", false, "date")}
-        {Txt("contactPerson", "Contact person")}
-        {Txt("contactNumber", "Contact number")}
+        {Txt("invoiceNo", "Invoice no", {
+          req: true,
+          placeholder: "GNE/25-26/0001",
+          maxLength: 40,
+          sanitize: docNoChars,
+          hint: "letters, numbers and / . - only",
+        })}
+        {Txt("invoiceDate", "Invoice date", {
+          req: true,
+          type: "date",
+          min: "2000-01-01",
+          max: today || undefined,
+          hint: "today or earlier",
+        })}
+        {Txt("orderNo", "Order no", { placeholder: "Client PO / WO no.", maxLength: 60 })}
+        {Txt("orderDate", "Order date", {
+          type: "date",
+          min: "2000-01-01",
+          max: v.invoiceDate || today || undefined,
+          hint: "on or before the invoice date",
+        })}
+        {Txt("contactPerson", "Contact person", { placeholder: "e.g. Rakesh Sharma", maxLength: 120 })}
+        {Txt("contactNumber", "Contact number", {
+          placeholder: "e.g. 98765 43210",
+          inputMode: "tel",
+          maxLength: 20,
+          sanitize: phoneChars,
+          hint: "8–15 digits",
+        })}
       </Section>
 
       <Section title="Parties">
@@ -208,6 +251,8 @@ export default function InvoiceForm({
             value={v.billTo}
             onChange={set("billTo")}
             rows={4}
+            maxLength={1000}
+            placeholder={"Company name\nStreet, city, state, PIN\nGSTIN: 22AAAAA0000A1Z5"}
             required
             aria-required
             aria-invalid={fieldErrors.billTo ? true : undefined}
@@ -215,7 +260,14 @@ export default function InvoiceForm({
           />
         </Field>
         <Field label="Ship to" htmlFor="shipTo" className="sm:col-span-2 lg:col-span-3" hint="Leave blank if same as Bill to">
-          <Textarea id="shipTo" value={v.shipTo} onChange={set("shipTo")} rows={3} />
+          <Textarea
+            id="shipTo"
+            value={v.shipTo}
+            onChange={set("shipTo")}
+            rows={3}
+            maxLength={1000}
+            placeholder="Site / delivery address"
+          />
         </Field>
       </Section>
 
@@ -225,7 +277,9 @@ export default function InvoiceForm({
         <div className="space-y-4">
           {items.map((item, i) => {
             const dErr = fieldErrors[`item-${i}-description`];
+            const sErr = fieldErrors[`item-${i}-sacCode`];
             const qErr = fieldErrors[`item-${i}-qty`];
+            const uErr = fieldErrors[`item-${i}-uom`];
             const rErr = fieldErrors[`item-${i}-rate`];
             const amount = totals.amounts[i] ?? 0;
             return (
@@ -239,36 +293,61 @@ export default function InvoiceForm({
                       id={`item-${i}-description`}
                       value={item.description}
                       onChange={setItem(i, "description")}
+                      maxLength={500}
+                      placeholder="e.g. Supply & installation of 545 Wp solar modules"
                       aria-invalid={dErr ? true : undefined}
                     />
                     {dErr && <p className="mt-1 text-[12px] text-rose-600">{dErr}</p>}
                   </div>
                   <div className="sm:col-span-2">
                     <label htmlFor={`item-${i}-sacCode`} className="mb-1 block text-[12px] font-medium text-slate-600">SAC code</label>
-                    <Input id={`item-${i}-sacCode`} value={item.sacCode} onChange={setItem(i, "sacCode")} />
+                    <Input
+                      id={`item-${i}-sacCode`}
+                      value={item.sacCode}
+                      onChange={setItem(i, "sacCode", digitsOnly(8))}
+                      inputMode="numeric"
+                      maxLength={8}
+                      placeholder="995461"
+                      aria-invalid={sErr ? true : undefined}
+                    />
+                    {sErr && <p className="mt-1 text-[12px] text-rose-600">{sErr}</p>}
                   </div>
                   <div className="sm:col-span-2">
                     <label htmlFor={`item-${i}-qty`} className="mb-1 block text-[12px] font-medium text-slate-600">Qty</label>
                     <Input
                       id={`item-${i}-qty`}
                       value={item.qty}
-                      onChange={setItem(i, "qty")}
+                      onChange={setItem(i, "qty", decimal3)}
                       inputMode="decimal"
+                      maxLength={12}
+                      placeholder="1"
                       aria-invalid={qErr ? true : undefined}
                     />
                     {qErr && <p className="mt-1 text-[12px] text-rose-600">{qErr}</p>}
                   </div>
                   <div className="sm:col-span-2">
                     <label htmlFor={`item-${i}-uom`} className="mb-1 block text-[12px] font-medium text-slate-600">UOM</label>
-                    <Input id={`item-${i}-uom`} value={item.uom} onChange={setItem(i, "uom")} />
+                    <Input
+                      id={`item-${i}-uom`}
+                      value={item.uom}
+                      onChange={setItem(i, "uom")}
+                      maxLength={20}
+                      placeholder="Nos / Set / Mtr"
+                      aria-invalid={uErr ? true : undefined}
+                    />
+                    {uErr && <p className="mt-1 text-[12px] text-rose-600">{uErr}</p>}
                   </div>
                   <div className="sm:col-span-3">
-                    <label htmlFor={`item-${i}-rate`} className="mb-1 block text-[12px] font-medium text-slate-600">Rate (₹)</label>
+                    <label htmlFor={`item-${i}-rate`} className="mb-1 block text-[12px] font-medium text-slate-600">
+                      Rate (₹) <span className="font-normal text-slate-400">whole ₹</span>
+                    </label>
                     <Input
                       id={`item-${i}-rate`}
                       value={item.rate}
-                      onChange={setItem(i, "rate")}
+                      onChange={setItem(i, "rate", digitsOnly(10))}
                       inputMode="numeric"
+                      maxLength={10}
+                      placeholder="e.g. 125000"
                       aria-invalid={rErr ? true : undefined}
                     />
                     {rErr && <p className="mt-1 text-[12px] text-rose-600">{rErr}</p>}
@@ -294,15 +373,18 @@ export default function InvoiceForm({
             );
           })}
 
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            onClick={() => setItems((rows) => [...rows, { ...EMPTY_ITEM }])}
-            disabled={items.length >= 30}
-          >
-            <Plus className="h-3.5 w-3.5" /> Add line
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => setItems((rows) => [...rows, { ...EMPTY_ITEM }])}
+              disabled={items.length >= 30}
+            >
+              <Plus className="h-3.5 w-3.5" /> Add line
+            </Button>
+            <span className="text-[12px] text-slate-500">{items.length} of 30 lines</span>
+          </div>
         </div>
       </fieldset>
 
@@ -312,7 +394,24 @@ export default function InvoiceForm({
             {GST_LABELS.map((l) => <option key={l} value={l}>{l}</option>)}
           </Select>
         </Field>
-        {Txt("gstRate", "GST rate (%)", false, "text", "numeric")}
+        <Field
+          label="GST rate (%)"
+          htmlFor="gstRate"
+          hint="0–28"
+          error={gstErr}
+          errorId={gstErr ? "gstRate-error" : undefined}
+        >
+          <Input
+            id="gstRate"
+            value={v.gstRate}
+            onChange={set("gstRate", digitsOnly(2))}
+            inputMode="numeric"
+            maxLength={2}
+            placeholder="18"
+            aria-invalid={gstErr ? true : undefined}
+            aria-describedby={gstErr ? "gstRate-error" : undefined}
+          />
+        </Field>
         <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
           <div className="flex items-center justify-between text-[12px] text-slate-500">
             <span>Subtotal</span>
@@ -326,9 +425,19 @@ export default function InvoiceForm({
             <span>Total</span>
             <span className="nums">{fmtINR(totals.total)}</span>
           </div>
+          {fieldErrors.items && (
+            <p className="mt-2 text-[12px] font-medium text-rose-600">{fieldErrors.items}</p>
+          )}
         </div>
         <Field label="Notes" htmlFor="notes" className="sm:col-span-2 lg:col-span-3">
-          <Textarea id="notes" value={v.notes} onChange={set("notes")} rows={2} />
+          <Textarea
+            id="notes"
+            value={v.notes}
+            onChange={set("notes")}
+            rows={2}
+            maxLength={1000}
+            placeholder="Payment terms, bank details, remarks…"
+          />
         </Field>
       </Section>
 

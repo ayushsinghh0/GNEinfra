@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser, FINANCE_WRITE } from "@/lib/rbac";
-import { paymentSchema } from "@/lib/finance-validation";
+import { paymentSchema, zodErrorMessage } from "@/lib/finance-validation";
 
 function toDate(s?: string) { const d = s ? new Date(s) : null; return d && !isNaN(d.getTime()) ? d : null; }
 
@@ -15,7 +15,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
   const { id } = await ctx.params;
   const parsed = paymentSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid input" }, { status: 400 });
+    return NextResponse.json({ error: zodErrorMessage(parsed.error) }, { status: 400 });
   }
   const d = parsed.data;
   const invoice = await prisma.invoice.findUnique({ where: { id }, select: { status: true } });
