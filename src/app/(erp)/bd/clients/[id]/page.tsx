@@ -163,10 +163,10 @@ export default async function BdClientDetailPage({
       <div className="p-8 space-y-6">
         {/* Identity + facts */}
         <Card>
-          <CardBody className="flex flex-col gap-5 sm:flex-row sm:items-start">
-            <div className="flex items-center gap-4">
+          <CardBody className="flex flex-col gap-5 lg:flex-row lg:items-start">
+            <div className="flex min-w-0 items-center gap-4">
               <Avatar name={client.name} size="md" />
-              <div>
+              <div className="min-w-0">
                 <div className="text-lg font-bold tracking-tight text-slate-900">{client.name}</div>
                 <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[12px] text-slate-500">
                   <span className="nums">{openEnquiries} open enquiries</span>
@@ -175,7 +175,7 @@ export default async function BdClientDetailPage({
                 </div>
               </div>
             </div>
-            <div className="flex-1 sm:border-l sm:border-slate-200 sm:pl-6">
+            <div className="min-w-0 flex-1 lg:border-l lg:border-slate-200 lg:pl-6">
               <KeyValue
                 cols={2}
                 items={[

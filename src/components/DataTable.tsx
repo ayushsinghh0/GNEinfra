@@ -28,8 +28,13 @@ export function DataTable<T>({
   if (rows.length === 0) return <>{empty}</>;
   return (
     <>
-      {/* Desktop / tablet: real table, priority-hidden columns, no horizontal scroll */}
-      <table className="hidden w-full text-sm sm:table">
+      {/* Desktop / tablet: real table with priority-hidden columns. The
+          overflow-x-auto shell is a safety net — when a table is still wider
+          than its container after priority hiding (e.g. an admin grid with
+          inline controls at tablet width), it scrolls WITHIN its own box
+          instead of pushing the whole page sideways. */}
+      <div className="hidden overflow-x-auto sm:block">
+      <table className="w-full text-sm">
         <thead>
           <tr className={theadRowCls}>
             {columns.map((c) => (
@@ -71,6 +76,7 @@ export function DataTable<T>({
           })}
         </tbody>
       </table>
+      </div>
 
       {/* Mobile: card list from the same columns */}
       <ul className="space-y-2 sm:hidden">

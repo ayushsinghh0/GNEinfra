@@ -361,18 +361,21 @@ export function Donut({
         </div>
       </div>
 
-      <ul className="w-full space-y-2">
+      {/* `w-full` in the mobile stack; in the sm+ row layout it must be a
+          shrinkable flex child (flex-1 + min-w-0) so it fills the space beside
+          the fixed-width donut instead of forcing 100% and overflowing. */}
+      <ul className="w-full space-y-2 sm:min-w-0 sm:flex-1">
         {data.map((d) => {
           const pct = total ? Math.round((d.value / total) * 100) : 0;
           return (
-            <li key={d.status} className="flex items-center gap-2.5 text-sm">
+            <li key={d.status} className="flex min-w-0 items-center gap-2.5 text-sm">
               <span
                 className="h-2.5 w-2.5 shrink-0 rounded-full"
                 style={{ background: STATUS_COLOR[d.status] ?? "#94a3b8" }}
               />
-              <span className="text-slate-600">{d.label}</span>
-              <span className="nums ml-auto font-semibold text-slate-700">{d.value}</span>
-              <span className="nums w-9 text-right text-xs text-slate-400">{pct}%</span>
+              <span className="min-w-0 truncate text-slate-600">{d.label}</span>
+              <span className="nums ml-auto shrink-0 font-semibold text-slate-700">{d.value}</span>
+              <span className="nums w-9 shrink-0 text-right text-xs text-slate-400">{pct}%</span>
             </li>
           );
         })}

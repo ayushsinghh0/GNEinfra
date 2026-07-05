@@ -491,16 +491,21 @@ export function PageHeader({
   children?: React.ReactNode;
 }) {
   const titleGroup = (
-    <div className="flex items-baseline gap-3 min-w-0">
+    <div className="flex min-w-0 flex-1 items-baseline gap-3">
       <h1 className="text-lg font-semibold tracking-tight text-slate-900 truncate">{title}</h1>
       {subtitle && <span className="text-sm text-slate-500 truncate">{subtitle}</span>}
     </div>
   );
-  const actions = children && <div className="flex items-center gap-2 shrink-0">{children}</div>;
+  // Actions can be a crowded toolbar (export + month nav + primary CTA). Let
+  // them wrap onto their own line on narrow screens instead of overflowing the
+  // fixed-height header — hence `flex-wrap` + `ml-auto` (right-aligns the
+  // wrapped line) and the row's `min-h-16`/`flex-wrap` below.
+  const actions = children && <div className="flex flex-wrap items-center justify-end gap-2 ml-auto">{children}</div>;
+  const rowCls = "flex min-h-16 flex-wrap items-center gap-x-4 gap-y-2 py-2 sm:py-0";
 
   if (!breadcrumbs || breadcrumbs.length === 0) {
     return (
-      <header className="glass sticky top-[var(--h-topbar)] md:top-0 z-20 flex h-16 items-center justify-between gap-4 border-b border-slate-200/70 px-6 sm:px-8">
+      <header className={cn("glass sticky top-[var(--h-topbar)] md:top-0 z-20 border-b border-slate-200/70 px-6 sm:px-8", rowCls)}>
         {titleGroup}
         {actions}
       </header>
@@ -512,7 +517,7 @@ export function PageHeader({
       <div className="flex h-8 items-center pt-1.5">
         <Breadcrumbs items={breadcrumbs} />
       </div>
-      <div className="flex h-16 items-center justify-between gap-4">
+      <div className={rowCls}>
         {titleGroup}
         {actions}
       </div>
