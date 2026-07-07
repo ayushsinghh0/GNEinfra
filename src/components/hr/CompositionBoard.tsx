@@ -1,6 +1,6 @@
 "use client";
 
-import { MapPin, Briefcase, Layers, Clock, Users } from "lucide-react";
+import { MapPin, Briefcase, Layers, Clock, Users, Award, UserPlus, Timer } from "lucide-react";
 import { useState } from "react";
 import Link from "next/link";
 import { Card, CardHeader, CardBody, EmptyState, cn } from "@/components/ui";
@@ -8,7 +8,8 @@ import { SegmentDonut, DISTRIBUTION_COLORS } from "@/components/Charts";
 import Segmented from "@/components/Segmented";
 
 type Bar = { label: string; count: number };
-type Dim = "location" | "designation" | "category" | "tenure";
+type Dim = "location" | "designation" | "category" | "band" | "tenure";
+type Summary = { totalActive: number; avgTenure: number; newJoiners: number };
 
 // The legend list is capped so the card doesn't sprawl past what a glance can absorb.
 // The donut itself is NEVER capped — it's built from the full `data` array so its arcs
@@ -20,6 +21,7 @@ const OPTIONS = [
   { value: "location" as Dim, label: "Location", icon: <MapPin className="h-3.5 w-3.5" /> },
   { value: "designation" as Dim, label: "Designation", icon: <Briefcase className="h-3.5 w-3.5" /> },
   { value: "category" as Dim, label: "Category", icon: <Layers className="h-3.5 w-3.5" /> },
+  { value: "band" as Dim, label: "Band", icon: <Award className="h-3.5 w-3.5" /> },
   { value: "tenure" as Dim, label: "Tenure", icon: <Clock className="h-3.5 w-3.5" /> },
 ];
 
@@ -41,15 +43,19 @@ export default function CompositionBoard({
   location,
   designation,
   category,
+  band,
   tenure,
+  summary,
 }: {
   location: Bar[];
   designation: Bar[];
   category: Bar[];
+  band: Bar[];
   tenure: Bar[];
+  summary: Summary;
 }) {
   const [dim, setDim] = useState<Dim>("location");
-  const all = { location, designation, category, tenure }[dim];
+  const all = { location, designation, category, band, tenure }[dim];
   // Tenure buckets have a meaningful order; the others read best ranked by size.
   const data = dim === "tenure" ? all : [...all].sort((a, b) => b.count - a.count);
   const total = data.reduce((s, b) => s + b.count, 0);
@@ -58,6 +64,22 @@ export default function CompositionBoard({
     <Card className="h-full">
       <CardHeader title="Workforce composition" subtitle="Active headcount" />
       <CardBody className="px-6 py-5">
+        {/* Summary — the headline reads before the per-dimension breakdown. */}
+        <div className="mb-4 grid grid-cols-3 gap-3 border-b border-slate-100 pb-4">
+          {[
+            { icon: <Users className="h-3.5 w-3.5" />, label: "Active", value: summary.totalActive },
+            { icon: <Timer className="h-3.5 w-3.5" />, label: "Avg tenure", value: `${summary.avgTenure} yr` },
+            { icon: <UserPlus className="h-3.5 w-3.5" />, label: "New this month", value: summary.newJoiners },
+          ].map((s) => (
+            <div key={s.label}>
+              <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-500">
+                {s.icon}
+                <span className="truncate">{s.label}</span>
+              </div>
+              <div className="nums mt-1 text-xl font-semibold leading-none text-slate-900">{s.value}</div>
+            </div>
+          ))}
+        </div>
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <Segmented
             ariaLabel="Composition dimension"
