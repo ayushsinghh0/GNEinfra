@@ -25,7 +25,10 @@ export default async function EditEmployeePage({
   await requirePageRole(HR_WRITE);
   const { id } = await params;
 
-  const emp = await prisma.employee.findUnique({ where: { id } });
+  const emp = await prisma.employee.findUnique({
+    where: { id },
+    include: { familyMembers: { orderBy: { sortOrder: "asc" } } },
+  });
   if (!emp) notFound();
 
   const initial = {
@@ -59,6 +62,18 @@ export default async function EditEmployeePage({
     esicNo: emp.esicNo ?? "",
   };
 
+  const initialFamily = emp.familyMembers.map((m) => ({
+    name: m.name,
+    relation: m.relation,
+    dob: toDateStr(m.dob),
+    gender: m.gender ?? "",
+    occupation: m.occupation ?? "",
+    contact: m.contact ?? "",
+    isDependent: m.isDependent,
+    isNominee: m.isNominee,
+    nomineePct: m.nomineePct != null ? String(m.nomineePct) : "",
+  }));
+
   return (
     <>
       <PageHeader title={`Edit — ${emp.name}`} subtitle={emp.empId} />
@@ -68,7 +83,7 @@ export default async function EditEmployeePage({
             {/* key={id}: force a remount on employee-to-employee edit navigation
                 so EmployeeForm's mount-time-seeded state can't show employee
                 A's fields (bank/PAN/salary) under employee B's id. */}
-            <EmployeeForm key={id} id={id} initial={initial} />
+            <EmployeeForm key={id} id={id} initial={initial} initialFamily={initialFamily} />
           </CardBody>
         </Card>
       </div>

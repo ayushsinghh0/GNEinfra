@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronRight, Laptop, FolderKanban, IdCard, Contact } from "lucide-react";
+import { ChevronRight, Laptop, FolderKanban, IdCard, Contact, Users } from "lucide-react";
 import { requirePageRole, HR_VIEW } from "@/lib/rbac";
 import { fmtDateOnly } from "@/lib/format";
-import { KeyValue, DetailSection, EntityLink, EmptyState } from "@/components/ui";
+import { KeyValue, DetailSection, EntityLink, EmptyState, Chip } from "@/components/ui";
 import { getEmployee } from "./_data";
 
 export const dynamic = "force-dynamic";
@@ -123,6 +123,43 @@ export default async function EmployeeOverviewPage({
         </DetailSection>
 
       </div>
+
+      <DetailSection title="Family details" icon={<Users className="h-4 w-4 text-slate-400" />}>
+        {emp.familyMembers.length === 0 ? (
+          <EmptyState icon={<Users className="h-5 w-5" />} title="No family details recorded" />
+        ) : (
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            {emp.familyMembers.map((m) => (
+              <div key={m.id} className="rounded-xl border border-slate-100 px-3 py-2.5">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium text-slate-800">{m.name}</p>
+                    <p className="text-xs text-slate-500">
+                      {m.relation}
+                      {m.occupation ? ` · ${m.occupation}` : ""}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 flex-wrap justify-end gap-1.5">
+                    {m.isDependent && <Chip>Dependent</Chip>}
+                    {m.isNominee && (
+                      <Chip className="bg-brand-50 text-brand-700">
+                        Nominee{m.nomineePct != null ? ` ${m.nomineePct}%` : ""}
+                      </Chip>
+                    )}
+                  </div>
+                </div>
+                {(m.dob || m.gender || m.contact) && (
+                  <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-slate-400">
+                    {m.dob && <span className="nums">DOB {fmtDateOnly(m.dob)}</span>}
+                    {m.gender && <span>{m.gender}</span>}
+                    {m.contact && <span className="nums">{m.contact}</span>}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </DetailSection>
     </div>
   );
 }

@@ -50,6 +50,17 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         uan: d.uan || null,
         panNo: d.panNo || null,
         esicNo: d.esicNo || null,
+        // Full replace of the family set — delete all then recreate in one
+        // atomic update (avoids diffing rows the client can reorder freely).
+        familyMembers: {
+          deleteMany: {},
+          create: (d.familyMembers ?? []).map((m, i) => ({
+            name: m.name, relation: m.relation, dob: toDate(m.dob),
+            gender: m.gender || null, occupation: m.occupation || null, contact: m.contact || null,
+            isDependent: !!m.isDependent, isNominee: !!m.isNominee,
+            nomineePct: m.nomineePct ?? null, sortOrder: i,
+          })),
+        },
       },
     });
     return NextResponse.json({ ok: true, employee });

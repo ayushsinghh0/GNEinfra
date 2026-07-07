@@ -46,6 +46,16 @@ export async function POST(req: NextRequest) {
         uan: d.uan || null,
         panNo: d.panNo || null,
         esicNo: d.esicNo || null,
+        familyMembers: d.familyMembers?.length
+          ? {
+              create: d.familyMembers.map((m, i) => ({
+                name: m.name, relation: m.relation, dob: toDate(m.dob),
+                gender: m.gender || null, occupation: m.occupation || null, contact: m.contact || null,
+                isDependent: !!m.isDependent, isNominee: !!m.isNominee,
+                nomineePct: m.nomineePct ?? null, sortOrder: i,
+              })),
+            }
+          : undefined,
       },
     });
     return NextResponse.json({ ok: true, employee });

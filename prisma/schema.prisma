@@ -324,6 +324,7 @@ model Employee {
   attendance         AttendanceRecord[]
   payrolls           PayrollRecord[]
   projectAssignments ProjectAssignment[]
+  familyMembers      EmployeeFamilyMember[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -331,6 +332,29 @@ model Employee {
   @@index([status])
   @@index([location])
   @@index([designation])
+}
+
+// Family / next-of-kin members (repeatable per employee). Cascade-deletes with
+// the employee — family data has no independent history to protect (unlike
+// attendance/payroll, which use Restrict). Nominee fields feed PF/ESIC/gratuity
+// paperwork; isDependent flags who is covered for benefits.
+model EmployeeFamilyMember {
+  id         String    @id @default(cuid())
+  employeeId String
+  employee   Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  name       String
+  relation   String // Father / Mother / Spouse / Son / Daughter / Guardian / Sibling / Other
+  dob        DateTime? @db.Date
+  gender     String?
+  occupation String?
+  contact    String?
+  isDependent Boolean  @default(false)
+  isNominee   Boolean  @default(false)
+  nomineePct  Int? // PF/ESIC/gratuity nominee share, when isNominee
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  @@index([employeeId])
 }
 
 model EmployeeAsset {

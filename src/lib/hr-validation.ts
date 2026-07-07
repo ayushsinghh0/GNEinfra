@@ -28,6 +28,31 @@ const optDate = z.preprocess(
 
 export const PROJECT_STATUSES = ["ACTIVE", "ON_HOLD", "COMPLETED"] as const;
 
+export const FAMILY_RELATIONS = [
+  "Father", "Mother", "Spouse", "Son", "Daughter", "Guardian", "Sibling", "Other",
+] as const;
+
+// Optional 0–100 percentage (nominee share): "" / null / undefined → undefined.
+const pct = z.preprocess(
+  (v) => (v === "" || v === null || v === undefined ? undefined : v),
+  z.coerce.number().int("Whole percent only").min(0).max(100).optional()
+);
+
+// One repeatable family / next-of-kin member. Only name + relation are required;
+// everything else is optional. Rows are saved as a full replace of the set.
+export const familyMemberSchema = z.object({
+  name: z.string().trim().min(1, "Family member name is required").max(120),
+  relation: z.string().trim().min(1, "Relation is required").max(40),
+  dob: optDate,
+  gender: z.string().trim().max(20).optional().or(z.literal("")),
+  occupation: z.string().trim().max(120).optional().or(z.literal("")),
+  contact: z.string().trim().max(20).optional().or(z.literal("")),
+  isDependent: z.coerce.boolean().optional(),
+  isNominee: z.coerce.boolean().optional(),
+  nomineePct: pct,
+});
+export type FamilyMemberInput = z.infer<typeof familyMemberSchema>;
+
 // Annual leave quota: "" / null / undefined → 12; else a non-negative integer.
 const quota = z.preprocess(
   (v) => (v === "" || v === null || v === undefined ? 12 : v),
@@ -63,6 +88,8 @@ export const employeeSchema = z.object({
   uan: z.string().trim().max(20).optional().or(z.literal("")),
   panNo: z.string().trim().max(10).optional().or(z.literal("")),
   esicNo: z.string().trim().max(20).optional().or(z.literal("")),
+  // Family / next-of-kin members — saved as a full replace of the set.
+  familyMembers: z.array(familyMemberSchema).max(20).optional(),
 });
 export type EmployeeInput = z.infer<typeof employeeSchema>;
 
