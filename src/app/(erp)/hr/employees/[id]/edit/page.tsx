@@ -32,6 +32,7 @@ export default async function EditEmployeePage({
     empId: emp.empId,
     name: emp.name,
     designation: emp.designation,
+    band: emp.band ?? "",
     empCategory: emp.empCategory ?? "",
     location: emp.location ?? "",
     dateOfJoining: toDateStr(emp.dateOfJoining),

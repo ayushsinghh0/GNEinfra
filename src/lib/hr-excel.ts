@@ -40,6 +40,7 @@ export async function buildEmployeesWorkbook(
     "EMP ID",
     "Name",
     "Designation",
+    "Band",
     "Emp Category",
     "Payroll",
     "Location",
@@ -64,6 +65,7 @@ export async function buildEmployeesWorkbook(
     { width: 14 },  // EMP ID
     { width: 28 },  // Name
     { width: 22 },  // Designation
+    { width: 10 },  // Band
     { width: 16 },  // Emp Category
     { width: 14 },  // Payroll
     { width: 16 },  // Location
@@ -92,6 +94,7 @@ export async function buildEmployeesWorkbook(
       emp.empId,
       emp.name,
       emp.designation,
+      emp.band ?? "",
       emp.empCategory ?? "",
       emp.payrollType ?? "",
       emp.location ?? "",

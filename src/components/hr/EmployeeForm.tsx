@@ -20,7 +20,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 }
 
 const EMPTY: Values = {
-  empId: "", name: "", designation: "", empCategory: "On-Roll", location: "",
+  empId: "", name: "", designation: "", band: "", empCategory: "On-Roll", location: "",
   dateOfJoining: "", payrollType: "", mailId: "", emergencyNumber: "", bloodGroup: "",
   iCardNo: "", dob: "", offerLetterDate: "", leavingDate: "",
   totalCtc: "", salary: "", lta: "", specialAllowance: "", conveyance: "",
@@ -161,6 +161,7 @@ export default function EmployeeForm({ id, initial }: { id?: string; initial?: V
         {Txt("empId", "EMP ID", true)}
         {Txt("name", "Name", true)}
         {Txt("designation", "Designation", true)}
+        {Txt("band", "Band")}
         <Field label="Emp Category" required htmlFor="empCategory">
           <Select id="empCategory" value={v.empCategory} onChange={set("empCategory")} required aria-required>
             {EMP_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
