@@ -465,6 +465,70 @@ model ProjectAssignment {
   @@index([projectId])
 }
 
+// ── Recruitment / Sourcing ────────────────────────────────────────────────────
+// JobPosition = the open role (role/position details + JD + manpower requirement);
+// Candidate = an applicant sourced against it (sourcing + CV tracker + hiring
+// pipeline). See docs/superpowers/specs/2026-07-08-hr-recruitment-module-design.md.
+enum PositionStatus {
+  OPEN
+  ON_HOLD
+  CLOSED
+}
+
+enum HiringStage {
+  SOURCED
+  SCREENING
+  SHORTLISTED
+  INTERVIEW
+  OFFER
+  HIRED
+  REJECTED
+  ON_HOLD
+}
+
+model JobPosition {
+  id             String         @id @default(cuid())
+  title          String
+  code           String?        @unique // optional requisition code, e.g. REQ-0001
+  department     String?
+  band           String?
+  location       String?
+  employmentType String? // Full-time / Contract / Intern / Consultant
+  openings       Int            @default(1) // Total Manpower Requirement
+  jobDescription String? // long-form JD
+  status         PositionStatus @default(OPEN)
+  candidates     Candidate[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+}
+
+model Candidate {
+  id              String       @id @default(cuid())
+  name            String
+  email           String?
+  phone           String?
+  positionId      String?
+  position        JobPosition? @relation(fields: [positionId], references: [id], onDelete: SetNull)
+  source          String? // Referral / Job Portal / Agency / LinkedIn / Walk-in / Other
+  stage           HiringStage  @default(SOURCED)
+  cvReceived      Boolean      @default(false)
+  cvLink          String? // external CV link (no file storage in v1)
+  experienceYears Float?
+  noticePeriod    String?
+  appliedOn       DateTime?    @db.Date
+  notes           String?
+  hiredEmployeeId String? // set when converted to an Employee (loose link)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([positionId])
+  @@index([stage])
+}
+
 // ── BD Module ─────────────────────────────────────────────────────────────────
 // Mirrors the four sheets of the GNE "BD Tracker" workbook: Client list,
 // Query & Quote (enquiry) tracker, PO Received tracker, and yearly Targets.
@@ -765,4 +829,19 @@ model CompanyProfile {
 
   updatedAt DateTime @updatedAt
   updatedBy String? // display name, loose string like the invoice audit fields
+}
+
+// Ledger-name mapping for the Tally XML export (/finance/tally). Singleton, like
+// CompanyProfile; read via getTallySettings() which falls back to TALLY_DEFAULTS
+// so a fresh DB needs no seed. All nullable → the fallback fills blanks.
+model TallySettings {
+  id               String  @id @default("tally")
+  tallyCompanyName String? // Tally SVCURRENTCOMPANY (defaults to CompanyProfile.name)
+  salesLedger      String? // default "Sales"
+  gstLedger        String? // default "Output IGST"
+  bankLedger       String? // default "Bank"
+  roundOffLedger   String? // default "Round Off" (reserved; totals are exact today)
+
+  updatedAt DateTime @updatedAt
+  updatedBy String?
 }

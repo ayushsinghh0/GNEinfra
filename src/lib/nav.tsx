@@ -2,7 +2,7 @@ import type { Role } from "@prisma/client";
 import {
   LayoutDashboard, Building2, Mail, Settings, Users, Boxes, Wallet, UserRound,
   Briefcase, ClipboardList, FileText, ReceiptText, Truck, PackageCheck,
-  CalendarClock, HardHat, BadgeIndianRupee, FolderKanban, Target, type LucideIcon,
+  CalendarClock, HardHat, BadgeIndianRupee, FolderKanban, Target, FileDown, type LucideIcon,
 } from "lucide-react";
 
 export type NavItem = { label: string; href?: string; icon: LucideIcon; soon?: boolean };
@@ -56,6 +56,7 @@ const FINANCE: NavSection = {
     { label: "Invoice Approval", href: "/finance/approvals", icon: PackageCheck },
     { label: "Payment", href: "/finance/payments", icon: BadgeIndianRupee },
     { label: "Reconciliation", href: "/finance/reconciliation", icon: Wallet },
+    { label: "Tally Export", href: "/finance/tally", icon: FileDown },
     { label: "Company Details", href: "/finance/company", icon: Building2 },
   ],
 };
@@ -69,7 +70,7 @@ const HR_ASSETS: NavItem = { label: "Assets", href: "/hr/assets", icon: Boxes };
 const HR_ATTENDANCE: NavItem = { label: "Attendance", href: "/hr/attendance", icon: CalendarClock };
 const HR_PROJECTS: NavItem = { label: "Projects", href: "/hr/projects", icon: FolderKanban };
 const HR_MANPOWER: NavItem = { label: "Manpower Planning", icon: UserRound, soon: true };
-const HR_RECRUITMENT: NavItem = { label: "Recruitment", icon: Briefcase, soon: true };
+const HR_RECRUITMENT: NavItem = { label: "Recruitment", href: "/hr/recruitment", icon: Briefcase };
 
 const HR: NavSection = {
   heading: "Human Resources",

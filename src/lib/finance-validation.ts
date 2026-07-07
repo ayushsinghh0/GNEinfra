@@ -299,6 +299,35 @@ export const paymentSchema = z.object({
 });
 export type PaymentInput = z.infer<typeof paymentSchema>;
 
+// ── Tally export ──────────────────────────────────────────────────────────────
+
+// Ledger-name mapping (all optional — blanks fall back to TALLY_DEFAULTS server-side).
+const ledgerName = z.string().trim().max(120).optional().or(z.literal(""));
+export const tallySettingsSchema = z.object({
+  tallyCompanyName: z.string().trim().max(200).optional().or(z.literal("")),
+  salesLedger: ledgerName,
+  gstLedger: ledgerName,
+  bankLedger: ledgerName,
+  roundOffLedger: ledgerName,
+});
+export type TallySettingsInput = z.infer<typeof tallySettingsSchema>;
+
+const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD");
+// Export request: voucher type + inclusive date range (capped so the query is bounded).
+export const tallyExportSchema = z
+  .object({
+    type: z.enum(["sales", "receipts", "both"]),
+    from: isoDate,
+    to: isoDate,
+    preview: z.enum(["0", "1"]).optional(),
+  })
+  .refine((d) => d.to >= d.from, { message: "End date must be on or after the start date", path: ["to"] })
+  .refine(
+    (d) => (Date.parse(d.to) - Date.parse(d.from)) / 86_400_000 <= 366,
+    { message: "Date range cannot exceed 366 days", path: ["to"] }
+  );
+export type TallyExportInput = z.infer<typeof tallyExportSchema>;
+
 // ── API error formatting ──────────────────────────────────────────────────────
 
 // Names the offending field on a schema rejection ("Line 2, rate: …") so the
