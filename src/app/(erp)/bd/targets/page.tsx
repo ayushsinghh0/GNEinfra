@@ -45,13 +45,14 @@ export default async function BdTargetsPage({
     }),
     prisma.bdTarget.aggregate({
       where,
-      _sum: { estimatedValue: true, forecastedRevenue: true, orderReceived: true },
+      _sum: { estimatedValue: true, forecastedRevenue: true, orderReceived: true, salesTarget: true },
     }),
   ]);
 
-  const estimated = agg._sum.estimatedValue ?? 0;
   const forecast = agg._sum.forecastedRevenue ?? 0;
   const received = agg._sum.orderReceived ?? 0;
+  const salesTargetTotal = agg._sum.salesTarget ?? 0;
+  const achievementPct = salesTargetTotal > 0 ? Math.round((received / salesTargetTotal) * 100) : null;
 
   type Row = (typeof targets)[number];
   const columns: Column<Row>[] = [
@@ -102,9 +103,27 @@ export default async function BdTargetsPage({
       },
     },
     {
+      key: "salesTarget",
+      header: "Sales target",
+      align: "right",
+      cardLabel: "Sales target",
+      cell: (t) => <span className="nums">{fmtINR(t.salesTarget)}</span>,
+    },
+    {
+      key: "achievement",
+      header: "Achieved",
+      align: "right",
+      cardLabel: "Achieved",
+      cell: (t) => {
+        const pct = t.salesTarget && t.salesTarget > 0 ? Math.round(((t.orderReceived ?? 0) / t.salesTarget) * 100) : null;
+        return <span className={pct !== null && pct >= 100 ? "nums font-semibold text-emerald-600" : "nums text-slate-600"}>{pct !== null ? `${pct}%` : "—"}</span>;
+      },
+    },
+    {
       key: "estimated",
       header: "Estimated",
       align: "right",
+      priority: "lg",
       cardLabel: "Estimated",
       cell: (t) => <span className="nums">{fmtINR(t.estimatedValue)}</span>,
     },
@@ -148,10 +167,11 @@ export default async function BdTargetsPage({
       </PageHeader>
 
       <div className="p-8 space-y-6">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <StatCard label="Estimated value" value={fmtINR(estimated)} tone="brand" size="sm" />
-          <StatCard label="Forecasted revenue" value={fmtINR(forecast)} tone="amber" size="sm" />
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <StatCard label="Sales target" value={fmtINR(salesTargetTotal)} tone="brand" size="sm" />
           <StatCard label="Orders received" value={fmtINR(received)} tone="emerald" size="sm" />
+          <StatCard label="Achievement" value={achievementPct !== null ? `${achievementPct}%` : "—"} tone="amber" size="sm" />
+          <StatCard label="Forecasted revenue" value={fmtINR(forecast)} tone="blue" size="sm" />
         </div>
 
         <Card>

@@ -40,6 +40,14 @@ export function enquiryData(d: EnquiryInput) {
     customerContact: d.customerContact || null,
     value: d.value ?? null,
     notes: d.notes || null,
+    technology: d.technology ?? null,
+    serviceCategory: d.serviceCategory ?? null,
+    quotationStatus: d.quotationStatus,
+    submittedTo: d.submittedTo || null,
+    quoteValidUntil: toDate(d.quoteValidUntil),
+    quoteRevision: d.quoteRevision || null,
+    enquirySource: d.enquirySource || null,
+    nextFollowUpDate: toDate(d.nextFollowUpDate),
   };
 }
 
@@ -59,6 +67,8 @@ export function poData(d: BdPoInput) {
     poDate: toDate(d.poDate),
     poStart: toDate(d.poStart),
     poEnd: toDate(d.poEnd),
+    technology: d.technology ?? null,
+    serviceCategory: d.serviceCategory ?? null,
     remarks: d.remarks || null,
   };
 }
@@ -78,6 +88,9 @@ export function targetData(d: TargetInput) {
     probabilityPct: d.probabilityPct ?? null,
     forecastedRevenue: d.forecastedRevenue ?? null,
     orderReceived: d.orderReceived ?? null,
+    salesTarget: d.salesTarget ?? null,
+    technology: d.technology ?? null,
+    serviceCategory: d.serviceCategory ?? null,
     notes: d.notes || null,
   };
 }

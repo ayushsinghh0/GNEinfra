@@ -6,6 +6,26 @@ export const BD_PLANT_TYPES = ["GROUND", "ROOF", "HYBRID"] as const;
 export const BD_STAGES = ["ENQUIRY", "QUOTE_SUBMITTED", "FOLLOW_UP", "NEGOTIATION", "CLOSED"] as const;
 export const BD_FINAL_STATUSES = ["OPEN", "WON", "LOST"] as const;
 export const BD_QUARTERS = ["Q1", "Q2", "Q3", "Q4"] as const;
+export const BD_TECHNOLOGIES = ["SOLAR", "BESS"] as const;
+export const BD_SERVICE_CATEGORIES = ["PMC", "EPC", "INC", "OM"] as const;
+export const BD_QUOTATION_STATUSES = ["PENDING", "QUOTE_PREPARATION", "APPROVAL", "QUOTE_SUBMISSION"] as const;
+
+export const TECHNOLOGY_LABELS: Record<(typeof BD_TECHNOLOGIES)[number], string> = {
+  SOLAR: "Solar",
+  BESS: "BESS",
+};
+export const SERVICE_CATEGORY_LABELS: Record<(typeof BD_SERVICE_CATEGORIES)[number], string> = {
+  PMC: "PMC",
+  EPC: "EPC",
+  INC: "I&C",
+  OM: "O&M",
+};
+export const QUOTATION_STATUS_LABELS: Record<(typeof BD_QUOTATION_STATUSES)[number], string> = {
+  PENDING: "Pending",
+  QUOTE_PREPARATION: "Quote preparation",
+  APPROVAL: "Approval",
+  QUOTE_SUBMISSION: "Quote submission",
+};
 
 export const SERVICE_TYPE_LABELS: Record<(typeof BD_SERVICE_TYPES)[number], string> = {
   EPC: "EPC",
@@ -82,6 +102,17 @@ export const enquirySchema = z.object({
   customerContact: optText(120),
   value: money,
   notes: optText(2000),
+  // Project-wise category
+  technology: optEnum(BD_TECHNOLOGIES),
+  serviceCategory: optEnum(BD_SERVICE_CATEGORIES),
+  // Quotation sub-process
+  quotationStatus: z.enum(BD_QUOTATION_STATUSES).default("PENDING"),
+  submittedTo: optText(160),
+  quoteValidUntil: optDate,
+  quoteRevision: optText(20),
+  // Extra enquiry info
+  enquirySource: optText(120),
+  nextFollowUpDate: optDate,
 });
 export type EnquiryInput = z.infer<typeof enquirySchema>;
 
@@ -101,6 +132,8 @@ export const bdPoSchema = z
     poDate: optDate,
     poStart: optDate,
     poEnd: optDate,
+    technology: optEnum(BD_TECHNOLOGIES),
+    serviceCategory: optEnum(BD_SERVICE_CATEGORIES),
     remarks: optText(1000),
   })
   .refine((d) => !d.poStart || !d.poEnd || d.poEnd >= d.poStart, {
@@ -123,6 +156,9 @@ export const targetSchema = z.object({
   probabilityPct: pct,
   forecastedRevenue: money,
   orderReceived: money,
+  salesTarget: money,
+  technology: optEnum(BD_TECHNOLOGIES),
+  serviceCategory: optEnum(BD_SERVICE_CATEGORIES),
   notes: optText(1000),
 });
 export type TargetInput = z.infer<typeof targetSchema>;

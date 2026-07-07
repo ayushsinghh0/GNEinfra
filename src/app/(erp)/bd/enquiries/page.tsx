@@ -4,7 +4,10 @@ import { Prisma } from "@prisma/client";
 import { FileText } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { requirePageRole, BD_VIEW, BD_WRITE } from "@/lib/rbac";
-import { BD_STAGES } from "@/lib/bd-validation";
+import {
+  BD_STAGES, BD_TECHNOLOGIES, BD_SERVICE_CATEGORIES, BD_QUOTATION_STATUSES,
+  TECHNOLOGY_LABELS, SERVICE_CATEGORY_LABELS, QUOTATION_STATUS_LABELS,
+} from "@/lib/bd-validation";
 import { statusMeta } from "@/lib/hr-status";
 import { fmtDateOnly, fmtINR } from "@/lib/format";
 import SavedViewPills from "@/components/hr/SavedViewPills";
@@ -24,16 +27,19 @@ export const dynamic = "force-dynamic";
 
 const VALID_FINAL = new Set(["OPEN", "WON", "LOST"]);
 const VALID_STAGE = new Set<string>(BD_STAGES);
+const VALID_TECH = new Set<string>(BD_TECHNOLOGIES);
+const VALID_SVC = new Set<string>(BD_SERVICE_CATEGORIES);
+const VALID_QUOTE = new Set<string>(BD_QUOTATION_STATUSES);
 
 export default async function BdEnquiriesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; status?: string; stage?: string; fy?: string }>;
+  searchParams: Promise<{ q?: string; status?: string; stage?: string; fy?: string; technology?: string; service?: string; quote?: string }>;
 }) {
   const viewer = await requirePageRole(BD_VIEW);
   const canWrite = BD_WRITE.includes(viewer.role);
 
-  const { q, status, stage, fy } = await searchParams;
+  const { q, status, stage, fy, technology, service, quote } = await searchParams;
 
   const where: Prisma.BdEnquiryWhereInput = {};
   if (status && VALID_FINAL.has(status)) {
@@ -44,6 +50,15 @@ export default async function BdEnquiriesPage({
   }
   if (fy && fy.trim()) {
     where.fiscalYear = fy.trim();
+  }
+  if (technology && VALID_TECH.has(technology)) {
+    where.technology = technology as Prisma.BdEnquiryWhereInput["technology"];
+  }
+  if (service && VALID_SVC.has(service)) {
+    where.serviceCategory = service as Prisma.BdEnquiryWhereInput["serviceCategory"];
+  }
+  if (quote && VALID_QUOTE.has(quote)) {
+    where.quotationStatus = quote as Prisma.BdEnquiryWhereInput["quotationStatus"];
   }
   if (q && q.trim()) {
     const term = q.trim();
@@ -66,7 +81,8 @@ export default async function BdEnquiriesPage({
   ]);
 
   const hasFilters = Boolean(
-    (q && q.trim()) || (status && VALID_FINAL.has(status)) || (stage && VALID_STAGE.has(stage)) || (fy && fy.trim())
+    (q && q.trim()) || (status && VALID_FINAL.has(status)) || (stage && VALID_STAGE.has(stage)) || (fy && fy.trim()) ||
+    (technology && VALID_TECH.has(technology)) || (service && VALID_SVC.has(service)) || (quote && VALID_QUOTE.has(quote))
   );
 
   type Row = (typeof enquiries)[number];
@@ -82,11 +98,21 @@ export default async function BdEnquiriesPage({
       ),
     },
     {
-      key: "project",
-      header: "Project",
+      key: "category",
+      header: "Category",
       priority: "md",
-      cardLabel: "Project",
-      cell: (e) => e.projectType ?? e.activities ?? "—",
+      cardLabel: "Category",
+      cell: (e) =>
+        e.technology || e.serviceCategory
+          ? [e.technology && TECHNOLOGY_LABELS[e.technology], e.serviceCategory && SERVICE_CATEGORY_LABELS[e.serviceCategory]].filter(Boolean).join(" · ")
+          : (e.projectType ?? "—"),
+    },
+    {
+      key: "quote",
+      header: "Quote",
+      priority: "lg",
+      cardLabel: "Quote status",
+      cell: (e) => <span className="relative z-10"><StatusChip status={e.quotationStatus} /></span>,
     },
     {
       key: "value",
@@ -170,6 +196,24 @@ export default async function BdEnquiriesPage({
                     ariaLabel: "Filter by stage",
                     allLabel: "All stages",
                     options: BD_STAGES.map((s) => ({ value: s, label: statusMeta(s).label })),
+                  },
+                  {
+                    param: "quote",
+                    ariaLabel: "Filter by quotation status",
+                    allLabel: "All quote statuses",
+                    options: BD_QUOTATION_STATUSES.map((s) => ({ value: s, label: QUOTATION_STATUS_LABELS[s] })),
+                  },
+                  {
+                    param: "technology",
+                    ariaLabel: "Filter by technology",
+                    allLabel: "All technologies",
+                    options: BD_TECHNOLOGIES.map((t) => ({ value: t, label: TECHNOLOGY_LABELS[t] })),
+                  },
+                  {
+                    param: "service",
+                    ariaLabel: "Filter by service",
+                    allLabel: "All services",
+                    options: BD_SERVICE_CATEGORIES.map((s) => ({ value: s, label: SERVICE_CATEGORY_LABELS[s] })),
                   },
                   {
                     param: "fy",

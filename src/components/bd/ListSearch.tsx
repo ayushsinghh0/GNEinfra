@@ -6,7 +6,7 @@ import { Search } from "lucide-react";
 import { Select, Spinner, inputCls, cn } from "@/components/ui";
 import { buildQuery, type ParsedListParams } from "@/lib/hr-filters";
 
-type FilterParam = "status" | "stage" | "fy" | "category" | "location";
+type FilterParam = "status" | "stage" | "fy" | "category" | "location" | "quote" | "technology" | "service";
 
 export type ListSelect = {
   param: FilterParam;

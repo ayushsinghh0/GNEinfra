@@ -47,6 +47,14 @@ export default async function EditBdEnquiryPage({
     customerContact: enquiry.customerContact ?? "",
     value: numStr(enquiry.value),
     notes: enquiry.notes ?? "",
+    technology: enquiry.technology ?? "",
+    serviceCategory: enquiry.serviceCategory ?? "",
+    quotationStatus: enquiry.quotationStatus,
+    submittedTo: enquiry.submittedTo ?? "",
+    quoteValidUntil: dateStr(enquiry.quoteValidUntil),
+    quoteRevision: enquiry.quoteRevision ?? "",
+    enquirySource: enquiry.enquirySource ?? "",
+    nextFollowUpDate: dateStr(enquiry.nextFollowUpDate),
   };
 
   return (

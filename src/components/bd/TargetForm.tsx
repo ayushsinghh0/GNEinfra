@@ -5,6 +5,7 @@ import { Button, Field, Input, Select, Textarea } from "@/components/ui";
 import {
   BD_SERVICE_TYPES, BD_PLANT_TYPES, BD_QUARTERS,
   SERVICE_TYPE_LABELS, PLANT_TYPE_LABELS,
+  BD_TECHNOLOGIES, BD_SERVICE_CATEGORIES, TECHNOLOGY_LABELS, SERVICE_CATEGORY_LABELS,
 } from "@/lib/bd-validation";
 import { fmtINR } from "@/lib/format";
 import { fyChoices, fyLabel } from "@/lib/fiscal";
@@ -26,9 +27,10 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 
 const EMPTY: Values = {
   fiscalYear: "", quarter: "", states: "", keyAccountPerson: "", project: "",
-  serviceType: "", plantType: "", projectSize: "", locations: "",
+  serviceType: "", plantType: "", technology: "", serviceCategory: "",
+  projectSize: "", locations: "",
   estimatedValue: "", probabilityPct: "", forecastedRevenue: "", orderReceived: "",
-  notes: "",
+  salesTarget: "", notes: "",
 };
 
 function isDirty(a: Values, b: Values): boolean {
@@ -124,6 +126,10 @@ export default function TargetForm({ id, initial }: { id?: string; initial?: Val
       ? Math.round((parseInt(v.estimatedValue, 10) || 0) * ((parseInt(v.probabilityPct, 10) || 0) / 100))
       : null;
 
+  const targetNum = parseInt(v.salesTarget, 10) || 0;
+  const achievement =
+    targetNum > 0 ? Math.round(((parseInt(v.orderReceived, 10) || 0) / targetNum) * 100) : null;
+
   const fyOptions = fyChoices();
   if (v.fiscalYear && !fyOptions.includes(v.fiscalYear)) fyOptions.push(v.fiscalYear);
 
@@ -152,6 +158,21 @@ export default function TargetForm({ id, initial }: { id?: string; initial?: Val
         {Txt("project", "Project")}
       </Section>
 
+      <Section title="Project category">
+        <Field label="Technology" htmlFor="technology">
+          <Select id="technology" value={v.technology} onChange={set("technology")}>
+            <option value="">—</option>
+            {BD_TECHNOLOGIES.map((t) => <option key={t} value={t}>{TECHNOLOGY_LABELS[t]}</option>)}
+          </Select>
+        </Field>
+        <Field label="Service category" htmlFor="serviceCategory">
+          <Select id="serviceCategory" value={v.serviceCategory} onChange={set("serviceCategory")}>
+            <option value="">—</option>
+            {BD_SERVICE_CATEGORIES.map((s) => <option key={s} value={s}>{SERVICE_CATEGORY_LABELS[s]}</option>)}
+          </Select>
+        </Field>
+      </Section>
+
       <Section title="Scope">
         <Field label="Type of service" htmlFor="serviceType">
           <Select id="serviceType" value={v.serviceType} onChange={set("serviceType")}>
@@ -170,6 +191,7 @@ export default function TargetForm({ id, initial }: { id?: string; initial?: Val
       </Section>
 
       <Section title="Value">
+        {Txt("salesTarget", "Sales target (₹)", false, "text", "numeric")}
         {Txt("estimatedValue", "Estimated value (₹)", false, "text", "numeric")}
         {Txt("probabilityPct", "Probability (%)", false, "text", "numeric")}
         <Field
@@ -184,7 +206,13 @@ export default function TargetForm({ id, initial }: { id?: string; initial?: Val
             inputMode="numeric"
           />
         </Field>
-        {Txt("orderReceived", "Order received (₹)", false, "text", "numeric")}
+        <Field
+          label="Order received (₹)"
+          htmlFor="orderReceived"
+          hint={achievement !== null ? `${achievement}% of sales target achieved` : undefined}
+        >
+          <Input id="orderReceived" value={v.orderReceived} onChange={set("orderReceived")} inputMode="numeric" />
+        </Field>
         <Field label="Notes" htmlFor="notes" className="sm:col-span-2 lg:col-span-3">
           <Textarea id="notes" value={v.notes} onChange={set("notes")} rows={2} />
         </Field>

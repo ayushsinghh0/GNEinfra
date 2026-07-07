@@ -33,6 +33,9 @@ export default async function EditBdTargetPage({
     probabilityPct: numStr(target.probabilityPct),
     forecastedRevenue: numStr(target.forecastedRevenue),
     orderReceived: numStr(target.orderReceived),
+    salesTarget: numStr(target.salesTarget),
+    technology: target.technology ?? "",
+    serviceCategory: target.serviceCategory ?? "",
     notes: target.notes ?? "",
   };
 

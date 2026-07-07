@@ -2,6 +2,7 @@
 import { useState, FormEvent, ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Field, Input, Select, Textarea } from "@/components/ui";
+import { BD_TECHNOLOGIES, BD_SERVICE_CATEGORIES, TECHNOLOGY_LABELS, SERVICE_CATEGORY_LABELS } from "@/lib/bd-validation";
 import { fyChoices, fyLabel } from "@/lib/fiscal";
 import { AlertCircle } from "lucide-react";
 import ConfirmDialog from "@/components/ConfirmDialog";
@@ -25,6 +26,7 @@ const EMPTY: Values = {
   fiscalYear: "", receivedDate: "", projectType: "", clientId: "", activities: "",
   quoteNo: "", enquiryId: "", projectQty: "", projectPeriod: "", poNumber: "",
   poValue: "", poDate: "", poStart: "", poEnd: "", remarks: "",
+  technology: "", serviceCategory: "",
 };
 
 const REQUIRED_FIELDS: [key: string, label: string][] = [
@@ -177,6 +179,18 @@ export default function PoForm({
           </Select>
         </Field>
         {Txt("projectType", "Project type")}
+        <Field label="Technology" htmlFor="technology">
+          <Select id="technology" value={v.technology} onChange={set("technology")}>
+            <option value="">—</option>
+            {BD_TECHNOLOGIES.map((t) => <option key={t} value={t}>{TECHNOLOGY_LABELS[t]}</option>)}
+          </Select>
+        </Field>
+        <Field label="Service category" htmlFor="serviceCategory">
+          <Select id="serviceCategory" value={v.serviceCategory} onChange={set("serviceCategory")}>
+            <option value="">—</option>
+            {BD_SERVICE_CATEGORIES.map((s) => <option key={s} value={s}>{SERVICE_CATEGORY_LABELS[s]}</option>)}
+          </Select>
+        </Field>
         {Txt("quoteNo", "Quote no")}
         <Field label="Won from enquiry" htmlFor="enquiryId" hint="Optional — links this PO to the quote it closed">
           <Select id="enquiryId" value={v.enquiryId} onChange={set("enquiryId")}>

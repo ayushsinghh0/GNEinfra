@@ -4,6 +4,7 @@ import { ReceiptText, StickyNote } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { requirePageRole, BD_VIEW, BD_WRITE } from "@/lib/rbac";
 import { fmtDateOnly, fmtINR } from "@/lib/format";
+import { TECHNOLOGY_LABELS, SERVICE_CATEGORY_LABELS } from "@/lib/bd-validation";
 import { DataTable, type Column } from "@/components/DataTable";
 import {
   PageHeader,
@@ -102,6 +103,12 @@ export default async function BdEnquiryDetailPage({
           <CardBody className="flex flex-wrap items-center gap-3">
             <StatusChip status={enquiry.stage} />
             <StatusChip status={enquiry.finalStatus} />
+            <StatusChip status={enquiry.quotationStatus} />
+            {(enquiry.technology || enquiry.serviceCategory) && (
+              <span className="rounded-full bg-brand-50 px-2.5 py-1 text-xs font-medium text-brand-700">
+                {[enquiry.technology && TECHNOLOGY_LABELS[enquiry.technology], enquiry.serviceCategory && SERVICE_CATEGORY_LABELS[enquiry.serviceCategory]].filter(Boolean).join(" · ")}
+              </span>
+            )}
             {enquiry.probabilityPct !== null && (
               <span className="nums rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
                 {enquiry.probabilityPct}% probability
@@ -133,26 +140,51 @@ export default async function BdEnquiryDetailPage({
               items={[
                 { label: "Fiscal year", value: enquiry.fiscalYear },
                 { label: "Enquiry date", value: fmtDateOnly(enquiry.enquiryDate) ?? "—" },
+                { label: "Source", value: enquiry.enquirySource ?? "—" },
                 { label: "Type", value: enquiry.enquiryType ?? "—" },
                 { label: "Person", value: enquiry.personName ?? "—" },
                 { label: "Contact no", value: enquiry.contactNo ?? "—", mono: true },
                 { label: "Location", value: enquiry.location ?? "—" },
                 { label: "Customer contact", value: enquiry.customerContact ?? "—" },
+                { label: "Next follow-up", value: fmtDateOnly(enquiry.nextFollowUpDate) ?? "—" },
               ]}
             />
           </DetailSection>
 
-          <DetailSection title="Scope & quote">
+          <DetailSection title="Project category">
             <KeyValue
               cols={2}
               items={[
-                { label: "Project type", value: enquiry.projectType ?? "—" },
+                { label: "Technology", value: enquiry.technology ? TECHNOLOGY_LABELS[enquiry.technology] : "—" },
+                { label: "Service", value: enquiry.serviceCategory ? SERVICE_CATEGORY_LABELS[enquiry.serviceCategory] : "—" },
                 { label: "Qty", value: enquiry.qty !== null ? `${enquiry.qty} ${enquiry.unit ?? ""}`.trim() : "—" },
-                { label: "Quote no", value: enquiry.quoteNo ?? "—", mono: true },
-                { label: "Submitted", value: fmtDateOnly(enquiry.submissionDate) ?? "—" },
-                { label: "Status of project", value: enquiry.projectStatus ?? "—" },
-                { label: "Expected closure", value: fmtDateOnly(enquiry.expectedClosure) ?? "—" },
                 { label: "Activities", value: enquiry.activities ?? "—" },
+              ]}
+            />
+          </DetailSection>
+
+          <DetailSection title="Quotation">
+            <KeyValue
+              cols={2}
+              items={[
+                { label: "Quote no", value: enquiry.quoteNo ?? "—", mono: true },
+                { label: "Revision", value: enquiry.quoteRevision ?? "—" },
+                { label: "Submitted to", value: enquiry.submittedTo ?? "—" },
+                { label: "Submitted on", value: fmtDateOnly(enquiry.submissionDate) ?? "—" },
+                { label: "Valid until", value: fmtDateOnly(enquiry.quoteValidUntil) ?? "—" },
+                { label: "Quoted value", value: fmtINR(enquiry.value) },
+              ]}
+            />
+          </DetailSection>
+
+          <DetailSection title="Pipeline">
+            <KeyValue
+              cols={2}
+              items={[
+                { label: "Status of project", value: enquiry.projectStatus ?? "—" },
+                { label: "Probability", value: enquiry.probabilityPct !== null ? `${enquiry.probabilityPct}%` : "—" },
+                { label: "Forecast", value: fmtINR(enquiry.forecastedRevenue) },
+                { label: "Expected closure", value: fmtDateOnly(enquiry.expectedClosure) ?? "—" },
               ]}
             />
           </DetailSection>

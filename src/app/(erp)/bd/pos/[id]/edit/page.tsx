@@ -49,6 +49,8 @@ export default async function EditBdPoPage({
     poDate: dateStr(po.poDate),
     poStart: dateStr(po.poStart),
     poEnd: dateStr(po.poEnd),
+    technology: po.technology ?? "",
+    serviceCategory: po.serviceCategory ?? "",
     remarks: po.remarks ?? "",
   };
 

@@ -120,6 +120,10 @@ const REGISTRY: Record<string, Tone> = {
   INTERVIEW: T.amber("Interview"),
   OFFER: T.violet("Offer"),
   HIRED: T.emerald("Hired"),
+  // BD quotation sub-process (PENDING shared with the amber "Pending" above)
+  QUOTE_PREPARATION: T.blue("Quote preparation"),
+  APPROVAL: T.violet("Approval"),
+  QUOTE_SUBMISSION: T.emerald("Quote submission"),
 };
 
 export function statusMeta(status: string): Tone {

@@ -2,8 +2,13 @@
 import { useState, FormEvent, ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Field, Input, Select, Textarea } from "@/components/ui";
-import { BD_STAGES, BD_FINAL_STATUSES } from "@/lib/bd-validation";
+import {
+  BD_STAGES, BD_FINAL_STATUSES,
+  BD_TECHNOLOGIES, BD_SERVICE_CATEGORIES, BD_QUOTATION_STATUSES,
+  TECHNOLOGY_LABELS, SERVICE_CATEGORY_LABELS, QUOTATION_STATUS_LABELS,
+} from "@/lib/bd-validation";
 import { statusMeta } from "@/lib/hr-status";
+import AddClientInline from "@/components/bd/AddClientInline";
 import { fmtINR } from "@/lib/format";
 import { fyChoices, fyLabel } from "@/lib/fiscal";
 import { AlertCircle } from "lucide-react";
@@ -26,7 +31,11 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 const EMPTY: Values = {
   fiscalYear: "", enquiryDate: "", enquiryType: "", clientId: "",
   personName: "", contactNo: "", location: "", projectType: "",
-  activities: "", unit: "kW", qty: "", quoteNo: "", submissionDate: "",
+  enquirySource: "", nextFollowUpDate: "",
+  technology: "", serviceCategory: "",
+  activities: "", unit: "kW", qty: "",
+  quoteNo: "", quotationStatus: "PENDING", submittedTo: "", submissionDate: "",
+  quoteValidUntil: "", quoteRevision: "",
   projectStatus: "", probabilityPct: "", forecastedRevenue: "",
   stage: "ENQUIRY", expectedClosure: "", finalStatus: "OPEN",
   customerContact: "", value: "", notes: "",
@@ -63,6 +72,7 @@ export default function EnquiryForm({
 }) {
   const router = useRouter();
   const [v, setV] = useState<Values>({ ...EMPTY, fiscalYear: fyLabel(), ...(initial ?? {}) });
+  const [clientOpts, setClientOpts] = useState<ClientOption[]>(clients);
   const [seed] = useState<Values>(() => v);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -161,44 +171,77 @@ export default function EnquiryForm({
         </div>
       )}
 
-      <Section title="Enquiry">
+      <Section title="Enquiry &amp; client">
         <Field label="Fiscal year" required htmlFor="fiscalYear">
           <Select id="fiscalYear" value={v.fiscalYear} onChange={set("fiscalYear")} required aria-required>
             {fyOptions.map((fy) => <option key={fy} value={fy}>{fy}</option>)}
           </Select>
         </Field>
         {Txt("enquiryDate", "Enquiry date", false, "date")}
-        <Field label="Client" required htmlFor="clientId" error={clientErr} errorId={clientErr ? "clientId-error" : undefined}>
-          <Select
-            id="clientId"
-            value={v.clientId}
-            onChange={set("clientId")}
-            required
-            aria-required
-            aria-invalid={clientErr ? true : undefined}
-            aria-describedby={clientErr ? "clientId-error" : undefined}
-          >
-            <option value="">Select client…</option>
-            {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </Select>
-        </Field>
-        {Txt("enquiryType", "Type", false)}
+        {Txt("enquirySource", "Enquiry source")}
+        <div className="sm:col-span-2 lg:col-span-3">
+          <Field label="Client" required htmlFor="clientId" error={clientErr} errorId={clientErr ? "clientId-error" : undefined}>
+            <Select
+              id="clientId"
+              value={v.clientId}
+              onChange={set("clientId")}
+              required
+              aria-required
+              aria-invalid={clientErr ? true : undefined}
+              aria-describedby={clientErr ? "clientId-error" : undefined}
+            >
+              <option value="">Select client…</option>
+              {clientOpts.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </Select>
+          </Field>
+          <AddClientInline
+            onAdded={(c) => {
+              setClientOpts((prev) => [...prev, c].sort((a, b) => a.name.localeCompare(b.name)));
+              setV((s) => ({ ...s, clientId: c.id }));
+              setFieldErrors((fe) => { const n = { ...fe }; delete n.clientId; return n; });
+            }}
+          />
+        </div>
+        {Txt("enquiryType", "Type")}
         {Txt("personName", "Person name")}
         {Txt("contactNo", "Contact no")}
         {Txt("location", "Location")}
         {Txt("customerContact", "Customer contact person")}
+        {Txt("nextFollowUpDate", "Next follow-up", false, "date")}
       </Section>
 
-      <Section title="Scope & quote">
-        {Txt("projectType", "Project type")}
+      <Section title="Project category">
+        <Field label="Technology" htmlFor="technology">
+          <Select id="technology" value={v.technology} onChange={set("technology")}>
+            <option value="">—</option>
+            {BD_TECHNOLOGIES.map((t) => <option key={t} value={t}>{TECHNOLOGY_LABELS[t]}</option>)}
+          </Select>
+        </Field>
+        <Field label="Service category" htmlFor="serviceCategory">
+          <Select id="serviceCategory" value={v.serviceCategory} onChange={set("serviceCategory")}>
+            <option value="">—</option>
+            {BD_SERVICE_CATEGORIES.map((s) => <option key={s} value={s}>{SERVICE_CATEGORY_LABELS[s]}</option>)}
+          </Select>
+        </Field>
         {Txt("unit", "Unit")}
         {Txt("qty", "Qty", false, "text", "numeric")}
-        {Txt("quoteNo", "Quote no")}
-        {Txt("submissionDate", "Date of submission", false, "date")}
-        {Txt("value", "Quoted value (₹)", false, "text", "numeric")}
         <Field label="Activities" htmlFor="activities" className="sm:col-span-2 lg:col-span-3">
           <Textarea id="activities" value={v.activities} onChange={set("activities")} rows={2} />
         </Field>
+      </Section>
+
+      <Section title="Quotation">
+        {Txt("quoteNo", "Quote no")}
+        <Field label="Quotation status" htmlFor="quotationStatus">
+          <Select id="quotationStatus" value={v.quotationStatus} onChange={set("quotationStatus")}>
+            {BD_QUOTATION_STATUSES.map((s) => <option key={s} value={s}>{QUOTATION_STATUS_LABELS[s]}</option>)}
+          </Select>
+        </Field>
+        {Txt("submittedTo", "Submitted to")}
+        {Txt("submissionDate", "Date of submission", false, "date")}
+        {Txt("quoteValidUntil", "Quote valid until", false, "date")}
+        {Txt("quoteRevision", "Revision")}
+        {Txt("value", "Quoted value (₹)", false, "text", "numeric")}
       </Section>
 
       <Section title="Pipeline">

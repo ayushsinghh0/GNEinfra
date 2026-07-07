@@ -561,6 +561,30 @@ enum BdFinalStatus {
   LOST
 }
 
+// Project-wise categorisation (Solar / BESS × PMC / EPC / I&C / O&M) applied to
+// enquiries/quotations, targets and POs. Separate from BdServiceType/BdPlantType
+// (the client-master taxonomy) — this is the project-scope category the BD team
+// tracks quotations by.
+enum BdTechnology {
+  SOLAR
+  BESS
+}
+
+enum BdServiceCategory {
+  PMC
+  EPC
+  INC // Installation & Commissioning (I&C)
+  OM // O&M
+}
+
+// The quote sub-process status, tracked alongside the pipeline BdStage.
+enum BdQuotationStatus {
+  PENDING
+  QUOTE_PREPARATION
+  APPROVAL
+  QUOTE_SUBMISSION
+}
+
 model BdClient {
   id            String         @id @default(cuid())
   name          String
@@ -607,6 +631,18 @@ model BdEnquiry {
   value             Int? // quoted value, integer rupees
   notes             String?
 
+  // Project-wise category (replaces free-text projectType in the UI; column kept for history)
+  technology      BdTechnology?
+  serviceCategory BdServiceCategory?
+  // Quotation sub-process (tracked alongside `stage`)
+  quotationStatus BdQuotationStatus @default(PENDING)
+  submittedTo     String? // whom the quote was submitted to
+  quoteValidUntil DateTime?         @db.Date
+  quoteRevision   String? // e.g. "R0", "R1"
+  // Extra enquiry info
+  enquirySource    String? // how the enquiry came in
+  nextFollowUpDate DateTime? @db.Date
+
   purchaseOrders BdPurchaseOrder[]
 
   createdAt DateTime @default(now())
@@ -637,6 +673,8 @@ model BdPurchaseOrder {
   poDate        DateTime?  @db.Date
   poStart       DateTime?  @db.Date
   poEnd         DateTime?  @db.Date
+  technology      BdTechnology?
+  serviceCategory BdServiceCategory?
   remarks       String?
 
   createdAt DateTime @default(now())
@@ -662,6 +700,9 @@ model BdTarget {
   probabilityPct    Int? // 0–100
   forecastedRevenue Int? // integer rupees
   orderReceived     Int? // integer rupees actually received
+  salesTarget       Int? // the sales target (₹); achievement % = orderReceived / salesTarget
+  technology        BdTechnology?
+  serviceCategory   BdServiceCategory?
   notes             String?
 
   createdAt DateTime @default(now())
