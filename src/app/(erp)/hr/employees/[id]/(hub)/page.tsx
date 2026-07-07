@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronRight, Laptop, FolderKanban, BadgeIndianRupee, IdCard, Contact, Wallet, Landmark } from "lucide-react";
+import { ChevronRight, Laptop, FolderKanban, IdCard, Contact } from "lucide-react";
 import { requirePageRole, HR_VIEW } from "@/lib/rbac";
-import { fmtINR, fmtDateOnly } from "@/lib/format";
-import { MONTHS } from "@/lib/hr-validation";
+import { fmtDateOnly } from "@/lib/format";
 import { KeyValue, DetailSection, EntityLink, EmptyState } from "@/components/ui";
 import { getEmployee } from "./_data";
 
@@ -53,6 +52,7 @@ export default async function EmployeeOverviewPage({
               { label: "EMP ID", value: emp.empId, mono: true, copy: true },
               { label: "Name", value: emp.name },
               { label: "Designation", value: emp.designation },
+              { label: "Band", value: emp.band },
               { label: "Category", value: emp.empCategory },
               { label: "Location", value: emp.location },
               { label: "Payroll Type", value: emp.payrollType },
@@ -75,38 +75,9 @@ export default async function EmployeeOverviewPage({
           />
         </DetailSection>
 
-        <DetailSection title="Compensation" icon={<Wallet className="h-4 w-4 text-slate-400" />}>
-          <KeyValue
-            items={[
-              { label: "Total CTC", value: fmtINR(emp.totalCtc) },
-              { label: "Salary", value: fmtINR(emp.salary) },
-              { label: "LTA", value: fmtINR(emp.lta) },
-              { label: "Special Allowance", value: fmtINR(emp.specialAllowance) },
-              { label: "Conveyance", value: fmtINR(emp.conveyance) },
-            ]}
-          />
-          {emp.totalCtc != null && (
-            <p className="nums mt-2.5 px-1 text-xs text-slate-400">
-              Monthly gross ≈ {fmtINR(Math.round(emp.totalCtc / 12))}
-            </p>
-          )}
-        </DetailSection>
-
-        <DetailSection title="Statutory & Leave" icon={<Landmark className="h-4 w-4 text-slate-400" />}>
-          <KeyValue
-            items={[
-              { label: "Bank A/C No", value: emp.bankAccountNo, mono: true, copy: true },
-              { label: "Bank Name", value: emp.bankName },
-              { label: "IFSC", value: emp.ifsc, mono: true, copy: true },
-              { label: "PAN", value: emp.panNo, mono: true, copy: true },
-              { label: "UAN", value: emp.uan, mono: true, copy: true },
-              { label: "ESIC No", value: emp.esicNo, mono: true, copy: true },
-            ]}
-          />
-        </DetailSection>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <DetailSection title="Assets" action={<ViewAll href={`/hr/employees/${id}/assets`} />}>
           {emp.assets.length === 0 ? (
             <EmptyState icon={<Laptop className="h-5 w-5" />} title="No assets assigned" />
@@ -151,26 +122,6 @@ export default async function EmployeeOverviewPage({
           )}
         </DetailSection>
 
-        <DetailSection title="Payslips" action={<ViewAll href={`/hr/employees/${id}/payroll`} />}>
-          {emp.payrolls.length === 0 ? (
-            <EmptyState icon={<BadgeIndianRupee className="h-5 w-5" />} title="No payslips yet" />
-          ) : (
-            <div className="space-y-2">
-              {emp.payrolls.slice(0, 3).map((p) => (
-                <Link
-                  key={p.id}
-                  href={`/hr/payout/${p.id}/print`}
-                  className="flex items-center justify-between rounded-xl border border-slate-100 px-3 py-2 text-sm transition-colors hover:bg-slate-50"
-                >
-                  <span className="font-medium text-slate-700">
-                    {MONTHS[p.periodMonth - 1]} {p.periodYear}
-                  </span>
-                  <span className="nums text-slate-600">{fmtINR(p.payableAmount)}</span>
-                </Link>
-              ))}
-            </div>
-          )}
-        </DetailSection>
       </div>
     </div>
   );

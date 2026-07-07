@@ -24,7 +24,7 @@ export default function SnapshotStrip({
   sickRemaining,
   assetsCount,
   activeProjects,
-  lastPay,
+  band,
 }: {
   id: string;
   tenureLabel: string;
@@ -32,7 +32,7 @@ export default function SnapshotStrip({
   sickRemaining: number;
   assetsCount: number;
   activeProjects: number;
-  lastPay: string | null;
+  band: string | null;
 }) {
   const base = `/hr/employees/${id}`;
   return (
@@ -52,8 +52,8 @@ export default function SnapshotStrip({
       <SnapshotChip href={`${base}/projects`}>
         <span className="nums">{activeProjects} projects</span>
       </SnapshotChip>
-      <SnapshotChip href={`${base}/payroll`}>
-        {lastPay ? <span className="nums">Last pay {lastPay}</span> : "No payslips"}
+      <SnapshotChip href={`${base}/compensation`}>
+        {band ? <span>Band {band}</span> : "Compensation"}
       </SnapshotChip>
     </div>
   );

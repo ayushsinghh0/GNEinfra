@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { requirePageRole, HR_VIEW, HR_WRITE } from "@/lib/rbac";
 import { leaveBalances } from "@/lib/hr-leave";
-import { MONTHS } from "@/lib/hr-validation";
 import { PageHeader, btn } from "@/components/ui";
 import EmployeeStatusAction from "@/components/hr/EmployeeStatusAction";
 import ProfileHeader from "@/components/hr/ProfileHeader";
@@ -55,11 +54,6 @@ export default async function EmployeeHubLayout({
   const cutoff = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
   const activeProjects = emp.projectAssignments.filter((a) => !a.endDate || a.endDate.getTime() >= cutoff).length;
 
-  const latestPayroll = emp.payrolls[0];
-  const lastPay = latestPayroll
-    ? `${MONTHS[latestPayroll.periodMonth - 1].slice(0, 3)} ${latestPayroll.periodYear}`
-    : null;
-
   return (
     <>
       <PageHeader
@@ -107,7 +101,7 @@ export default async function EmployeeHubLayout({
         sickRemaining={balances.sickRemaining}
         assetsCount={emp.assets.length}
         activeProjects={activeProjects}
-        lastPay={lastPay}
+        band={emp.band}
       />
 
       <EmployeeTabs id={id} />
