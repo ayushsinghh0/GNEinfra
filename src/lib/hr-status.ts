@@ -87,10 +87,8 @@ const REGISTRY: Record<string, Tone> = {
   // no PLANNED/ARCHIVED; ACTIVE is shared with Employee status above).
   ON_HOLD: T.amber("On hold"),
   COMPLETED: T.slate("Completed"),
-  // Payroll (client-side states)
+  // Draft — used by the Finance invoice workflow (see PENDING_APPROVAL below).
   DRAFT: T.slate("Draft"),
-  UNSAVED: T.amber("Unsaved"),
-  SAVED: T.emerald("Saved"),
   // Vendor / invite — verbatim from the pre-registry Badge.tsx palette.
   SUBMITTED: T.blue("Submitted"),
   UNDER_REVIEW: T.amber("Under review"),

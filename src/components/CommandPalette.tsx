@@ -4,7 +4,7 @@ import * as React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { Search, User, Laptop, FolderKanban, UserPlus, BadgeIndianRupee, CornerDownLeft } from "lucide-react";
+import { Search, User, Laptop, FolderKanban, UserPlus, CornerDownLeft } from "lucide-react";
 import { cn } from "@/components/ui";
 
 /**
@@ -33,13 +33,13 @@ type FlatItem =
   | ({ kind: "employee" } & EmployeeResult)
   | ({ kind: "asset" } & AssetResult)
   | ({ kind: "project" } & ProjectResult)
-  | { kind: "action"; id: "new-employee" | "generate-payslip"; label: string; hint: string };
+  | { kind: "action"; id: "new-employee"; label: string; hint: string };
 
 type ActionItem = Extract<FlatItem, { kind: "action" }>;
 
 const noopSubscribe = () => () => {};
 
-function hrefFor(item: FlatItem, lastEmployeeId: string | null): string {
+function hrefFor(item: FlatItem): string {
   switch (item.kind) {
     case "employee":
       return `/hr/employees/${item.id}`;
@@ -48,8 +48,7 @@ function hrefFor(item: FlatItem, lastEmployeeId: string | null): string {
     case "project":
       return `/hr/projects/${item.id}`;
     case "action":
-      if (item.id === "new-employee") return "/hr/employees/new";
-      return lastEmployeeId ? `/hr/payout?employeeId=${lastEmployeeId}` : "/hr/payout";
+      return "/hr/employees/new";
   }
 }
 
@@ -132,7 +131,6 @@ export default function CommandPalette({
   const [results, setResults] = useState<SearchPayload>(EMPTY_RESULTS);
   const [loading, setLoading] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [lastEmployeeId, setLastEmployeeId] = useState<string | null>(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
@@ -140,10 +138,7 @@ export default function CommandPalette({
   const actions = useMemo<ActionItem[]>(
     () =>
       canWrite
-        ? [
-            { kind: "action", id: "new-employee", label: "New employee", hint: "Create an employee record" },
-            { kind: "action", id: "generate-payslip", label: "Generate payslip", hint: "Open the payout editor" },
-          ]
+        ? [{ kind: "action" as const, id: "new-employee" as const, label: "New employee", hint: "Create an employee record" }]
         : [],
     [canWrite]
   );
@@ -163,15 +158,10 @@ export default function CommandPalette({
   const projectOffset = assetOffset + results.assets.length;
   const actionOffset = projectOffset + results.projects.length;
 
-  // Highlights `idx` and, if that row is an employee, remembers it as the
-  // default target for "Generate payslip" (sticky — hovering a non-employee
-  // row afterwards doesn't clear it). Called from mouse (onHover, below) and
-  // — inlined rather than shared, to keep the keydown effect's dependency
-  // array meaningful — from the keyboard handler's Arrow branches.
+  // Highlights `idx` — called from mouse (onHover) and mirrored inline in the
+  // keyboard handler's Arrow branches.
   function focusRow(idx: number) {
     setActiveIndex(idx);
-    const item = flatList[idx];
-    if (item && item.kind === "employee") setLastEmployeeId(item.id);
   }
 
   // Closes AND resets — the single exit path used by Escape, backdrop click,
@@ -187,15 +177,14 @@ export default function CommandPalette({
     setResults(EMPTY_RESULTS);
     setLoading(false);
     setActiveIndex(0);
-    setLastEmployeeId(null);
   }, []);
 
   const selectItem = useCallback(
     (item: FlatItem) => {
-      router.push(hrefFor(item, lastEmployeeId));
+      router.push(hrefFor(item));
       close();
     },
-    [router, lastEmployeeId, close]
+    [router, close]
   );
 
   // Visible-affordance hook: the sidebar's "Search ⌘K/Ctrl K" button (role-
@@ -234,8 +223,6 @@ export default function CommandPalette({
         if (flatList.length === 0) return;
         const next = (activeIndex + 1) % flatList.length;
         setActiveIndex(next);
-        const item = flatList[next];
-        if (item && item.kind === "employee") setLastEmployeeId(item.id);
         return;
       }
       if (e.key === "ArrowUp") {
@@ -243,8 +230,6 @@ export default function CommandPalette({
         if (flatList.length === 0) return;
         const next = (activeIndex - 1 + flatList.length) % flatList.length;
         setActiveIndex(next);
-        const item = flatList[next];
-        if (item && item.kind === "employee") setLastEmployeeId(item.id);
         return;
       }
       if (e.key === "Enter") {
@@ -290,7 +275,6 @@ export default function CommandPalette({
         setResults(EMPTY_RESULTS);
         setLoading(false);
         setActiveIndex(0);
-        setLastEmployeeId(null);
         return;
       }
       setLoading(true);
@@ -304,13 +288,11 @@ export default function CommandPalette({
           };
           setResults(next);
           setActiveIndex(0);
-          setLastEmployeeId(next.employees[0]?.id ?? null);
         })
         .catch((err: unknown) => {
           if (err instanceof DOMException && err.name === "AbortError") return;
           setResults(EMPTY_RESULTS);
           setActiveIndex(0);
-          setLastEmployeeId(null);
         })
         .finally(() => setLoading(false));
     }, 200);
@@ -439,7 +421,7 @@ export default function CommandPalette({
                   key={a.id}
                   id={`cmdk-item-${actionOffset + i}`}
                   active={activeIndex === actionOffset + i}
-                  icon={a.id === "new-employee" ? <UserPlus className="h-4 w-4" /> : <BadgeIndianRupee className="h-4 w-4" />}
+                  icon={<UserPlus className="h-4 w-4" />}
                   title={a.label}
                   subtitle={a.hint}
                   onHover={() => focusRow(actionOffset + i)}

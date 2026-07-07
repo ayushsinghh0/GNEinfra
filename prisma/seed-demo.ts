@@ -40,27 +40,6 @@ const EMPLOYEES: Emp[] = [
   { empId: "GNE-E006", name: "Arjun Reddy", designation: "Field Engineer", empCategory: "Contract", location: "Bangalore", mailId: "arjun@gne.test", doj: "2024-09-20", gross: 42000, left: "2026-06-10" },
 ];
 
-// last 6 months (2026-01 .. 2026-06)
-const MONTHS = [1, 2, 3, 4, 5, 6];
-
-function payrollFor(gross: number, monthIdx: number) {
-  const g = Math.round(gross * (0.95 + monthIdx * 0.012)); // gentle upward trend
-  const basic = Math.round(g * 0.5);
-  const hra = Math.round(g * 0.2);
-  const cca = Math.round(g * 0.05);
-  const conveyance = 1600;
-  const medicalReimb = 1250;
-  const pla = Math.round(g * 0.05);
-  const personalPay = g - basic - hra - cca - conveyance - medicalReimb - pla;
-  const totalEarnings = basic + hra + cca + personalPay + conveyance + pla + medicalReimb;
-  const epf = Math.round(basic * 0.12);
-  const tds = Math.round(g * 0.05);
-  const esi = g < 21000 ? Math.round(g * 0.0075) : 0;
-  const loanAdv = 0;
-  const totalDeductions = tds + loanAdv + epf + esi;
-  return { basic, hra, cca, personalPay, conveyance, pla, medicalReimb, totalEarnings, tds, loanAdv, epf, esi, totalDeductions, payableAmount: totalEarnings - totalDeductions };
-}
-
 function attendanceStatus(empIdx: number, day: number): AttendanceStatus | null {
   const date = new Date(Date.UTC(2026, 5, day)); // June 2026
   const dow = date.getUTCDay();
@@ -126,23 +105,6 @@ async function main() {
     }
   }
   console.log(`  ✓ ${attCount} attendance records (June 2026)`);
-
-  // 4) payroll — last 6 months for active employees
-  let payCount = 0;
-  for (const e of EMPLOYEES) {
-    if (e.left) continue;
-    for (let mi = 0; mi < MONTHS.length; mi++) {
-      const month = MONTHS[mi];
-      const p = payrollFor(e.gross, mi);
-      await prisma.payrollRecord.upsert({
-        where: { employeeId_periodYear_periodMonth: { employeeId: empIds[e.empId], periodYear: 2026, periodMonth: month } },
-        update: p,
-        create: { employeeId: empIds[e.empId], periodYear: 2026, periodMonth: month, designation: e.designation, doj: D(e.doj), ctc: e.gross * 12, ...p },
-      });
-      payCount++;
-    }
-  }
-  console.log(`  ✓ ${payCount} payslips`);
 
   // 5) projects + assignments (some concurrent)
   const PROJECTS = [

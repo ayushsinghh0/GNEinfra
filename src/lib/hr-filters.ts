@@ -1,5 +1,5 @@
 // Pure URL list-filter helpers shared by every HR list page (employees, assets,
-// attendance, payout, projects). Reads/writes the query string that drives
+// attendance, projects). Reads/writes the query string that drives
 // search + status/category/location/employee filters + sort + pagination.
 // Framework-agnostic (no React) so it works from both RSC pages (parsing
 // `searchParams`) and client components (building `href`s for filter links).

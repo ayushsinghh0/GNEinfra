@@ -20,11 +20,6 @@ const money = z.preprocess(
   (v) => (v === "" || v === null || v === undefined ? undefined : v),
   z.coerce.number().int("Whole rupees only").min(0, "Cannot be negative").optional()
 );
-// Required money (payslip components) default 0.
-const money0 = z.preprocess(
-  (v) => (v === "" || v === null || v === undefined ? 0 : v),
-  z.coerce.number().int("Whole rupees only").min(0, "Cannot be negative")
-);
 // Optional ISO date string → kept as string|undefined (the route converts to Date).
 const optDate = z.preprocess(
   (v) => (v === "" || v === null ? undefined : v),
@@ -98,33 +93,6 @@ export const attendanceBulkSchema = z.object({
   })).max(5000).optional(),
 });
 
-export const PAYROLL_LINE_KINDS = ["earning", "deduction"] as const;
-export type PayrollLineKind = (typeof PAYROLL_LINE_KINDS)[number];
-
-// A custom payslip line item: label + integer-rupee amount + earning/deduction.
-export const payrollLineSchema = z.object({
-  label: z.string().trim().min(1, "Label is required").max(60),
-  amount: money0,
-  kind: z.enum(PAYROLL_LINE_KINDS),
-});
-export type PayrollExtraLine = z.infer<typeof payrollLineSchema>;
-
-export const payrollSchema = z.object({
-  employeeId: z.string().min(1),
-  year: z.coerce.number().int().min(2000).max(2100),
-  month: z.coerce.number().int().min(1).max(12),
-  code: z.string().trim().max(40).optional().or(z.literal("")),
-  role: z.string().trim().max(120).optional().or(z.literal("")),
-  designation: z.string().trim().max(120).optional().or(z.literal("")),
-  ctc: money,
-  basic: money0, hra: money0, cca: money0, personalPay: money0,
-  conveyance: money0, lta: money0, specialAllowance: money0, pla: money0, medicalReimb: money0,
-  tds: money0, loanAdv: money0, epf: money0, esi: money0,
-  remarks: z.string().trim().max(500).optional().or(z.literal("")),
-  extraLines: z.array(payrollLineSchema).max(20).optional(),
-});
-export type PayrollInput = z.infer<typeof payrollSchema>;
-
 export const projectSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(160),
   code: z.string().trim().min(1, "Code is required").max(40),
@@ -151,20 +119,3 @@ export const assignmentSchema = z.object({
   (d) => !d.endDate || d.endDate >= d.startDate,
   { message: "End date cannot be before start date", path: ["endDate"] }
 );
-
-// Server-authoritative totals — earnings sum, deductions sum, net payable.
-export function computePayrollTotals(p: {
-  basic: number; hra: number; cca: number; personalPay: number;
-  conveyance: number; lta: number; specialAllowance: number; pla: number; medicalReimb: number;
-  tds: number; loanAdv: number; epf: number; esi: number;
-  extraLines?: { amount: number; kind: PayrollLineKind }[];
-}) {
-  const extra = p.extraLines ?? [];
-  const extraEarnings = extra.filter((l) => l.kind === "earning").reduce((s, l) => s + l.amount, 0);
-  const extraDeductions = extra.filter((l) => l.kind === "deduction").reduce((s, l) => s + l.amount, 0);
-  const totalEarnings =
-    p.basic + p.hra + p.cca + p.personalPay + p.conveyance +
-    p.lta + p.specialAllowance + p.pla + p.medicalReimb + extraEarnings;
-  const totalDeductions = p.tds + p.loanAdv + p.epf + p.esi + extraDeductions;
-  return { totalEarnings, totalDeductions, payableAmount: totalEarnings - totalDeductions };
-}

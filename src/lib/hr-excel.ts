@@ -1,5 +1,5 @@
 import ExcelJS from "exceljs";
-import type { Employee, PayrollRecord } from "@prisma/client";
+import type { Employee } from "@prisma/client";
 
 // Short display codes for attendance statuses
 const STATUS_CODE: Record<string, string> = {
@@ -174,101 +174,6 @@ export async function buildAttendanceWorkbook(
       else if (raw === "ABSENT") A++;
     }
     ws.addRow([`${emp.empId} – ${emp.name}`, ...dayCells, P, L, A]);
-  }
-
-  return Buffer.from(await wb.xlsx.writeBuffer());
-}
-
-// ── 3. Payroll workbook ────────────────────────────────────────────────────────
-type PayrollWithEmployee = PayrollRecord & {
-  employee: { empId: string; name: string };
-};
-
-export async function buildPayrollWorkbook(
-  records: PayrollWithEmployee[],
-  year: number,
-  month: number
-): Promise<Buffer> {
-  const wb = new ExcelJS.Workbook();
-  wb.creator = "GNE ERP";
-
-  const ws = wb.addWorksheet(`Payroll ${mmYYYY(month, year)}`);
-
-  const headers = [
-    "Code",
-    "Name",
-    "Designation",
-    "CTC",
-    "Basic",
-    "HRA",
-    "CCA",
-    "Personal Pay",
-    "Conveyance",
-    "LTA",
-    "Special Allowance",
-    "PLA",
-    "Medical Reimb",
-    "Total Earnings",
-    "TDS",
-    "Loan Adv",
-    "EPF",
-    "ESI",
-    "Total Ded",
-    "Payable",
-    "Remarks",
-  ];
-
-  ws.columns = [
-    { width: 14 },  // Code
-    { width: 28 },  // Name
-    { width: 20 },  // Designation
-    { width: 12 },  // CTC
-    { width: 10 },  // Basic
-    { width: 10 },  // HRA
-    { width: 10 },  // CCA
-    { width: 14 },  // Personal Pay
-    { width: 13 },  // Conveyance
-    { width: 10 },  // LTA
-    { width: 18 },  // Special Allowance
-    { width: 10 },  // PLA
-    { width: 15 },  // Medical Reimb
-    { width: 15 },  // Total Earnings
-    { width: 10 },  // TDS
-    { width: 10 },  // Loan Adv
-    { width: 10 },  // EPF
-    { width: 10 },  // ESI
-    { width: 12 },  // Total Ded
-    { width: 12 },  // Payable
-    { width: 24 },  // Remarks
-  ];
-
-  const head = ws.addRow(headers);
-  boldWhiteHeader(head);
-
-  for (const r of records) {
-    ws.addRow([
-      r.code ?? "",
-      r.employee.name,
-      r.designation ?? "",
-      r.ctc ?? "",
-      r.basic,
-      r.hra,
-      r.cca,
-      r.personalPay,
-      r.conveyance,
-      r.lta,
-      r.specialAllowance,
-      r.pla,
-      r.medicalReimb,
-      r.totalEarnings,
-      r.tds,
-      r.loanAdv,
-      r.epf,
-      r.esi,
-      r.totalDeductions,
-      r.payableAmount,
-      r.remarks ?? "",
-    ]);
   }
 
   return Buffer.from(await wb.xlsx.writeBuffer());

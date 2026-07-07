@@ -68,7 +68,6 @@ const HR_EMPLOYEES: NavItem = { label: "Employees", href: "/hr/employees", icon:
 const HR_ASSETS: NavItem = { label: "Assets", href: "/hr/assets", icon: Boxes };
 const HR_ATTENDANCE: NavItem = { label: "Attendance", href: "/hr/attendance", icon: CalendarClock };
 const HR_PROJECTS: NavItem = { label: "Projects", href: "/hr/projects", icon: FolderKanban };
-const HR_PAYOUT: NavItem = { label: "Payout", href: "/hr/payout", icon: BadgeIndianRupee };
 const HR_MANPOWER: NavItem = { label: "Manpower Planning", icon: UserRound, soon: true };
 const HR_RECRUITMENT: NavItem = { label: "Recruitment", icon: Briefcase, soon: true };
 
@@ -76,7 +75,7 @@ const HR: NavSection = {
   heading: "Human Resources",
   items: [
     HR_DASHBOARD, HR_EMPLOYEES, HR_ASSETS, HR_ATTENDANCE,
-    HR_PROJECTS, HR_PAYOUT, HR_MANPOWER, HR_RECRUITMENT,
+    HR_PROJECTS, HR_MANPOWER, HR_RECRUITMENT,
   ],
 };
 
@@ -110,7 +109,7 @@ export function navForRole(role: Role): NavSection[] {
     // avoid a bloated sidebar.
     return [
       { heading: "Overview", items: [HR_DASHBOARD] },
-      { heading: "People", items: [HR_EMPLOYEES, HR_ATTENDANCE, HR_PAYOUT] },
+      { heading: "People", items: [HR_EMPLOYEES, HR_ATTENDANCE] },
       { heading: "Resources", items: [HR_ASSETS, HR_PROJECTS, HR_MANPOWER, HR_RECRUITMENT] },
     ];
   }

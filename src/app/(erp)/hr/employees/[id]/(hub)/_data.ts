@@ -10,7 +10,6 @@ export const getEmployee = cache((id: string) =>
     include: {
       assets: true,
       projectAssignments: { include: { project: true }, orderBy: { startDate: "desc" } },
-      payrolls: { orderBy: [{ periodYear: "desc" }, { periodMonth: "desc" }] },
     },
   })
 );
