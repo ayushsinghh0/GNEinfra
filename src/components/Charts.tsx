@@ -182,7 +182,7 @@ export function ForecastArea({
   // Points actually rendered — actuals only when the forecast is suppressed, so no
   // forecast dots/labels/divider linger once the dashed line itself is gone.
   const visible = suppressForecast ? actual : pts;
-  // Same deterministic label-thinning as AreaChart — payroll/headcount series run up to
+  // Same deterministic label-thinning as AreaChart — the headcount series runs up to
   // 13 points (12 actual + forecast tail) and collide on narrow viewports otherwise.
   const labelStep = visible.length > 8 ? 2 : 1;
 

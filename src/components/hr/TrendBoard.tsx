@@ -1,10 +1,9 @@
 "use client";
 import { useMemo, useState } from "react";
-import { Wallet, Users, CalendarCheck, Plane } from "lucide-react";
+import { Users, CalendarCheck, Plane } from "lucide-react";
 import Segmented from "@/components/Segmented";
 import { AreaChart, ForecastArea, Sparkline } from "@/components/Charts";
 import { Card, CardHeader, CardBody, cn } from "@/components/ui";
-import { fmtINR } from "@/lib/format";
 
 type Point = { label: string; value: number; forecast?: boolean };
 
@@ -12,17 +11,15 @@ type Point = { label: string; value: number; forecast?: boolean };
 // "Project utilization" card (DashboardComposition), its single home; a Projects
 // tab here used to duplicate that card's exact bars.
 export type TrendSeries = {
-  payroll: Point[];       // 12 actual + forecast tail (forecast:true)
   headcount: Point[];     // 12 actual + 1 forecast
   attendance: Point[];    // 12 actual (no forecast)
   leave: Point[];         // 12 actual (no forecast)
 };
 
-type Metric = "payroll" | "headcount" | "attendance" | "leave";
+type Metric = "headcount" | "attendance" | "leave";
 type Range = "6" | "12";
 
 const METRICS = [
-  { value: "payroll" as Metric, label: "Payroll", icon: <Wallet className="h-3.5 w-3.5" /> },
   { value: "headcount" as Metric, label: "Headcount", icon: <Users className="h-3.5 w-3.5" /> },
   { value: "attendance" as Metric, label: "Attendance", icon: <CalendarCheck className="h-3.5 w-3.5" /> },
   { value: "leave" as Metric, label: "Leave", icon: <Plane className="h-3.5 w-3.5" /> },
@@ -44,25 +41,22 @@ function actualValues(points: Point[]): number[] {
 }
 
 const SUBTITLE: Record<Metric, string> = {
-  payroll: "Net payable per month (solid) · projection (dashed)",
   headcount: "Active staff at each month-end · next month projected",
   attendance: "Monthly present-equivalent %",
   leave: "Leave + sick days taken per month",
 };
 
 export default function TrendBoard({ series }: { series: TrendSeries }) {
-  const [metric, setMetric] = useState<Metric>("payroll");
+  const [metric, setMetric] = useState<Metric>("headcount");
   const [range, setRange] = useState<Range>("6");
   const n = range === "6" ? 6 : 12;
 
-  const payroll = useMemo(() => windowed(series.payroll, n), [series.payroll, n]);
   const headcount = useMemo(() => windowed(series.headcount, n), [series.headcount, n]);
   const attendance = useMemo(() => windowed(series.attendance, n), [series.attendance, n]);
   const leave = useMemo(() => windowed(series.leave, n), [series.leave, n]);
 
   const sparkData: Record<Metric, number[]> = useMemo(
     () => ({
-      payroll: actualValues(series.payroll),
       headcount: actualValues(series.headcount),
       attendance: series.attendance.map((p) => p.value),
       leave: series.leave.map((p) => p.value),
@@ -74,16 +68,15 @@ export default function TrendBoard({ series }: { series: TrendSeries }) {
   // the big chart's forecast tail already anchors on, just surfaced as a
   // scalar. Real data only, never the forecast value.
   const currentValue: Record<Metric, string> = {
-    payroll: fmtINR(sparkData.payroll.at(-1) ?? 0),
     headcount: String(sparkData.headcount.at(-1) ?? 0),
     attendance: `${sparkData.attendance.at(-1) ?? 0}%`,
     leave: `${sparkData.leave.at(-1) ?? 0}d`,
   };
 
-  // Forecast-capable metrics only — payroll/headcount are the only two series
-  // that ever carry a dashed projection segment (attendance/leave are actuals
+  // Forecast-capable metric only — headcount is the only series that ever
+  // carries a dashed projection segment (attendance/leave are actuals
   // only), so the legend is only meaningful there.
-  const showLegend = metric === "payroll" || metric === "headcount";
+  const showLegend = metric === "headcount";
 
   return (
     <Card>
@@ -133,7 +126,6 @@ export default function TrendBoard({ series }: { series: TrendSeries }) {
           })}
         </div>
 
-        {metric === "payroll" && <ForecastArea data={payroll} idPrefix="tb-pay" />}
         {metric === "headcount" && <ForecastArea data={headcount} idPrefix="tb-head" />}
         {metric === "attendance" && <AreaChart data={attendance} ariaLabel="Monthly attendance rate" />}
         {metric === "leave" && <AreaChart data={leave} ariaLabel="Leave and sick days taken per month" />}

@@ -128,7 +128,7 @@ export default async function OverviewPage() {
       label: "Human Resources",
       href: "/hr",
       icon: <Users className="h-5 w-5" />,
-      desc: "Employee master, attendance, payroll and project staffing.",
+      desc: "Employee master, attendance and project staffing.",
       live: true,
       stats: [`${activeEmployees} active staff`, `${activeProjects} projects`],
     },

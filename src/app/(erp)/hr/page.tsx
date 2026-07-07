@@ -1,14 +1,13 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { Users, Wallet, CalendarCheck, UserMinus, Clock, FolderKanban, CalendarClock, BadgeIndianRupee, ChevronRight } from "lucide-react";
+import { Users, Boxes, CalendarCheck, UserMinus, Clock, FolderKanban, CalendarClock, ChevronRight } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { requirePageRole, HR_VIEW } from "@/lib/rbac";
-import { fmtINR } from "@/lib/format";
 import { BrandHero, CanvasAtmosphere } from "@/components/chrome";
 import { StatCard, Skeleton, Card, CardHeader, CardBody } from "@/components/ui";
 import { DeltaBadge } from "@/components/Charts";
 import { pctDelta } from "@/lib/hr-forecast";
-import { getPeriods, periodKey, monthlyAttendanceStats } from "@/lib/hr-dashboard";
+import { getPeriods, monthlyAttendanceStats } from "@/lib/hr-dashboard";
 import DashboardTrends from "@/components/hr/DashboardTrends";
 import { DashboardLeaveBurn, DashboardUtilization, DashboardWorkforceComposition } from "@/components/hr/DashboardComposition";
 import MonthPicker from "@/components/hr/MonthPicker";
@@ -27,9 +26,9 @@ export default async function HrPage({
   const todayY = today.getUTCFullYear();
   const todayM = today.getUTCMonth() + 1;
 
-  // Reference month picker (MonthPicker, mirrors attendance/payout) — defaults to the
+  // Reference month picker (MonthPicker, mirrors attendance) — defaults to the
   // current month, clamped like every other HR month-scoped page. This is the "as-of"
-  // anchor for the trend window + the payroll / attrition / headcount-at-month-end KPIs
+  // anchor for the trend window + the attrition / headcount-at-month-end KPIs
   // below (each re-derives its `periods`/`cur`/`prev` from it). It does NOT drive the
   // "present/on-leave today" pulse metrics, which stay real-time "today" regardless of
   // the picker — labeled honestly ("today", linking to today's actual attendance date)
@@ -40,7 +39,7 @@ export default async function HrPage({
   const isCurrentRefMonth = refYear === todayY && refMonth === todayM;
   const refAnchor = new Date(Date.UTC(refYear, refMonth - 1, 1));
 
-  const { periods, cur, prev } = getPeriods(refAnchor);
+  const { cur, prev } = getPeriods(refAnchor);
 
   // Lightweight KPI query set — scoped to just the current + previous period (rather
   // than the full 12-month series the streamed sections below compute for their charts),
@@ -55,7 +54,7 @@ export default async function HrPage({
     leaversPrev,
     headcountCur,
     headcountPrev,
-    payrollGroups,
+    assetsInUse,
     attCur,
     attPrev,
   ] = await Promise.all([
@@ -64,14 +63,7 @@ export default async function HrPage({
     prisma.employee.count({ where: { leavingDate: { gte: prev.start, lt: prev.end } } }),
     prisma.employee.count({ where: { dateOfJoining: { lt: cur.end }, OR: [{ leavingDate: null }, { leavingDate: { gte: cur.end } }] } }),
     prisma.employee.count({ where: { dateOfJoining: { lt: prev.end }, OR: [{ leavingDate: null }, { leavingDate: { gte: prev.end } }] } }),
-    // Batched across all 12 periods in one round trip (vs. 12 individual aggregates) —
-    // needed because "last processed payroll" scans backward for the last non-zero
-    // month, which isn't knowable from just the current + previous period.
-    prisma.payrollRecord.groupBy({
-      by: ["periodYear", "periodMonth"],
-      where: { OR: periods.map((p) => ({ periodYear: p.year, periodMonth: p.month })) },
-      _sum: { payableAmount: true },
-    }),
+    prisma.employeeAsset.count({ where: { returnedAt: null } }),
     monthlyAttendanceStats(cur.start, cur.end),
     monthlyAttendanceStats(prev.start, prev.end),
   ]);
@@ -97,30 +89,16 @@ export default async function HrPage({
   const attCurHasRows = attCur.total > 0;
   const showAttRateDelta = attCurHasRows && attPrev.total > 0 && attRateDelta !== null;
 
-  // Payroll → anchor on last non-zero month (mirrors the TrendBoard payroll series'
-  // "scan backward" rule), net payroll processed this month for the footer note.
-  const payrollMap = new Map(payrollGroups.map((g) => [periodKey({ year: g.periodYear, month: g.periodMonth }), g._sum.payableAmount ?? 0]));
-  let lastActual = periods.length - 1;
-  while (lastActual > 0 && (payrollMap.get(periodKey(periods[lastActual])) ?? 0) === 0) lastActual--;
-  const costAnchor = payrollMap.get(periodKey(periods[lastActual])) ?? 0;
-  const costDelta = pctDelta(costAnchor, lastActual > 0 ? (payrollMap.get(periodKey(periods[lastActual - 1])) ?? 0) : 0);
-  const netPayrollMonth = payrollMap.get(periodKey(cur)) ?? 0;
-  // The anchor month is still in progress (today's calendar month, not yet closed) — comparing
-  // a partially-processed month against a fully-processed prior one is an apples-to-oranges
-  // delta, so swap the badge for an honest "so far this month" caption instead.
-  const payrollAnchorOngoing = isCurrentRefMonth && lastActual === periods.length - 1;
-  const showPayrollDelta = !payrollAnchorOngoing && costDelta !== null;
-
   const quickLinks = [
     { href: "/hr/employees", label: "Employees", icon: Users },
     { href: "/hr/attendance", label: "Attendance", icon: CalendarClock },
-    { href: "/hr/payout", label: "Payout", icon: BadgeIndianRupee },
+    { href: "/hr/assets", label: "Assets", icon: Boxes },
     { href: "/hr/projects", label: "Projects", icon: FolderKanban },
   ];
 
   return (
     <>
-      <BrandHero variant="mint" size="sm" wave={false} eyebrow="Human Resources" title="HR Dashboard" subtitle="Workforce, payroll and attendance — with trend projections." className="px-4 pb-6 pt-8 sm:px-6">
+      <BrandHero variant="mint" size="sm" wave={false} eyebrow="Human Resources" title="HR Dashboard" subtitle="Workforce and attendance — with trend projections." className="px-4 pb-6 pt-8 sm:px-6">
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <span className="text-xs font-medium uppercase tracking-wide text-slate-500">Viewing</span>
           <MonthPicker year={refYear} month={refMonth} basePath="/hr" />
@@ -136,7 +114,7 @@ export default async function HrPage({
             utilization (4). Row 3: Workforce composition (7) + "Today" pulse card (5). */}
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
           {/* Row 1A — KPI cluster. Deltas paint before the heavier sections below
-              stream in. Headcount/payroll/attendance-rate/attrition re-anchor to the
+              stream in. Headcount/attendance-rate/attrition re-anchor to the
               reference month above; present/on-leave live in the Today pulse card
               (Row 3B) and stay real-time "today" regardless of the picker. */}
           <div className="lg:col-span-8">
@@ -147,17 +125,9 @@ export default async function HrPage({
               <StatCard className="flex flex-col justify-between" tone="brand" icon={<Users className="h-4 w-4" />} label={`Headcount · ${cur.label} ${refYear}`}
                 href="/hr/employees?status=ACTIVE"
                 value={<span className="flex flex-wrap items-baseline gap-2"><span>{headcountCur}</span>{showHeadcountDelta && <DeltaBadge value={headcountDelta} />}</span>} />
-              <StatCard className="flex flex-col justify-between" tone="emerald" icon={<Wallet className="h-4 w-4" />} label={`Payroll · ${periods[lastActual].label} ${periods[lastActual].year}`}
-                href={`/hr/payout?year=${periods[lastActual].year}&month=${periods[lastActual].month}`}
-                value={
-                  <>
-                    <span className="flex flex-wrap items-baseline gap-2">
-                      <span>{fmtINR(costAnchor)}</span>
-                      {showPayrollDelta && <DeltaBadge value={costDelta} />}
-                    </span>
-                    {payrollAnchorOngoing && <p className="mt-1 text-xs text-slate-500">so far this month</p>}
-                  </>
-                } />
+              <StatCard className="flex flex-col justify-between" tone="emerald" icon={<Boxes className="h-4 w-4" />} label="Assets in use"
+                href="/hr/assets"
+                value={<span>{assetsInUse}</span>} />
               <StatCard className="flex flex-col justify-between" tone="blue" icon={<CalendarCheck className="h-4 w-4" />} label={isCurrentRefMonth ? "Attendance rate (MTD)" : `Attendance rate · ${cur.label}`}
                 href={`/hr/attendance?year=${refYear}&month=${refMonth}`}
                 spark={attCurHasRows ? attCur.rate : undefined}
@@ -266,7 +236,7 @@ export default async function HrPage({
           </div>
         </div>
 
-        <p className="text-center text-[11px] text-slate-400">&quot;Projected&quot; values are least-squares trend extrapolations, not guarantees · {netPayrollMonth ? `${fmtINR(netPayrollMonth)} processed ${isCurrentRefMonth ? "this month" : `in ${cur.label} ${refYear}`}` : `no payroll processed ${isCurrentRefMonth ? "yet this month" : `in ${cur.label} ${refYear}`}`}</p>
+        <p className="text-center text-[11px] text-slate-400">&quot;Projected&quot; values are least-squares trend extrapolations, not guarantees</p>
       </div>
     </>
   );

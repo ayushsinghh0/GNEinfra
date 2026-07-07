@@ -4,8 +4,8 @@ import { linearForecast } from "@/lib/hr-forecast";
 import TrendBoard, { type TrendSeries } from "@/components/hr/TrendBoard";
 
 // Streamed independently of the HR dashboard's KPI band (see hr/page.tsx) — this is the
-// heaviest slice of the dashboard's data: 12x monthly aggregate/groupBy loops for payroll,
-// headcount, attendance and leave. Takes the reference year/month (not a Date) so this
+// heaviest slice of the dashboard's data: 12x monthly aggregate loops for headcount,
+// attendance and leave. Takes the reference year/month (not a Date) so this
 // component computes its own `asOf` anchor and re-derives `periods` from it (pure, cheap)
 // rather than receiving the page's already-computed array, so this Suspense boundary can
 // resolve fully on its own without waiting on (or blocking) the KPI band or the
@@ -15,19 +15,6 @@ import TrendBoard, { type TrendSeries } from "@/components/hr/TrendBoard";
 export default async function DashboardTrends({ year, month }: { year: number; month: number }) {
   const asOf = new Date(Date.UTC(year, month - 1, 1));
   const { periods, nextLabel } = getPeriods(asOf);
-
-  // Payroll series (12) → anchor on last non-zero month, forecast the rest.
-  const payrollSeries = await Promise.all(periods.map((p) =>
-    prisma.payrollRecord.aggregate({ where: { periodYear: p.year, periodMonth: p.month }, _sum: { payableAmount: true } }).then((r) => r._sum.payableAmount ?? 0)));
-  let lastActual = payrollSeries.length - 1;
-  while (lastActual > 0 && payrollSeries[lastActual] === 0) lastActual--;
-  const payrollActuals = payrollSeries.slice(0, lastActual + 1);
-  const fLabels = [...periods.slice(lastActual + 1).map((p) => p.label), nextLabel];
-  const payrollForecast = linearForecast(payrollActuals, fLabels.length);
-  const payrollPoints = [
-    ...payrollActuals.map((v, i) => ({ label: periods[i].label, value: v, forecast: false })),
-    ...payrollForecast.map((v, i) => ({ label: fLabels[i], value: v, forecast: true })),
-  ];
 
   // Headcount at each month-end (12) → forecast 1.
   const headcountSeries = await Promise.all(periods.map((p) =>
@@ -44,7 +31,7 @@ export default async function DashboardTrends({ year, month }: { year: number; m
 
   // (Project allocation intentionally NOT here — it isn't a time series. Its single
   // home is the "Project utilization" card in DashboardComposition.)
-  const series: TrendSeries = { payroll: payrollPoints, headcount: headcountPoints, attendance: attendancePoints, leave: leavePoints };
+  const series: TrendSeries = { headcount: headcountPoints, attendance: attendancePoints, leave: leavePoints };
 
   return <TrendBoard series={series} />;
 }
