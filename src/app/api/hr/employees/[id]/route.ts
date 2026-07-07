@@ -32,7 +32,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const employee = await prisma.employee.update({
       where: { id },
       data: {
-        empId: d.empId, name: d.name, designation: d.designation, empCategory: d.empCategory,
+        empId: d.empId, name: d.name, designation: d.designation, band: d.band || null,
+        empCategory: d.empCategory,
         location: d.location, dateOfJoining: toDate(d.dateOfJoining)!,
         payrollType: d.payrollType || null, mailId: d.mailId || null,
         emergencyNumber: d.emergencyNumber || null, bloodGroup: d.bloodGroup || null,

@@ -43,6 +43,7 @@ export const employeeSchema = z.object({
   empId: z.string().trim().min(1, "EMP ID is required").max(40),
   name: z.string().trim().min(1, "Name is required").max(200),
   designation: z.string().trim().min(1, "Designation is required").max(120),
+  band: z.string().trim().max(40).optional().or(z.literal("")),
   empCategory: z.string().trim().min(1, "Emp Category is required").max(60),
   dateOfJoining: z.string().min(1, "Date of Joining is required"),
   location: z.string().trim().min(1, "Location is required").max(120),

@@ -292,6 +292,7 @@ model Employee {
   empId            String         @unique
   name             String
   designation      String
+  band             String?
   empCategory      String?
   payrollType      String?
   mailId           String?
