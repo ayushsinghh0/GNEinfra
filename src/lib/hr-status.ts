@@ -112,6 +112,14 @@ const REGISTRY: Record<string, Tone> = {
   PENDING_APPROVAL: T.amber("Pending approval"),
   UNPAID: T.amber("Unpaid"),
   PAID: T.emerald("Paid"),
+  // Recruitment — HiringStage (ON_HOLD/REJECTED shared above) + PositionStatus
+  // (OPEN/ON_HOLD/CLOSED all shared above).
+  SOURCED: T.slate("Sourced"),
+  SCREENING: T.blue("Screening"),
+  SHORTLISTED: T.sky("Shortlisted"),
+  INTERVIEW: T.amber("Interview"),
+  OFFER: T.violet("Offer"),
+  HIRED: T.emerald("Hired"),
 };
 
 export function statusMeta(status: string): Tone {
