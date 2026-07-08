@@ -1,6 +1,18 @@
 import { z } from "zod";
 
 export const EMP_CATEGORIES = ["On-Roll", "Contract", "Intern", "Consultant"] as const;
+
+// Preset job positions offered for an employee's Designation (a UI convenience —
+// `designation` stays a free string, so "Other" + legacy values still work).
+export const EMPLOYEE_POSITIONS = [
+  "Assistant Manager – Solar EPC",
+  "Solar Plant Supervisor",
+  "Health, Safety & Environment (HSE)",
+  "Project Coordinator",
+  "Civil Engineer",
+  "Electrical Engineer",
+  "Supply Chain Manager",
+] as const;
 export const ATTENDANCE_STATUSES = ["PRESENT", "ABSENT", "LEAVE", "SICK", "HALF_DAY", "HOLIDAY", "WEEK_OFF"] as const;
 export type AttendanceStatusValue = (typeof ATTENDANCE_STATUSES)[number];
 
@@ -75,23 +87,35 @@ export const employeeSchema = z.object({
   dob: optDate,
   offerLetterDate: optDate,
   leavingDate: optDate,
+  casualLeaveQuota: quota,
+  sickLeaveQuota: quota,
+  // Family / next-of-kin members — saved as a full replace of the set.
+  familyMembers: z.array(familyMemberSchema).max(20).optional(),
+  // NOTE: pay / bank / statutory moved to payrollSchema (/hr/payroll) — salary is
+  // decided later, so the employee form no longer sets it.
+});
+export type EmployeeInput = z.infer<typeof employeeSchema>;
+
+// Pay structure + bank + statutory + fixed deductions — edited on /hr/payroll,
+// NOT on the employee form (so editing an employee never wipes salary set later).
+export const payrollSchema = z.object({
   totalCtc: money,
   salary: money,
   lta: money,
   specialAllowance: money,
   conveyance: money,
-  casualLeaveQuota: quota,
-  sickLeaveQuota: quota,
   bankAccountNo: z.string().trim().max(40).optional().or(z.literal("")),
   bankName: z.string().trim().max(120).optional().or(z.literal("")),
   ifsc: z.string().trim().max(11).optional().or(z.literal("")),
   uan: z.string().trim().max(20).optional().or(z.literal("")),
   panNo: z.string().trim().max(10).optional().or(z.literal("")),
   esicNo: z.string().trim().max(20).optional().or(z.literal("")),
-  // Family / next-of-kin members — saved as a full replace of the set.
-  familyMembers: z.array(familyMemberSchema).max(20).optional(),
+  pfDeduction: money,
+  esiDeduction: money,
+  tdsDeduction: money,
+  otherDeduction: money,
 });
-export type EmployeeInput = z.infer<typeof employeeSchema>;
+export type PayrollInput = z.infer<typeof payrollSchema>;
 
 export const assetSchema = z.object({
   employeeId: z.string().min(1, "Employee is required"),

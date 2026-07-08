@@ -14,7 +14,6 @@ function tabsFor(id: string) {
     { label: "Attendance", href: `${base}/attendance`, exact: false },
     { label: "Assets", href: `${base}/assets`, exact: false },
     { label: "Projects", href: `${base}/projects`, exact: false },
-    { label: "Compensation", href: `${base}/compensation`, exact: false },
   ];
 }
 

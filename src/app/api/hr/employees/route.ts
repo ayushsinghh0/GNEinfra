@@ -36,16 +36,9 @@ export async function POST(req: NextRequest) {
         iCardNo: d.iCardNo || null, dob: toDate(d.dob), offerLetterDate: toDate(d.offerLetterDate),
         leavingDate: toDate(d.leavingDate),
         status: toDate(d.leavingDate) ? "INACTIVE" : "ACTIVE",
-        totalCtc: d.totalCtc ?? null, salary: d.salary ?? null, lta: d.lta ?? null,
-        specialAllowance: d.specialAllowance ?? null, conveyance: d.conveyance ?? null,
         casualLeaveQuota: d.casualLeaveQuota,
         sickLeaveQuota: d.sickLeaveQuota,
-        bankAccountNo: d.bankAccountNo || null,
-        bankName: d.bankName || null,
-        ifsc: d.ifsc || null,
-        uan: d.uan || null,
-        panNo: d.panNo || null,
-        esicNo: d.esicNo || null,
+        // Pay / bank / statutory are set later on /hr/payroll, not here.
         familyMembers: d.familyMembers?.length
           ? {
               create: d.familyMembers.map((m, i) => ({

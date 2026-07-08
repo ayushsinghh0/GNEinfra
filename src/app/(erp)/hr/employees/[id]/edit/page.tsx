@@ -12,10 +12,6 @@ function toDateStr(d: Date | null | undefined): string {
   return d.toISOString().slice(0, 10);
 }
 
-function toMoneyStr(n: number | null | undefined): string {
-  if (n === null || n === undefined) return "";
-  return String(n);
-}
 
 export default async function EditEmployeePage({
   params,
@@ -47,19 +43,9 @@ export default async function EditEmployeePage({
     dob: toDateStr(emp.dob),
     offerLetterDate: toDateStr(emp.offerLetterDate),
     leavingDate: toDateStr(emp.leavingDate),
-    totalCtc: toMoneyStr(emp.totalCtc),
-    salary: toMoneyStr(emp.salary),
-    lta: toMoneyStr(emp.lta),
-    specialAllowance: toMoneyStr(emp.specialAllowance),
-    conveyance: toMoneyStr(emp.conveyance),
     casualLeaveQuota: String(emp.casualLeaveQuota),
     sickLeaveQuota: String(emp.sickLeaveQuota),
-    bankAccountNo: emp.bankAccountNo ?? "",
-    bankName: emp.bankName ?? "",
-    ifsc: emp.ifsc ?? "",
-    uan: emp.uan ?? "",
-    panNo: emp.panNo ?? "",
-    esicNo: emp.esicNo ?? "",
+    // Pay / bank / statutory are edited on /hr/payroll, not here.
   };
 
   const initialFamily = emp.familyMembers.map((m) => ({

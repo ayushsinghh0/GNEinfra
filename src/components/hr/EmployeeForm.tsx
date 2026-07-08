@@ -2,7 +2,7 @@
 import { useRef, useState, FormEvent, ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Field, Input, Select } from "@/components/ui";
-import { EMP_CATEGORIES, FAMILY_RELATIONS } from "@/lib/hr-validation";
+import { EMP_CATEGORIES, FAMILY_RELATIONS, EMPLOYEE_POSITIONS } from "@/lib/hr-validation";
 import { AlertCircle, Plus, Trash2, Users } from "lucide-react";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { toast } from "@/components/Toast";
@@ -47,9 +47,7 @@ const EMPTY: Values = {
   empId: "", name: "", designation: "", band: "", empCategory: "On-Roll", location: "",
   dateOfJoining: "", payrollType: "", mailId: "", emergencyNumber: "", bloodGroup: "",
   iCardNo: "", dob: "", offerLetterDate: "", leavingDate: "",
-  totalCtc: "", salary: "", lta: "", specialAllowance: "", conveyance: "",
   casualLeaveQuota: "12", sickLeaveQuota: "12",
-  bankAccountNo: "", bankName: "", ifsc: "", uan: "", panNo: "", esicNo: "",
 };
 
 // Mirrors employeeSchema's required fields (src/lib/hr-validation.ts) — the
@@ -97,6 +95,13 @@ export default function EmployeeForm({
 }) {
   const router = useRouter();
   const [v, setV] = useState<Values>({ ...EMPTY, ...(initial ?? {}) });
+
+  // Designation is a preset dropdown + "Other" (free-text). "Other" is on when
+  // the seeded designation isn't one of the presets (custom/legacy title).
+  const presets: readonly string[] = EMPLOYEE_POSITIONS;
+  const [designationOther, setDesignationOther] = useState<boolean>(
+    () => !!v.designation && !presets.includes(v.designation)
+  );
 
   // Family rows — seeded once at mount (this instance is remounted via key={id}
   // on employee-to-employee navigation, so the seed never goes stale). Initial
@@ -206,7 +211,32 @@ export default function EmployeeForm({
       <Section title="Identity & Role">
         {Txt("empId", "EMP ID", true)}
         {Txt("name", "Name", true)}
-        {Txt("designation", "Designation", true)}
+        <Field label="Designation" required htmlFor="designation" error={fieldErrors.designation} errorId={fieldErrors.designation ? "designation-error" : undefined}>
+          <Select
+            id="designation"
+            value={designationOther ? "__OTHER__" : v.designation}
+            onChange={(e) => {
+              const val = e.target.value;
+              if (val === "__OTHER__") {
+                setDesignationOther(true);
+                setV((s) => ({ ...s, designation: "" }));
+              } else {
+                setDesignationOther(false);
+                setV((s) => ({ ...s, designation: val }));
+              }
+              setFieldErrors((fe) => { if (!fe.designation) return fe; const n = { ...fe }; delete n.designation; return n; });
+            }}
+            required
+            aria-required
+          >
+            <option value="">Select position…</option>
+            {EMPLOYEE_POSITIONS.map((p) => <option key={p} value={p}>{p}</option>)}
+            <option value="__OTHER__">Other…</option>
+          </Select>
+          {designationOther && (
+            <Input className="mt-2" value={v.designation} onChange={set("designation")} placeholder="Enter designation" aria-label="Custom designation" />
+          )}
+        </Field>
         {Txt("band", "Band")}
         <Field label="Emp Category" required htmlFor="empCategory">
           <Select id="empCategory" value={v.empCategory} onChange={set("empCategory")} required aria-required>
@@ -228,21 +258,9 @@ export default function EmployeeForm({
         {Txt("leavingDate", "Leaving Date", false, "date")}
       </Section>
 
-      <Section title="Compensation">
-        {Txt("totalCtc", "Total CTC (₹)", false, "text", "numeric")}
-        {Txt("salary", "Salary (₹)", false, "text", "numeric")}
-        {Txt("lta", "LTA (₹)", false, "text", "numeric")}
-        {Txt("specialAllowance", "Special Allowance (₹)", false, "text", "numeric")}
-        {Txt("conveyance", "Conveyance (₹)", false, "text", "numeric")}
-      </Section>
-
-      <Section title="Statutory & Leave">
-        {Txt("bankAccountNo", "Bank A/C No")}
-        {Txt("bankName", "Bank Name")}
-        {Txt("ifsc", "IFSC")}
-        {Txt("panNo", "PAN No")}
-        {Txt("uan", "UAN (PF)")}
-        {Txt("esicNo", "ESIC No")}
+      {/* Pay, bank and statutory details live on the Payroll page (/hr/payroll) —
+          salary is decided later, so they're intentionally not on this form. */}
+      <Section title="Leave">
         {Txt("casualLeaveQuota", "Casual Leave Quota", false, "number")}
         {Txt("sickLeaveQuota", "Sick Leave Quota", false, "number")}
       </Section>

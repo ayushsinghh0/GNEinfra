@@ -320,6 +320,12 @@ model Employee {
   panNo              String?
   esicNo             String?
 
+  // Fixed monthly deductions for the structure-based payment slip (₹; managed on /hr/payroll)
+  pfDeduction    Int?
+  esiDeduction   Int?
+  tdsDeduction   Int?
+  otherDeduction Int?
+
   assets             EmployeeAsset[]
   attendance         AttendanceRecord[]
   payrolls           PayrollRecord[]
