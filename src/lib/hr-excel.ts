@@ -145,7 +145,8 @@ export async function buildAttendanceWorkbook(
   const ws = wb.addWorksheet(`Attendance ${mmYYYY(month, year)}`);
 
   const headers = [
-    "Employee",
+    "EMP ID",
+    "Employee Name",
     ...Array.from({ length: daysInMonth }, (_, i) => String(i + 1)),
     "P",
     "L",
@@ -153,7 +154,8 @@ export async function buildAttendanceWorkbook(
   ];
 
   ws.columns = [
-    { width: 34 },
+    { width: 12 },
+    { width: 26 },
     ...Array.from({ length: daysInMonth }, () => ({ width: 5 })),
     { width: 5 },
     { width: 5 },
@@ -183,7 +185,7 @@ export async function buildAttendanceWorkbook(
       else if (raw === "LEAVE") L++;
       else if (raw === "ABSENT") A++;
     }
-    ws.addRow([`${emp.empId} – ${emp.name}`, ...dayCells, P, L, A]);
+    ws.addRow([emp.empId, emp.name, ...dayCells, P, L, A]);
   }
 
   return Buffer.from(await wb.xlsx.writeBuffer());
