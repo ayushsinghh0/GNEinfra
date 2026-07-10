@@ -1,21 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import type { AttendanceStatus } from "@prisma/client";
 
-// Calendar-year leave balances for one employee. taken = that year's LEAVE/SICK days.
-export async function leaveBalances(
-  employeeId: string, year: number, casualQuota: number, sickQuota: number
-) {
-  const start = new Date(Date.UTC(year, 0, 1));
-  const end = new Date(Date.UTC(year + 1, 0, 1));
-  const [casualTaken, sickTaken] = await Promise.all([
-    prisma.attendanceRecord.count({ where: { employeeId, status: "LEAVE", date: { gte: start, lt: end } } }),
-    prisma.attendanceRecord.count({ where: { employeeId, status: "SICK", date: { gte: start, lt: end } } }),
-  ]);
-  return {
-    casualQuota, casualTaken, casualRemaining: Math.max(0, casualQuota - casualTaken),
-    sickQuota, sickTaken, sickRemaining: Math.max(0, sickQuota - sickTaken),
-  };
-}
+// Holds the year-summary helper used by the employee attendance tab.
 
 // Count per status for one employee across a calendar year.
 export async function attendanceYearSummary(employeeId: string, year: number) {

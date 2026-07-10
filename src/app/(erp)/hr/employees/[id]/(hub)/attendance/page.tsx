@@ -4,7 +4,7 @@ import Link from "next/link";
 import { CalendarDays } from "lucide-react";
 import { requirePageRole, HR_VIEW } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
-import { leaveBalances, attendanceYearSummary } from "@/lib/hr-leave";
+import { attendanceYearSummary } from "@/lib/hr-leave";
 import { MONTHS, type AttendanceStatusValue } from "@/lib/hr-validation";
 import { DetailSection, btn } from "@/components/ui";
 import AttendanceCalendar from "@/components/hr/AttendanceCalendar";
@@ -48,12 +48,11 @@ export default async function EmployeeAttendanceTab({
   const monthEnd = new Date(Date.UTC(year, month, 1));
   const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
 
-  const [records, balances, summary] = await Promise.all([
+  const [records, summary] = await Promise.all([
     prisma.attendanceRecord.findMany({
       where: { employeeId: id, date: { gte: monthStart, lt: monthEnd } },
       select: { date: true, status: true },
     }),
-    leaveBalances(id, year, emp.casualLeaveQuota, emp.sickLeaveQuota),
     attendanceYearSummary(id, year),
   ]);
 
@@ -62,46 +61,19 @@ export default async function EmployeeAttendanceTab({
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <DetailSection title={`${year} Summary`}>
-          <div className="flex flex-wrap gap-2">
-            {SUMMARY_CHIPS.map(([label, key, cls]) => (
-              <div
-                key={key}
-                className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium ${cls}`}
-              >
-                <span className="nums font-semibold">{summary[key]}</span>
-                <span className="text-xs">{label}</span>
-              </div>
-            ))}
-          </div>
-        </DetailSection>
-
-        <DetailSection title="Leave Balances">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
-              <p className="mb-2 text-xs font-semibold text-slate-500">Casual Leave</p>
-              <div className="flex items-end gap-1.5">
-                <span className="nums text-2xl font-bold text-slate-800">{balances.casualRemaining}</span>
-                <span className="pb-0.5 text-sm text-slate-400">remaining</span>
-              </div>
-              <p className="nums mt-1 text-xs text-slate-400">
-                {balances.casualTaken} taken · {balances.casualQuota} quota
-              </p>
+      <DetailSection title={`${year} Summary`}>
+        <div className="flex flex-wrap gap-2">
+          {SUMMARY_CHIPS.map(([label, key, cls]) => (
+            <div
+              key={key}
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium ${cls}`}
+            >
+              <span className="nums font-semibold">{summary[key]}</span>
+              <span className="text-xs">{label}</span>
             </div>
-            <div className="rounded-xl border border-slate-100 bg-slate-50 p-4">
-              <p className="mb-2 text-xs font-semibold text-slate-500">Sick Leave</p>
-              <div className="flex items-end gap-1.5">
-                <span className="nums text-2xl font-bold text-slate-800">{balances.sickRemaining}</span>
-                <span className="pb-0.5 text-sm text-slate-400">remaining</span>
-              </div>
-              <p className="nums mt-1 text-xs text-slate-400">
-                {balances.sickTaken} taken · {balances.sickQuota} quota
-              </p>
-            </div>
-          </div>
-        </DetailSection>
-      </div>
+          ))}
+        </div>
+      </DetailSection>
 
       <DetailSection
         title={

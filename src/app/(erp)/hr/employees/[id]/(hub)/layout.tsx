@@ -2,7 +2,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { requirePageRole, HR_VIEW, HR_WRITE } from "@/lib/rbac";
-import { leaveBalances } from "@/lib/hr-leave";
 import { PageHeader, btn } from "@/components/ui";
 import EmployeeStatusAction from "@/components/hr/EmployeeStatusAction";
 import ProfileHeader from "@/components/hr/ProfileHeader";
@@ -40,9 +39,6 @@ export default async function EmployeeHubLayout({
   const { id } = await params;
   const emp = await getEmployee(id);
   if (!emp) notFound();
-
-  const year = new Date().getUTCFullYear();
-  const balances = await leaveBalances(emp.id, year, emp.casualLeaveQuota, emp.sickLeaveQuota);
 
   // UTC-midnight cutoff — MUST match hr-projects.ts's activeAllocation(),
   // which the Projects tab uses for "X% committed". endDate is stored at
@@ -97,8 +93,6 @@ export default async function EmployeeHubLayout({
       <SnapshotStrip
         id={id}
         tenureLabel={tenureLabel(emp.dateOfJoining)}
-        casualRemaining={balances.casualRemaining}
-        sickRemaining={balances.sickRemaining}
         assetsCount={emp.assets.length}
         activeProjects={activeProjects}
         band={emp.band}

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronRight, Laptop, FolderKanban, IdCard, Contact, Users } from "lucide-react";
+import { ChevronRight, Laptop, FolderKanban, IdCard, Contact, Users, Landmark } from "lucide-react";
 import { requirePageRole, HR_VIEW } from "@/lib/rbac";
 import { fmtDateOnly } from "@/lib/format";
 import { KeyValue, DetailSection, EntityLink, EmptyState, Chip } from "@/components/ui";
@@ -54,9 +54,9 @@ export default async function EmployeeOverviewPage({
               { label: "Designation", value: emp.designation },
               { label: "Band", value: emp.band },
               { label: "Category", value: emp.empCategory },
+              { label: "Department", value: emp.department },
               { label: "Location", value: emp.location },
               { label: "Payroll Type", value: emp.payrollType },
-              { label: "I-Card No", value: emp.iCardNo, mono: true },
             ]}
           />
         </DetailSection>
@@ -71,6 +71,19 @@ export default async function EmployeeOverviewPage({
               { label: "Date of Joining", value: fmtDateOnly(emp.dateOfJoining) },
               { label: "Offer Letter Date", value: fmtDateOnly(emp.offerLetterDate) },
               { label: "Leaving Date", value: fmtDateOnly(emp.leavingDate) },
+            ]}
+          />
+        </DetailSection>
+
+        <DetailSection title="Bank & statutory" icon={<Landmark className="h-4 w-4 text-slate-400" />}>
+          <KeyValue
+            items={[
+              { label: "Bank A/C No", value: emp.bankAccountNo, mono: true },
+              { label: "Bank Name", value: emp.bankName },
+              { label: "IFSC", value: emp.ifsc, mono: true },
+              { label: "PAN No", value: emp.panNo, mono: true },
+              { label: "UAN (PF)", value: emp.uan, mono: true },
+              { label: "ESIC No", value: emp.esicNo, mono: true },
             ]}
           />
         </DetailSection>

@@ -20,16 +20,12 @@ function SnapshotChip({ href, children }: { href: string; children: React.ReactN
 export default function SnapshotStrip({
   id,
   tenureLabel,
-  casualRemaining,
-  sickRemaining,
   assetsCount,
   activeProjects,
   band,
 }: {
   id: string;
   tenureLabel: string;
-  casualRemaining: number;
-  sickRemaining: number;
   assetsCount: number;
   activeProjects: number;
   band: string | null;
@@ -39,12 +35,6 @@ export default function SnapshotStrip({
     <div className="flex flex-wrap items-center gap-2 border-b border-slate-200/70 bg-white px-6 py-3 sm:px-8">
       <SnapshotChip href={base}>
         <span className="nums">Tenure {tenureLabel}</span>
-      </SnapshotChip>
-      <SnapshotChip href={`${base}/attendance`}>
-        <span className="nums">CL {casualRemaining} left</span>
-      </SnapshotChip>
-      <SnapshotChip href={`${base}/attendance`}>
-        <span className="nums">SL {sickRemaining} left</span>
       </SnapshotChip>
       <SnapshotChip href={`${base}/assets`}>
         <span className="nums">{assetsCount} assets</span>
