@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, useTransition, type FormEvent } from "reac
 import { Search } from "lucide-react";
 import { Select, Spinner, inputCls, cn } from "@/components/ui";
 import { buildQuery } from "@/lib/hr-filters";
+import { DEPARTMENTS } from "@/lib/hr-validation";
 
 const STATUSES = ["", "ACTIVE", "INACTIVE"];
 
@@ -13,18 +14,21 @@ export default function EmployeeSearch() {
   const params = useSearchParams();
   const urlQ = params.get("q") ?? "";
   const urlStatus = params.get("status") ?? "";
+  const urlDepartment = params.get("department") ?? "";
   const [isPending, startTransition] = useTransition();
 
   const [q, setQ] = useState(urlQ);
   const [status, setStatus] = useState(urlStatus);
+  const [department, setDepartment] = useState(urlDepartment);
 
   // Re-sync inputs when the URL changes (e.g. a dashboard card link sets a
   // filter). React pattern: adjust state during render, not in an effect.
-  const [seen, setSeen] = useState(`${urlQ}|${urlStatus}`);
-  if (seen !== `${urlQ}|${urlStatus}`) {
-    setSeen(`${urlQ}|${urlStatus}`);
+  const [seen, setSeen] = useState(`${urlQ}|${urlStatus}|${urlDepartment}`);
+  if (seen !== `${urlQ}|${urlStatus}|${urlDepartment}`) {
+    setSeen(`${urlQ}|${urlStatus}|${urlDepartment}`);
     setQ(urlQ);
     setStatus(urlStatus);
+    setDepartment(urlDepartment);
   }
 
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -38,7 +42,7 @@ export default function EmployeeSearch() {
     []
   );
 
-  function apply(nextQ: string, nextStatus: string) {
+  function apply(nextQ: string, nextStatus: string, nextDepartment: string) {
     // Any explicit apply (Enter / status change) cancels a still-pending debounce,
     // so a stale timer can't clobber the value just applied.
     if (timer.current) clearTimeout(timer.current);
@@ -50,6 +54,7 @@ export default function EmployeeSearch() {
     const href = buildQuery("/hr/employees", {
       q: nextQ || undefined,
       status: nextStatus || undefined,
+      department: nextDepartment || undefined,
       category,
       location,
     });
@@ -70,12 +75,12 @@ export default function EmployeeSearch() {
   function onQChange(v: string) {
     setQ(v);
     if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => apply(v, status), 300);
+    timer.current = setTimeout(() => apply(v, status, department), 300);
   }
 
   function onSubmit(e: FormEvent) {
     e.preventDefault();
-    apply(q, status);
+    apply(q, status, department);
   }
 
   return (
@@ -99,7 +104,7 @@ export default function EmployeeSearch() {
         disabled={isPending}
         onChange={(e) => {
           setStatus(e.target.value);
-          apply(q, e.target.value);
+          apply(q, e.target.value, department);
         }}
         className="sm:w-48"
       >
@@ -107,6 +112,21 @@ export default function EmployeeSearch() {
           <option key={s} value={s}>
             {s ? s : "All statuses"}
           </option>
+        ))}
+      </Select>
+      <Select
+        value={department}
+        disabled={isPending}
+        aria-label="Filter by department"
+        onChange={(e) => {
+          setDepartment(e.target.value);
+          apply(q, status, e.target.value);
+        }}
+        className="sm:w-56"
+      >
+        <option value="">All departments</option>
+        {DEPARTMENTS.map((d) => (
+          <option key={d} value={d}>{d}</option>
         ))}
       </Select>
     </form>

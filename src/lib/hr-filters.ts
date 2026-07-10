@@ -12,6 +12,7 @@ export interface ParsedListParams {
   q?: string;
   status?: string;
   category?: string;
+  department?: string;
   location?: string;
   employeeId?: string;
   // BD/Finance list scopes (unused by HR pages; parse/serialize like the rest).
@@ -39,6 +40,7 @@ export function parseListParams(sp: RawSearchParams): ParsedListParams {
     q: trimmedOrUndefined(sp.q),
     status: trimmedOrUndefined(sp.status),
     category: trimmedOrUndefined(sp.category),
+    department: trimmedOrUndefined(sp.department),
     location: trimmedOrUndefined(sp.location),
     employeeId: trimmedOrUndefined(sp.employeeId),
     fy: trimmedOrUndefined(sp.fy),
@@ -66,6 +68,7 @@ export function buildQuery(base: string, patch: Partial<ParsedListParams>): stri
   setIfPresent("q", patch.q);
   setIfPresent("status", patch.status);
   setIfPresent("category", patch.category);
+  setIfPresent("department", patch.department);
   setIfPresent("location", patch.location);
   setIfPresent("employeeId", patch.employeeId);
   setIfPresent("fy", patch.fy);

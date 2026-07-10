@@ -26,12 +26,12 @@ const VALID_STATUS = new Set(["ACTIVE", "INACTIVE"]);
 export default async function EmployeesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; status?: string; category?: string; location?: string }>;
+  searchParams: Promise<{ q?: string; status?: string; category?: string; department?: string; location?: string }>;
 }) {
   const viewer = await requirePageRole(HR_VIEW);
   const canWrite = HR_WRITE.includes(viewer.role);
 
-  const { q, status, category, location } = await searchParams;
+  const { q, status, category, department, location } = await searchParams;
 
   const where: Prisma.EmployeeWhereInput = {};
   if (status && VALID_STATUS.has(status)) {
@@ -39,6 +39,9 @@ export default async function EmployeesPage({
   }
   if (category && category.trim()) {
     where.empCategory = category.trim();
+  }
+  if (department && department.trim()) {
+    where.department = department.trim();
   }
   if (location && location.trim()) {
     where.location = location.trim();
@@ -58,14 +61,14 @@ export default async function EmployeesPage({
     orderBy: { createdAt: "desc" },
   });
 
-  const filterNote = category ? `Category: ${category.trim()}` : location ? `Location: ${location.trim()}` : null;
+  const filterNote = category ? `Category: ${category.trim()}` : department ? `Department: ${department.trim()}` : location ? `Location: ${location.trim()}` : null;
 
   // Any filter active (vs. a genuinely empty roster) — drives which EmptyState
   // copy/action renders below, and keeps the export scoped to what's on screen.
   const hasFilters = Boolean(
-    (q && q.trim()) || (status && VALID_STATUS.has(status)) || (category && category.trim()) || (location && location.trim())
+    (q && q.trim()) || (status && VALID_STATUS.has(status)) || (category && category.trim()) || (department && department.trim()) || (location && location.trim())
   );
-  const exportHref = buildQuery("/api/hr/employees/export", { q, status, category, location });
+  const exportHref = buildQuery("/api/hr/employees/export", { q, status, category, department, location });
 
   type Emp = (typeof employees)[number];
   const columns: Column<Emp>[] = [
@@ -84,6 +87,13 @@ export default async function EmployeesPage({
       header: "Designation",
       cardLabel: "Designation",
       cell: (e) => e.designation ?? "—",
+    },
+    {
+      key: "department",
+      header: "Department",
+      priority: "lg",
+      cardLabel: "Department",
+      cell: (e) => e.department ?? "—",
     },
     {
       key: "category",

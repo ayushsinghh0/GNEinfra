@@ -41,19 +41,21 @@ export async function buildEmployeesWorkbook(
     "Name",
     "Designation",
     "Band",
+    "Department",
     "Emp Category",
-    "Payroll",
+    "Payroll Type",
     "Location",
     "Mail Id",
     "Emergency Number",
     "Blood Group",
-    "I-Card",
     "DOB",
     "Date of Joining",
     "Offer Letter Date",
     "Leaving Date",
     "Status",
     "Total CTC",
+    "Monthly Gross",
+    "Annualised Gross (×12)",
     "Salary",
     "LTA",
     "Special Allowance",
@@ -66,19 +68,21 @@ export async function buildEmployeesWorkbook(
     { width: 28 },  // Name
     { width: 22 },  // Designation
     { width: 10 },  // Band
+    { width: 22 },  // Department
     { width: 16 },  // Emp Category
-    { width: 14 },  // Payroll
+    { width: 14 },  // Payroll Type
     { width: 16 },  // Location
     { width: 28 },  // Mail Id
     { width: 18 },  // Emergency Number
     { width: 13 },  // Blood Group
-    { width: 14 },  // I-Card
     { width: 14 },  // DOB
     { width: 16 },  // Date of Joining
     { width: 18 },  // Offer Letter Date
     { width: 14 },  // Leaving Date
     { width: 10 },  // Status
     { width: 12 },  // Total CTC
+    { width: 14 },  // Monthly Gross
+    { width: 20 },  // Annualised Gross
     { width: 10 },  // Salary
     { width: 10 },  // LTA
     { width: 18 },  // Special Allowance
@@ -89,25 +93,31 @@ export async function buildEmployeesWorkbook(
   boldWhiteHeader(head);
 
   employees.forEach((emp, idx) => {
+    // Monthly gross mirrors /hr/payroll's live summary; ×12 sits next to the
+    // annual Total CTC so the two are directly comparable in the sheet.
+    const gross =
+      (emp.salary ?? 0) + (emp.lta ?? 0) + (emp.specialAllowance ?? 0) + (emp.conveyance ?? 0);
     ws.addRow([
       idx + 1,
       emp.empId,
       emp.name,
       emp.designation,
       emp.band ?? "",
+      emp.department ?? "",
       emp.empCategory ?? "",
       emp.payrollType ?? "",
       emp.location ?? "",
       emp.mailId ?? "",
       emp.emergencyNumber ?? "",
       emp.bloodGroup ?? "",
-      emp.iCardNo ?? "",
       fmtDate(emp.dob),
       fmtDate(emp.dateOfJoining),
       fmtDate(emp.offerLetterDate),
       fmtDate(emp.leavingDate),
       emp.status,
       emp.totalCtc ?? "",
+      gross || "",
+      gross ? gross * 12 : "",
       emp.salary ?? "",
       emp.lta ?? "",
       emp.specialAllowance ?? "",

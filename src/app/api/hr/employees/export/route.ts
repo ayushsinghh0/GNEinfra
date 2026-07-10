@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 const VALID_STATUS = new Set(["ACTIVE", "INACTIVE"]);
 
-// GET /api/hr/employees/export?q=&status=&category=&location=
+// GET /api/hr/employees/export?q=&status=&category=&department=&location=
 // Downloads employees as .xlsx, filtered identically to /hr/employees —
 // mirrors the `where` built in employees/page.tsx so an export always
 // matches what the user is currently looking at (an unfiltered export
@@ -24,6 +24,7 @@ export async function GET(req: NextRequest) {
   const q = sp.get("q");
   const status = sp.get("status");
   const category = sp.get("category");
+  const department = sp.get("department");
   const location = sp.get("location");
 
   const where: Prisma.EmployeeWhereInput = {};
@@ -32,6 +33,9 @@ export async function GET(req: NextRequest) {
   }
   if (category && category.trim()) {
     where.empCategory = category.trim();
+  }
+  if (department && department.trim()) {
+    where.department = department.trim();
   }
   if (location && location.trim()) {
     where.location = location.trim();
