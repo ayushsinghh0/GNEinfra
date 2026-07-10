@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { AlertCircle } from "lucide-react";
 import { Button, Field, Input, Select } from "@/components/ui";
 import { toast } from "@/components/Toast";
+import { ASSET_TYPES, ASSET_CONDITIONS } from "@/lib/hr-validation";
 
 export type AssetEmployee = {
   id: string; empId: string; name: string;
@@ -13,14 +14,18 @@ export type AssetEmployee = {
 export type AssetValues = {
   employeeId: string;
   hasLaptop: boolean; laptopBag: boolean; mouse: boolean; charger: boolean; idCard: boolean;
-  lpSerialNo: string; makeModel: string; lpCategory: string; oemName: string;
+  assetType: string; lpSerialNo: string; makeModel: string; lpCategory: string; oemName: string;
+  assetTag: string; condition: string; purchaseValue: string; purchaseDate: string;
+  allocatedAt: string; remarks: string;
   returnedAt?: string;
 };
 
 const EMPTY: AssetValues = {
   employeeId: "",
   hasLaptop: false, laptopBag: false, mouse: false, charger: false, idCard: false,
-  lpSerialNo: "", makeModel: "", lpCategory: "", oemName: "", returnedAt: "",
+  assetType: "", lpSerialNo: "", makeModel: "", lpCategory: "", oemName: "",
+  assetTag: "", condition: "", purchaseValue: "", purchaseDate: "",
+  allocatedAt: "", remarks: "", returnedAt: "",
 };
 
 const CHECKBOXES: { key: keyof AssetValues; label: string }[] = [
@@ -103,17 +108,38 @@ export default function AssetForm({
           )}
         </div>
 
-        <Field label="LP Serial No" htmlFor="lpSerialNo">
-          <Input id="lpSerialNo" value={v.lpSerialNo} onChange={setStr("lpSerialNo")} />
+        <Field label="Asset Type" htmlFor="assetType">
+          <Select id="assetType" value={v.assetType} onChange={setStr("assetType")}>
+            <option value="">Select type…</option>
+            {ASSET_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+          </Select>
         </Field>
         <Field label="Make / Model" htmlFor="makeModel">
           <Input id="makeModel" value={v.makeModel} onChange={setStr("makeModel")} />
         </Field>
-        <Field label="LP Category" htmlFor="lpCategory">
-          <Input id="lpCategory" value={v.lpCategory} onChange={setStr("lpCategory")} />
+        <Field label="Asset Tag No" htmlFor="assetTag">
+          <Input id="assetTag" value={v.assetTag} onChange={setStr("assetTag")} />
+        </Field>
+        <Field label="Serial No" htmlFor="lpSerialNo">
+          <Input id="lpSerialNo" value={v.lpSerialNo} onChange={setStr("lpSerialNo")} />
         </Field>
         <Field label="OEM Name" htmlFor="oemName">
           <Input id="oemName" value={v.oemName} onChange={setStr("oemName")} />
+        </Field>
+        <Field label="Condition" htmlFor="condition">
+          <Select id="condition" value={v.condition} onChange={setStr("condition")}>
+            <option value="">Select condition…</option>
+            {ASSET_CONDITIONS.map((c) => <option key={c} value={c}>{c}</option>)}
+          </Select>
+        </Field>
+        <Field label="Purchase Value (₹)" htmlFor="purchaseValue">
+          <Input id="purchaseValue" inputMode="numeric" value={v.purchaseValue} onChange={setStr("purchaseValue")} />
+        </Field>
+        <Field label="Purchase Date" htmlFor="purchaseDate">
+          <Input id="purchaseDate" type="date" value={v.purchaseDate} onChange={setStr("purchaseDate")} />
+        </Field>
+        <Field label="Allocated On" htmlFor="allocatedAt" hint="leave blank for today">
+          <Input id="allocatedAt" type="date" value={v.allocatedAt} onChange={setStr("allocatedAt")} />
         </Field>
 
         {assetId && (
@@ -121,10 +147,16 @@ export default function AssetForm({
             <Input id="returnedAt" type="date" value={v.returnedAt ?? ""} onChange={setStr("returnedAt")} />
           </Field>
         )}
+
+        <div className="sm:col-span-2">
+          <Field label="Remarks" htmlFor="remarks">
+            <Input id="remarks" value={v.remarks} onChange={setStr("remarks")} />
+          </Field>
+        </div>
       </div>
 
       <fieldset className="space-y-2">
-        <legend className="mb-2 text-[13px] font-medium text-slate-700">Assets issued</legend>
+        <legend className="mb-2 text-[13px] font-medium text-slate-700">Accessories issued</legend>
         <div className="flex flex-wrap gap-4">
           {CHECKBOXES.map(({ key, label }) => (
             <label key={key} className="flex items-center gap-2 cursor-pointer select-none text-sm text-slate-700">

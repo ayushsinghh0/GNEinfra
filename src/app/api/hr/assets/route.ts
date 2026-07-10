@@ -3,6 +3,11 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser, HR_WRITE } from "@/lib/rbac";
 import { assetSchema } from "@/lib/hr-validation";
 
+function toDate(s?: string) {
+  const d = s ? new Date(s) : null;
+  return d && !isNaN(d.getTime()) ? d : null;
+}
+
 export async function POST(req: NextRequest) {
   const user = await getCurrentUser();
   if (!user || user.mustChangePassword || !HR_WRITE.includes(user.role)) {
@@ -19,8 +24,15 @@ export async function POST(req: NextRequest) {
         employeeId: d.employeeId,
         hasLaptop: !!d.hasLaptop, laptopBag: !!d.laptopBag, mouse: !!d.mouse,
         charger: !!d.charger, idCard: !!d.idCard,
-        lpSerialNo: d.lpSerialNo || null, makeModel: d.makeModel || null,
-        lpCategory: d.lpCategory || null, oemName: d.oemName || null,
+        assetType: d.assetType || null, lpSerialNo: d.lpSerialNo || null,
+        makeModel: d.makeModel || null, lpCategory: d.lpCategory || null,
+        oemName: d.oemName || null, assetTag: d.assetTag || null,
+        condition: d.condition || null,
+        purchaseValue: d.purchaseValue ?? null,
+        purchaseDate: toDate(d.purchaseDate),
+        // undefined → let the column default (now()) apply
+        allocatedAt: toDate(d.allocatedAt) ?? undefined,
+        remarks: d.remarks || null,
       },
     });
     return NextResponse.json({ ok: true, asset });

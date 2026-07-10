@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Laptop } from "lucide-react";
 import { requirePageRole, HR_VIEW } from "@/lib/rbac";
-import { fmtDateOnly } from "@/lib/format";
+import { fmtDateOnly, fmtINR } from "@/lib/format";
 import { DetailSection, KeyValue, Chip, EmptyState, btn } from "@/components/ui";
 import { getEmployee } from "../_data";
 
@@ -55,7 +55,7 @@ export default async function EmployeeAssetsTab({
             ].filter((x): x is string => Boolean(x));
 
             return (
-              <DetailSection key={a.id} title={a.makeModel || (a.hasLaptop ? "Laptop" : "Asset")}>
+              <DetailSection key={a.id} title={[a.assetType || (a.hasLaptop ? "Laptop" : "Asset"), a.makeModel].filter(Boolean).join(" — ")}>
                 <div className="space-y-4">
                   {issued.length > 0 && (
                     <div className="flex flex-wrap gap-1.5">
@@ -66,12 +66,16 @@ export default async function EmployeeAssetsTab({
                   )}
                   <KeyValue
                     items={[
+                      { label: "Asset Tag", value: a.assetTag, mono: true },
                       { label: "Serial No", value: a.lpSerialNo, mono: true },
                       { label: "Make / Model", value: a.makeModel },
-                      { label: "Category", value: a.lpCategory },
                       { label: "OEM", value: a.oemName },
+                      { label: "Condition", value: a.condition },
+                      { label: "Purchase Value", value: a.purchaseValue != null ? fmtINR(a.purchaseValue) : null },
+                      { label: "Purchase Date", value: fmtDateOnly(a.purchaseDate) },
                       { label: "Allocated", value: fmtDateOnly(a.allocatedAt) },
                       { label: "Returned", value: fmtDateOnly(a.returnedAt) },
+                      { label: "Remarks", value: a.remarks },
                     ]}
                   />
                 </div>

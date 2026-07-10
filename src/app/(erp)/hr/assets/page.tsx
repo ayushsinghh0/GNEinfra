@@ -3,7 +3,7 @@ import { Prisma } from "@prisma/client";
 import { Package, Laptop, RotateCcw, UserX } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { requirePageRole, HR_VIEW, HR_WRITE } from "@/lib/rbac";
-import { fmtDateOnly } from "@/lib/format";
+import { fmtDateOnly, fmtINR } from "@/lib/format";
 import AssetRowActions from "@/components/hr/AssetRowActions";
 import AddAssetButton from "@/components/hr/AddAssetButton";
 import AssetSearch from "@/components/hr/AssetSearch";
@@ -18,7 +18,6 @@ import {
   EntityLink,
   StatusChip,
   StatCard,
-  Chip,
 } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
@@ -46,6 +45,8 @@ export default async function AssetsPage({
     // employees list builds its `q` filter (employees/page.tsx).
     assetWhere.OR = [
       { lpSerialNo: { contains: q, mode: "insensitive" } },
+      { assetTag: { contains: q, mode: "insensitive" } },
+      { assetType: { contains: q, mode: "insensitive" } },
       { makeModel: { contains: q, mode: "insensitive" } },
       { oemName: { contains: q, mode: "insensitive" } },
       { employee: { name: { contains: q, mode: "insensitive" } } },
@@ -97,38 +98,37 @@ export default async function AssetsPage({
       ),
     },
     {
-      key: "items",
-      header: "Items issued",
-      cardLabel: "Items",
+      key: "asset",
+      header: "Asset",
+      cardLabel: "Asset",
       cell: (a) => {
-        const issued = [
-          a.hasLaptop && "Laptop",
-          a.laptopBag && "Bag",
-          a.mouse && "Mouse",
-          a.charger && "Charger",
-          a.idCard && "ID Card",
-        ].filter((x): x is string => Boolean(x));
-        if (issued.length === 0) return <span className="text-slate-400">—</span>;
+        const type = a.assetType || (a.hasLaptop ? "Laptop" : a.idCard ? "ID Card" : "Asset");
         return (
-          <div className="flex flex-wrap gap-1">
-            {issued.map((it) => (
-              <Chip key={it}>{it}</Chip>
-            ))}
-          </div>
+          <span className="block min-w-0">
+            <span className="block truncate text-sm font-medium text-slate-700">{type}</span>
+            {a.makeModel && <span className="block truncate text-xs text-slate-500">{a.makeModel}</span>}
+          </span>
         );
       },
     },
     {
-      key: "serial",
-      header: "Serial / Make",
+      key: "tagSerial",
+      header: "Tag / Serial",
       priority: "lg",
-      cardLabel: "Serial",
+      cardLabel: "Tag / Serial",
       cell: (a) => (
         <span className="block min-w-0">
-          <span className="nums block truncate font-mono text-xs text-slate-600">{a.lpSerialNo || "—"}</span>
-          {a.makeModel && <span className="block truncate text-xs text-slate-500">{a.makeModel}</span>}
+          <span className="nums block truncate font-mono text-xs text-slate-600">{a.assetTag || "—"}</span>
+          {a.lpSerialNo && <span className="nums block truncate font-mono text-xs text-slate-400">{a.lpSerialNo}</span>}
         </span>
       ),
+    },
+    {
+      key: "condition",
+      header: "Condition",
+      priority: "lg",
+      cardLabel: "Condition",
+      cell: (a) => a.condition ?? "—",
     },
     {
       key: "status",
@@ -146,6 +146,14 @@ export default async function AssetsPage({
       priority: "lg",
       cardLabel: "Allocated",
       cell: (a) => <span className="nums">{fmtDateOnly(a.allocatedAt) ?? "—"}</span>,
+    },
+    {
+      key: "value",
+      header: "Value",
+      priority: "xl",
+      align: "right",
+      cardLabel: "Value",
+      cell: (a) => <span className="nums">{a.purchaseValue != null ? fmtINR(a.purchaseValue) : "—"}</span>,
     },
   ];
 
@@ -165,10 +173,17 @@ export default async function AssetsPage({
               mouse: a.mouse,
               charger: a.charger,
               idCard: a.idCard,
+              assetType: a.assetType ?? "",
               lpSerialNo: a.lpSerialNo ?? "",
               makeModel: a.makeModel ?? "",
               lpCategory: a.lpCategory ?? "",
               oemName: a.oemName ?? "",
+              assetTag: a.assetTag ?? "",
+              condition: a.condition ?? "",
+              purchaseValue: a.purchaseValue != null ? String(a.purchaseValue) : "",
+              purchaseDate: a.purchaseDate ? a.purchaseDate.toISOString().slice(0, 10) : "",
+              allocatedAt: a.allocatedAt.toISOString().slice(0, 10),
+              remarks: a.remarks ?? "",
               returnedAt: a.returnedAt ? a.returnedAt.toISOString().slice(0, 10) : "",
             }}
             employees={employees}

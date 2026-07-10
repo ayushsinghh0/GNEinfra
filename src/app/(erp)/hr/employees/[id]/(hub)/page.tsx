@@ -99,7 +99,7 @@ export default async function EmployeeOverviewPage({
               {emp.assets.slice(0, 3).map((a) => (
                 <div key={a.id} className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-sm">
                   <p className="font-medium text-slate-700">
-                    {a.makeModel || (a.hasLaptop ? "Laptop" : "Asset")}
+                    {[a.assetType || (a.hasLaptop ? "Laptop" : "Asset"), a.makeModel].filter(Boolean).join(" — ")}
                   </p>
                   {a.lpSerialNo && <p className="nums font-mono text-xs text-slate-400">{a.lpSerialNo}</p>}
                 </div>
