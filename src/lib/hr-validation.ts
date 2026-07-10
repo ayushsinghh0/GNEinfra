@@ -128,13 +128,25 @@ export const payrollSchema = z.object({
 });
 export type PayrollInput = z.infer<typeof payrollSchema>;
 
+export const ASSET_TYPES = [
+  "Laptop", "Desktop", "Monitor", "Phone", "SIM", "ID Card", "Vehicle", "Tool", "Furniture", "Other",
+] as const;
+export const ASSET_CONDITIONS = ["New", "Good", "Fair", "Damaged"] as const;
+
 export const assetSchema = z.object({
   employeeId: z.string().min(1, "Employee is required"),
+  assetType: z.string().trim().max(40).optional().or(z.literal("")),
   hasLaptop: z.coerce.boolean().optional(),
   lpSerialNo: z.string().trim().max(80).optional().or(z.literal("")),
   makeModel: z.string().trim().max(120).optional().or(z.literal("")),
   lpCategory: z.string().trim().max(60).optional().or(z.literal("")),
   oemName: z.string().trim().max(80).optional().or(z.literal("")),
+  assetTag: z.string().trim().max(60).optional().or(z.literal("")),
+  condition: z.string().trim().max(20).optional().or(z.literal("")),
+  purchaseValue: money,
+  purchaseDate: optDate,
+  allocatedAt: optDate,
+  remarks: z.string().trim().max(500).optional().or(z.literal("")),
   laptopBag: z.coerce.boolean().optional(),
   mouse: z.coerce.boolean().optional(),
   charger: z.coerce.boolean().optional(),

@@ -373,6 +373,12 @@ model EmployeeAsset {
   makeModel  String?
   lpCategory String?
   oemName    String?
+  assetType     String?
+  assetTag      String?
+  condition     String?
+  purchaseValue Int?
+  purchaseDate  DateTime?
+  remarks       String?
   laptopBag  Boolean   @default(false)
   mouse      Boolean   @default(false)
   charger    Boolean   @default(false)
