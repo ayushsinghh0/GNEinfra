@@ -28,16 +28,16 @@ const ROLE_USERS: { name: string; email: string; role: Role }[] = [
 const D = (s: string) => new Date(s + "T00:00:00.000Z");
 
 type Emp = {
-  empId: string; name: string; designation: string; empCategory: string;
+  empId: string; name: string; designation: string; empCategory: string; department: string;
   location: string; mailId: string; doj: string; gross: number; left?: string;
 };
 const EMPLOYEES: Emp[] = [
-  { empId: "GNE-E001", name: "Asha Rao", designation: "Solar Engineer", empCategory: "On-Roll", location: "Delhi", mailId: "asha@gne.test", doj: "2023-02-15", gross: 65000 },
-  { empId: "GNE-E002", name: "Rahul Verma", designation: "Senior Engineer", empCategory: "On-Roll", location: "Mumbai", mailId: "rahul@gne.test", doj: "2021-03-01", gross: 90000 },
-  { empId: "GNE-E003", name: "Priya Singh", designation: "Project Manager", empCategory: "On-Roll", location: "Delhi", mailId: "priya@gne.test", doj: "2022-07-10", gross: 120000 },
-  { empId: "GNE-E004", name: "Vikram Patel", designation: "Site Technician", empCategory: "Contract", location: "Bangalore", mailId: "vikram@gne.test", doj: "2025-11-01", gross: 35000 },
-  { empId: "GNE-E005", name: "Neha Gupta", designation: "Accountant", empCategory: "On-Roll", location: "Mumbai", mailId: "neha@gne.test", doj: "2020-06-15", gross: 70000 },
-  { empId: "GNE-E006", name: "Arjun Reddy", designation: "Field Engineer", empCategory: "Contract", location: "Bangalore", mailId: "arjun@gne.test", doj: "2024-09-20", gross: 42000, left: "2026-06-10" },
+  { empId: "GNE-E001", name: "Asha Rao", designation: "Solar Engineer", empCategory: "On-Roll", department: "Projects", location: "Delhi", mailId: "asha@gne.test", doj: "2023-02-15", gross: 65000 },
+  { empId: "GNE-E002", name: "Rahul Verma", designation: "Senior Engineer", empCategory: "On-Roll", department: "Engineering & Design", location: "Mumbai", mailId: "rahul@gne.test", doj: "2021-03-01", gross: 90000 },
+  { empId: "GNE-E003", name: "Priya Singh", designation: "Project Manager", empCategory: "On-Roll", department: "Projects", location: "Delhi", mailId: "priya@gne.test", doj: "2022-07-10", gross: 120000 },
+  { empId: "GNE-E004", name: "Vikram Patel", designation: "Site Technician", empCategory: "Contract", department: "Operations & Maintenance", location: "Bangalore", mailId: "vikram@gne.test", doj: "2025-11-01", gross: 35000 },
+  { empId: "GNE-E005", name: "Neha Gupta", designation: "Accountant", empCategory: "On-Roll", department: "Finance & Accounts", location: "Mumbai", mailId: "neha@gne.test", doj: "2020-06-15", gross: 70000 },
+  { empId: "GNE-E006", name: "Arjun Reddy", designation: "Field Engineer", empCategory: "Contract", department: "Operations & Maintenance", location: "Bangalore", mailId: "arjun@gne.test", doj: "2024-09-20", gross: 42000, left: "2026-06-10" },
 ];
 
 function attendanceStatus(empIdx: number, day: number): AttendanceStatus | null {
@@ -73,6 +73,7 @@ async function main() {
       update: {},
       create: {
         empId: e.empId, name: e.name, designation: e.designation, empCategory: e.empCategory,
+        department: e.department,
         location: e.location, mailId: e.mailId, dateOfJoining: D(e.doj),
         leavingDate: e.left ? D(e.left) : null, status: e.left ? "INACTIVE" : "ACTIVE",
         emergencyNumber: "9876543210", bloodGroup: "O+", casualLeaveQuota: 12, sickLeaveQuota: 12,
@@ -137,7 +138,7 @@ async function main() {
     const has = await prisma.employeeAsset.count({ where: { employeeId: empIds[emp] } });
     if (has === 0) {
       await prisma.employeeAsset.create({
-        data: { employeeId: empIds[emp], hasLaptop: true, makeModel: make, lpSerialNo: "SN" + emp.slice(-3), lpCategory: "Standard", oemName: make.split(" ")[0], laptopBag: true, mouse: true, charger: true, idCard: true },
+        data: { employeeId: empIds[emp], hasLaptop: true, makeModel: make, lpSerialNo: "SN" + emp.slice(-3), lpCategory: "Standard", oemName: make.split(" ")[0], laptopBag: true, mouse: true, charger: true, idCard: true, assetType: "Laptop", condition: "Good" },
       });
     }
   }
