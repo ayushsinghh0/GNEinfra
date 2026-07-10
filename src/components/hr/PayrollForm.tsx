@@ -44,6 +44,12 @@ export default function PayrollForm({ id, initial, canWrite }: { id: string; ini
   const deductions = n("pfDeduction") + n("esiDeduction") + n("tdsDeduction") + n("otherDeduction");
   const net = gross - deductions;
 
+  // Non-blocking reconciliation hint: the annual CTC and the monthly breakup
+  // are entered independently — surface the delta so HR fixes it at entry time.
+  const ctc = n("totalCtc");
+  const annualised = gross * 12;
+  const ctcMismatch = ctc > 0 && gross > 0 && annualised !== ctc;
+
   async function submit(e: FormEvent) {
     e.preventDefault();
     setError(null);
@@ -111,6 +117,16 @@ export default function PayrollForm({ id, initial, canWrite }: { id: string; ini
         <span className="text-slate-600">Deductions <span className="font-semibold text-slate-900">{fmtINR(deductions)}</span></span>
         <span className="text-slate-600">Net <span className="font-semibold text-emerald-600">{fmtINR(net)}</span></span>
       </div>
+
+      {ctcMismatch && (
+        <p role="status" className="nums flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-800">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>
+            12 × monthly gross ({fmtINR(annualised)}) differs from Total CTC ({fmtINR(ctc)}) by{" "}
+            <span className="font-semibold">{fmtINR(Math.abs(ctc - annualised))}</span>.
+          </span>
+        </p>
+      )}
 
       {canWrite && (
         <Button type="submit" disabled={busy || !dirty}>{busy ? "Saving…" : "Save payroll"}</Button>

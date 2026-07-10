@@ -57,7 +57,29 @@ export default async function PayrollPage({
     },
     { key: "designation", header: "Designation", priority: "md", cardLabel: "Designation", cell: (e) => e.designation ?? "—" },
     { key: "band", header: "Band", priority: "lg", cardLabel: "Band", cell: (e) => e.band ?? "—" },
-    { key: "ctc", header: "CTC", align: "right", cardLabel: "CTC", cell: (e) => <span className="nums">{fmtINR(e.totalCtc)}</span> },
+    {
+      key: "ctc",
+      header: "CTC",
+      align: "right",
+      cardLabel: "CTC",
+      cell: (e) => {
+        const { gross } = monthlyNet(e);
+        const mismatch = e.totalCtc != null && e.totalCtc > 0 && gross > 0 && gross * 12 !== e.totalCtc;
+        return (
+          <span className="inline-flex items-center gap-1.5">
+            {mismatch && (
+              <span
+                title="12 × monthly gross does not equal Total CTC — fix the breakup on this employee's payroll page"
+                className="whitespace-nowrap rounded-md bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 ring-1 ring-inset ring-amber-200"
+              >
+                breakup ≠ CTC
+              </span>
+            )}
+            <span className="nums">{fmtINR(e.totalCtc)}</span>
+          </span>
+        );
+      },
+    },
     {
       key: "net",
       header: "Net / month",
