@@ -78,34 +78,32 @@ export const familyMemberSchema = z.object({
 });
 export type FamilyMemberInput = z.infer<typeof familyMemberSchema>;
 
-// Annual leave quota: "" / null / undefined → 12; else a non-negative integer.
-const quota = z.preprocess(
-  (v) => (v === "" || v === null || v === undefined ? 12 : v),
-  z.coerce.number().int("Whole days only").min(0).max(366)
-);
-
 export const employeeSchema = z.object({
   empId: z.string().trim().min(1, "EMP ID is required").max(40),
   name: z.string().trim().min(1, "Name is required").max(200),
   designation: z.string().trim().min(1, "Designation is required").max(120),
   band: z.string().trim().max(40).optional().or(z.literal("")),
   empCategory: z.string().trim().min(1, "Emp Category is required").max(60),
+  department: z.string().trim().max(120).optional().or(z.literal("")),
   dateOfJoining: z.string().min(1, "Date of Joining is required"),
   location: z.string().trim().min(1, "Location is required").max(120),
   payrollType: z.string().trim().max(60).optional().or(z.literal("")),
   mailId: z.string().trim().email("Enter a valid email").max(200).optional().or(z.literal("")),
   emergencyNumber: z.string().trim().max(20).optional().or(z.literal("")),
   bloodGroup: z.string().trim().max(8).optional().or(z.literal("")),
-  iCardNo: z.string().trim().max(40).optional().or(z.literal("")),
   dob: optDate,
   offerLetterDate: optDate,
   leavingDate: optDate,
-  casualLeaveQuota: quota,
-  sickLeaveQuota: quota,
+  // Bank + statutory live on BOTH this form and /hr/payroll (same columns —
+  // last write wins). Pay structure (CTC/salary/deductions) stays payroll-only.
+  bankAccountNo: z.string().trim().max(40).optional().or(z.literal("")),
+  bankName: z.string().trim().max(120).optional().or(z.literal("")),
+  ifsc: z.string().trim().max(11).optional().or(z.literal("")),
+  panNo: z.string().trim().max(10).optional().or(z.literal("")),
+  uan: z.string().trim().max(20).optional().or(z.literal("")),
+  esicNo: z.string().trim().max(20).optional().or(z.literal("")),
   // Family / next-of-kin members — saved as a full replace of the set.
   familyMembers: z.array(familyMemberSchema).max(20).optional(),
-  // NOTE: pay / bank / statutory moved to payrollSchema (/hr/payroll) — salary is
-  // decided later, so the employee form no longer sets it.
 });
 export type EmployeeInput = z.infer<typeof employeeSchema>;
 

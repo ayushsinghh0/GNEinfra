@@ -33,19 +33,22 @@ export default async function EditEmployeePage({
     designation: emp.designation,
     band: emp.band ?? "",
     empCategory: emp.empCategory ?? "",
+    department: emp.department ?? "",
     location: emp.location ?? "",
     dateOfJoining: toDateStr(emp.dateOfJoining),
     payrollType: emp.payrollType ?? "",
     mailId: emp.mailId ?? "",
     emergencyNumber: emp.emergencyNumber ?? "",
     bloodGroup: emp.bloodGroup ?? "",
-    iCardNo: emp.iCardNo ?? "",
     dob: toDateStr(emp.dob),
     offerLetterDate: toDateStr(emp.offerLetterDate),
     leavingDate: toDateStr(emp.leavingDate),
-    casualLeaveQuota: String(emp.casualLeaveQuota),
-    sickLeaveQuota: String(emp.sickLeaveQuota),
-    // Pay / bank / statutory are edited on /hr/payroll, not here.
+    bankAccountNo: emp.bankAccountNo ?? "",
+    bankName: emp.bankName ?? "",
+    ifsc: emp.ifsc ?? "",
+    panNo: emp.panNo ?? "",
+    uan: emp.uan ?? "",
+    esicNo: emp.esicNo ?? "",
   };
 
   const initialFamily = emp.familyMembers.map((m) => ({

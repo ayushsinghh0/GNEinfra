@@ -30,15 +30,16 @@ export async function POST(req: NextRequest) {
       data: {
         empId: d.empId, name: d.name, designation: d.designation, band: d.band || null,
         empCategory: d.empCategory,
+        department: d.department || null,
         location: d.location, dateOfJoining: toDate(d.dateOfJoining)!,
         payrollType: d.payrollType || null, mailId: d.mailId || null,
         emergencyNumber: d.emergencyNumber || null, bloodGroup: d.bloodGroup || null,
-        iCardNo: d.iCardNo || null, dob: toDate(d.dob), offerLetterDate: toDate(d.offerLetterDate),
+        dob: toDate(d.dob), offerLetterDate: toDate(d.offerLetterDate),
         leavingDate: toDate(d.leavingDate),
         status: toDate(d.leavingDate) ? "INACTIVE" : "ACTIVE",
-        casualLeaveQuota: d.casualLeaveQuota,
-        sickLeaveQuota: d.sickLeaveQuota,
-        // Pay / bank / statutory are set later on /hr/payroll, not here.
+        bankAccountNo: d.bankAccountNo || null, bankName: d.bankName || null, ifsc: d.ifsc || null,
+        panNo: d.panNo || null, uan: d.uan || null, esicNo: d.esicNo || null,
+        // Pay structure (CTC/salary/deductions) is set later on /hr/payroll, not here.
         familyMembers: d.familyMembers?.length
           ? {
               create: d.familyMembers.map((m, i) => ({

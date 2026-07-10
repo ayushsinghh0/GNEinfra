@@ -34,16 +34,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       data: {
         empId: d.empId, name: d.name, designation: d.designation, band: d.band || null,
         empCategory: d.empCategory,
+        department: d.department || null,
         location: d.location, dateOfJoining: toDate(d.dateOfJoining)!,
         payrollType: d.payrollType || null, mailId: d.mailId || null,
         emergencyNumber: d.emergencyNumber || null, bloodGroup: d.bloodGroup || null,
-        iCardNo: d.iCardNo || null, dob: toDate(d.dob), offerLetterDate: toDate(d.offerLetterDate),
+        dob: toDate(d.dob), offerLetterDate: toDate(d.offerLetterDate),
         leavingDate: toDate(d.leavingDate),
         status: toDate(d.leavingDate) ? "INACTIVE" : "ACTIVE",
-        casualLeaveQuota: d.casualLeaveQuota,
-        sickLeaveQuota: d.sickLeaveQuota,
-        // Pay / bank / statutory are edited on /hr/payroll — never touched here, so
-        // editing an employee can't wipe salary set later.
+        bankAccountNo: d.bankAccountNo || null, bankName: d.bankName || null, ifsc: d.ifsc || null,
+        panNo: d.panNo || null, uan: d.uan || null, esicNo: d.esicNo || null,
+        // Pay structure (CTC/salary/deductions) is set later on /hr/payroll, not here.
         // Full replace of the family set — delete all then recreate in one
         // atomic update (avoids diffing rows the client can reorder freely).
         familyMembers: {

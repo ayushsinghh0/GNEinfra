@@ -2,7 +2,7 @@
 import { useRef, useState, FormEvent, ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Field, Input, Select } from "@/components/ui";
-import { EMP_CATEGORIES, FAMILY_RELATIONS, EMPLOYEE_POSITIONS } from "@/lib/hr-validation";
+import { EMP_CATEGORIES, FAMILY_RELATIONS, EMPLOYEE_POSITIONS, DEPARTMENTS } from "@/lib/hr-validation";
 import { AlertCircle, Plus, Trash2, Users } from "lucide-react";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { toast } from "@/components/Toast";
@@ -44,10 +44,10 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 }
 
 const EMPTY: Values = {
-  empId: "", name: "", designation: "", band: "", empCategory: "On-Roll", location: "",
-  dateOfJoining: "", payrollType: "", mailId: "", emergencyNumber: "", bloodGroup: "",
-  iCardNo: "", dob: "", offerLetterDate: "", leavingDate: "",
-  casualLeaveQuota: "12", sickLeaveQuota: "12",
+  empId: "", name: "", designation: "", band: "", empCategory: "On-Roll", department: "",
+  location: "", dateOfJoining: "", payrollType: "", mailId: "", emergencyNumber: "",
+  bloodGroup: "", dob: "", offerLetterDate: "", leavingDate: "",
+  bankAccountNo: "", bankName: "", ifsc: "", panNo: "", uan: "", esicNo: "",
 };
 
 // Mirrors employeeSchema's required fields (src/lib/hr-validation.ts) — the
@@ -101,6 +101,12 @@ export default function EmployeeForm({
   const presets: readonly string[] = EMPLOYEE_POSITIONS;
   const [designationOther, setDesignationOther] = useState<boolean>(
     () => !!v.designation && !presets.includes(v.designation)
+  );
+
+  // Department mirrors the designation dropdown+Other pattern.
+  const deptPresets: readonly string[] = DEPARTMENTS;
+  const [departmentOther, setDepartmentOther] = useState<boolean>(
+    () => !!v.department && !deptPresets.includes(v.department)
   );
 
   // Family rows — seeded once at mount (this instance is remounted via key={id}
@@ -243,10 +249,32 @@ export default function EmployeeForm({
             {EMP_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
           </Select>
         </Field>
+        <Field label="Department" htmlFor="department">
+          <Select
+            id="department"
+            value={departmentOther ? "__OTHER__" : v.department}
+            onChange={(e) => {
+              const val = e.target.value;
+              if (val === "__OTHER__") {
+                setDepartmentOther(true);
+                setV((s) => ({ ...s, department: "" }));
+              } else {
+                setDepartmentOther(false);
+                setV((s) => ({ ...s, department: val }));
+              }
+            }}
+          >
+            <option value="">Select department…</option>
+            {DEPARTMENTS.map((d) => <option key={d} value={d}>{d}</option>)}
+            <option value="__OTHER__">Other…</option>
+          </Select>
+          {departmentOther && (
+            <Input className="mt-2" value={v.department} onChange={set("department")} placeholder="Enter department" aria-label="Custom department" />
+          )}
+        </Field>
         {Txt("location", "Location", true)}
         {Txt("dateOfJoining", "Date of Joining", true, "date")}
         {Txt("payrollType", "Payroll")}
-        {Txt("iCardNo", "I-Card No")}
       </Section>
 
       <Section title="Contact & Personal">
@@ -258,11 +286,16 @@ export default function EmployeeForm({
         {Txt("leavingDate", "Leaving Date", false, "date")}
       </Section>
 
-      {/* Pay, bank and statutory details live on the Payroll page (/hr/payroll) —
-          salary is decided later, so they're intentionally not on this form. */}
-      <Section title="Leave">
-        {Txt("casualLeaveQuota", "Casual Leave Quota", false, "number")}
-        {Txt("sickLeaveQuota", "Sick Leave Quota", false, "number")}
+      {/* Pay structure (CTC/salary/deductions) lives on /hr/payroll — salary is
+          decided later. Bank + statutory ARE captured here (client requirement)
+          and stay editable on the payroll page too (same columns). */}
+      <Section title="Bank & statutory">
+        {Txt("bankAccountNo", "Bank A/C No")}
+        {Txt("bankName", "Bank Name")}
+        {Txt("ifsc", "IFSC")}
+        {Txt("panNo", "PAN No")}
+        {Txt("uan", "UAN (PF)")}
+        {Txt("esicNo", "ESIC No")}
       </Section>
 
       <fieldset className="rounded-2xl border border-slate-200 p-4 sm:p-5">
