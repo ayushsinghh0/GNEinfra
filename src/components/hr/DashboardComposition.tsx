@@ -1,81 +1,72 @@
 import Link from "next/link";
-import { FolderKanban, Users, ChevronRight, Armchair, CalendarCheck } from "lucide-react";
+import { FolderKanban, Users, ChevronRight, Armchair, CalendarCheck, Clock } from "lucide-react";
 import { prisma } from "@/lib/prisma";
-import { Card, CardHeader, CardBody, ProgressBar, EmptyState, StatusChip, cn } from "@/components/ui";
+import { Card, CardHeader, CardBody, EmptyState, StatusChip, StatCard, EntityLink, cn } from "@/components/ui";
 import { fmtDateOnly } from "@/lib/format";
-import CompositionBoard from "@/components/hr/CompositionBoard";
-
-type Bar = { label: string; count: number; href?: string };
-
-const SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+import { buildQuery } from "@/lib/hr-filters";
+import { BarList } from "@/components/Charts";
 
 // The HR dashboard's streamed cells (each its own Suspense boundary). Every cell
 // re-runs its own slice of the employee/project/attendance queries rather than
-// sharing another cell's result — correctness over dedupe. Headcount is
-// re-anchored to the dashboard's reference month (its attendance rate is a
-// monthly reading); Workforce composition and Project details stay a
-// current-snapshot ("now"), matching their pre-rework behavior.
+// sharing another cell's result — correctness over dedupe.
 
-/* ── Headcount & attendance by department (empCategory) ───────────────────── */
-// "Department" maps to the Employee `empCategory` field (there is no department
-// column). Per category: active headcount + the reference month's
-// present-equivalent attendance rate. Honesty rule (do NOT regress): a category
-// with no attendance rows for the month reads "—" + "Not marked yet", never a
-// red 0% — same guard the dashboard uses everywhere else.
-export async function DashboardHeadcount({
-  refYear,
-  refMonth,
-  isCurrentRefMonth,
-}: {
-  refYear: number;
-  refMonth: number;
-  isCurrentRefMonth: boolean;
-}) {
-  const start = new Date(Date.UTC(refYear, refMonth - 1, 1));
-  const end = new Date(Date.UTC(refYear, refMonth, 1));
-  const monthLabel = `${SHORT[refMonth - 1]} ${refYear}`;
+/* ── KPI strip: total + today's attendance + per-category headcount ───────── */
+export async function ManpowerKpis({ todayUTC }: { todayUTC: Date }) {
+  const [byCategory, attToday] = await Promise.all([
+    prisma.employee.groupBy({ by: ["empCategory"], where: { status: "ACTIVE" }, _count: { _all: true } }),
+    prisma.attendanceRecord.groupBy({ by: ["status"], where: { date: todayUTC }, _count: { _all: true } }),
+  ]);
+  const total = byCategory.reduce((s, r) => s + r._count._all, 0);
+  const cats = [...byCategory].sort((a, b) => b._count._all - a._count._all);
+  const n = (s: string) => attToday.find((r) => r.status === s)?._count._all ?? 0;
+  const presentToday = n("PRESENT");
+  const onLeaveToday = n("LEAVE") + n("SICK");
+  // Honesty rule: zero rows today → "—", never an alarming 0.
+  const todayHasRows = attToday.reduce((s, r) => s + r._count._all, 0) > 0;
+  const y = todayUTC.getUTCFullYear();
+  const m = todayUTC.getUTCMonth() + 1;
 
-  const byCategory = await prisma.employee.groupBy({
-    by: ["empCategory"],
+  return (
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <StatCard size="sm" label="Total manpower" value={total} tone="brand" icon={<Users className="h-4 w-4" />} href="/hr/employees?status=ACTIVE" />
+      <StatCard size="sm" label="Present today" value={todayHasRows ? presentToday : "—"} tone="emerald" icon={<CalendarCheck className="h-4 w-4" />} href={`/hr/attendance?year=${y}&month=${m}`} />
+      <StatCard size="sm" label="On leave today" value={todayHasRows ? onLeaveToday : "—"} tone="amber" icon={<Clock className="h-4 w-4" />} href={`/hr/attendance?year=${y}&month=${m}`} />
+      {cats.map((c) => (
+        <StatCard
+          key={c.empCategory ?? "uncategorised"}
+          size="sm"
+          label={c.empCategory ?? "Uncategorised"}
+          value={c._count._all}
+          tone="slate"
+          href={c.empCategory ? buildQuery("/hr/employees", { status: "ACTIVE", category: c.empCategory }) : undefined}
+        />
+      ))}
+    </div>
+  );
+}
+
+/* ── Manpower by department ────────────────────────────────────────────────── */
+export async function DashboardDepartments() {
+  const byDept = await prisma.employee.groupBy({
+    by: ["department"],
     where: { status: "ACTIVE" },
     _count: { _all: true },
   });
-  const total = byCategory.reduce((s, r) => s + r._count._all, 0);
-  // Rank departments by headcount; null category ("—") sorts in naturally.
-  const cats = [...byCategory].sort((a, b) => b._count._all - a._count._all);
-
-  // Per-category month attendance — one status groupBy each (categories are few).
-  // groupBy `where` supports the relation filter, so this stays a DB aggregate.
-  const stats = await Promise.all(
-    cats.map((c) =>
-      prisma.attendanceRecord.groupBy({
-        by: ["status"],
-        where: { date: { gte: start, lt: end }, employee: { empCategory: c.empCategory } },
-        _count: { _all: true },
-      })
-    )
-  );
-
-  const rows = cats.map((c, i) => {
-    const g = stats[i];
-    const n = (s: string) => g.find((r) => r.status === s)?._count._all ?? 0;
-    const worked = n("PRESENT") + n("ABSENT") + n("LEAVE") + n("SICK") + n("HALF_DAY");
-    const rate = worked ? Math.round(((n("PRESENT") + 0.5 * n("HALF_DAY")) / worked) * 100) : 0;
-    const hasRows = g.reduce((s, r) => s + r._count._all, 0) > 0;
-    return {
-      label: c.empCategory ?? "—",
-      count: c._count._all,
-      rate,
-      hasRows,
-      href: c.empCategory ? `/hr/employees?category=${encodeURIComponent(c.empCategory)}` : undefined,
-    };
-  });
+  const items = [...byDept]
+    .sort((a, b) => b._count._all - a._count._all)
+    .map((d) => ({
+      label: d.department ?? "Unassigned",
+      value: d._count._all,
+      href: d.department
+        ? buildQuery("/hr/employees", { status: "ACTIVE", department: d.department })
+        : undefined,
+    }));
 
   return (
     <Card className="h-full">
       <CardHeader
-        title="Headcount & attendance"
-        subtitle={`By department · attendance for ${monthLabel}${isCurrentRefMonth ? " (so far)" : ""}`}
+        title="By department"
+        subtitle="Active headcount"
         action={
           <Link
             href="/hr/employees?status=ACTIVE"
@@ -87,68 +78,14 @@ export async function DashboardHeadcount({
         }
       />
       <CardBody className="px-6 py-5">
-        <div className="flex items-end justify-between border-b border-slate-100 pb-4">
-          <div>
-            <div className="nums text-4xl font-semibold leading-none text-slate-900">{total}</div>
-            <div className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-slate-500">
-              <Users className="h-3.5 w-3.5" aria-hidden="true" />
-              Active employees
-            </div>
-          </div>
-          <div className="text-right">
-            <div className="nums text-sm font-semibold text-slate-700">{cats.length}</div>
-            <div className="text-xs text-slate-400">department{cats.length === 1 ? "" : "s"}</div>
-          </div>
-        </div>
-
-        {rows.length === 0 ? (
+        {items.length === 0 ? (
           <EmptyState
             icon={<Users className="h-6 w-6" />}
             title="No active employees"
-            description="Department headcount and attendance appear once employees are on record."
+            description="Department headcount appears once employees are on record."
           />
         ) : (
-          <ul className="mt-3 space-y-1">
-            {rows.map((r) => {
-              const inner = (
-                <>
-                  <div className="min-w-0 flex-[1.4]">
-                    <div className="truncate text-sm font-medium text-slate-700 group-hover:text-brand-700">{r.label}</div>
-                    <div className="nums text-xs text-slate-400">
-                      {r.count} {r.count === 1 ? "person" : "people"}
-                    </div>
-                  </div>
-                  <div className="flex flex-1 items-center gap-2.5">
-                    {r.hasRows ? (
-                      <>
-                        <ProgressBar value={r.rate} tone="brand" className="min-w-0 flex-1" />
-                        <span className="nums w-9 shrink-0 text-right text-sm font-semibold text-slate-700">{r.rate}%</span>
-                      </>
-                    ) : (
-                      <span className="flex items-center gap-1.5 text-xs text-slate-400">
-                        <CalendarCheck className="h-3.5 w-3.5" aria-hidden="true" />
-                        Not marked yet
-                      </span>
-                    )}
-                  </div>
-                </>
-              );
-              return (
-                <li key={r.label}>
-                  {r.href ? (
-                    <Link
-                      href={r.href}
-                      className="group -mx-1.5 flex min-h-11 items-center gap-3 rounded-lg px-1.5 motion-safe:transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30"
-                    >
-                      {inner}
-                    </Link>
-                  ) : (
-                    <div className="flex min-h-11 items-center gap-3 px-1.5">{inner}</div>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
+          <BarList items={items} />
         )}
       </CardBody>
     </Card>
@@ -202,7 +139,7 @@ export async function DashboardProjects({ today }: { today: Date }) {
   const summary = [
     { label: "Active projects", value: projects.length, tone: "brand" as const, icon: FolderKanban },
     { label: "On projects", value: deployed, tone: "emerald" as const, icon: Users },
-    { label: "Unused (bench)", value: bench, tone: "amber" as const, icon: Armchair },
+    { label: "Not deployed", value: bench, tone: "amber" as const, icon: Armchair },
   ];
   const toneCls: Record<"brand" | "emerald" | "amber", string> = {
     brand: "bg-brand-50/60 text-brand-700",
@@ -293,44 +230,51 @@ export async function DashboardProjects({ today }: { today: Date }) {
   );
 }
 
-/* ── Workforce composition (location/designation/category/band/tenure) ────── */
-export async function DashboardWorkforceComposition({ today }: { today: Date }) {
-  const [byLocation, byDesignation, byEmpCategory, byBand, joinDates] = await Promise.all([
-    prisma.employee.groupBy({ by: ["location"], where: { status: "ACTIVE" }, _count: { _all: true } }),
-    prisma.employee.groupBy({ by: ["designation"], where: { status: "ACTIVE" }, _count: { _all: true } }),
-    prisma.employee.groupBy({ by: ["empCategory"], where: { status: "ACTIVE" }, _count: { _all: true } }),
-    prisma.employee.groupBy({ by: ["band"], where: { status: "ACTIVE" }, _count: { _all: true } }),
-    prisma.employee.findMany({ where: { status: "ACTIVE" }, select: { dateOfJoining: true } }),
-  ]);
-
-  const now = today.getTime();
-  const tenures = joinDates.map((e) => (now - e.dateOfJoining.getTime()) / (365.25 * 24 * 3600 * 1000));
-  const tenureBars: Bar[] = [
-    { label: "0–1 yr", count: tenures.filter((t) => t < 1).length },
-    { label: "1–3 yrs", count: tenures.filter((t) => t >= 1 && t < 3).length },
-    { label: "3+ yrs", count: tenures.filter((t) => t >= 3).length },
-  ];
-
-  // Summary: total active, average tenure (years), new joiners this calendar month.
-  const totalActive = joinDates.length;
-  const avgTenure = totalActive ? tenures.reduce((s, t) => s + t, 0) / totalActive : 0;
-  const monthStart = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1));
-  const newJoiners = joinDates.filter((e) => e.dateOfJoining >= monthStart).length;
-
-  const sortDesc = (a: Bar[]) => [...a].sort((x, y) => y.count - x.count);
-  const locationBars = sortDesc(byLocation.map((r) => ({ label: r.location ?? "—", count: r._count._all })));
-  const designationBars = sortDesc(byDesignation.map((r) => ({ label: r.designation ?? "—", count: r._count._all })));
-  const categoryBars = sortDesc(byEmpCategory.map((r) => ({ label: r.empCategory ?? "—", count: r._count._all })));
-  const bandBars = sortDesc(byBand.map((r) => ({ label: r.band ?? "—", count: r._count._all })));
+/* ── Not deployed to any project ───────────────────────────────────────────── */
+// ACTIVE employees with no live assignment (start ≤ today, not ended) on an
+// ACTIVE project — the actionable "who can be staffed" list.
+export async function DashboardNotDeployed({ today }: { today: Date }) {
+  const notDeployed = await prisma.employee.findMany({
+    where: {
+      status: "ACTIVE",
+      projectAssignments: {
+        none: {
+          startDate: { lte: today },
+          OR: [{ endDate: null }, { endDate: { gte: today } }],
+          project: { status: "ACTIVE" },
+        },
+      },
+    },
+    select: { id: true, empId: true, name: true, designation: true, department: true },
+    orderBy: { name: "asc" },
+  });
 
   return (
-    <CompositionBoard
-      location={locationBars}
-      designation={designationBars}
-      category={categoryBars}
-      band={bandBars}
-      tenure={tenureBars}
-      summary={{ totalActive, avgTenure: Math.round(avgTenure * 10) / 10, newJoiners }}
-    />
+    <Card className="h-full">
+      <CardHeader
+        title="Not deployed"
+        subtitle={`${notDeployed.length} without a live project`}
+      />
+      <CardBody className="max-h-96 overflow-y-auto px-6 py-4">
+        {notDeployed.length === 0 ? (
+          <EmptyState
+            icon={<Users className="h-6 w-6" />}
+            title="Everyone is deployed"
+            description="Every active employee has a live project assignment."
+          />
+        ) : (
+          <ul className="divide-y divide-slate-100">
+            {notDeployed.map((e) => (
+              <li key={e.id} className="flex items-center justify-between gap-2 py-2">
+                <EntityLink href={`/hr/employees/${e.id}`} name={e.name} code={e.empId} />
+                <span className="shrink-0 text-right text-xs text-slate-400">
+                  {[e.designation, e.department].filter(Boolean).join(" · ") || "—"}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardBody>
+    </Card>
   );
 }

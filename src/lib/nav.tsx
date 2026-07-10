@@ -1,6 +1,6 @@
 import type { Role } from "@prisma/client";
 import {
-  LayoutDashboard, Building2, Mail, Settings, Users, Boxes, Wallet, UserRound,
+  LayoutDashboard, Building2, Mail, Settings, Users, Boxes, Wallet,
   Briefcase, ClipboardList, FileText, ReceiptText, Truck, PackageCheck,
   CalendarClock, HardHat, BadgeIndianRupee, FolderKanban, Target, FileDown, type LucideIcon,
 } from "lucide-react";
@@ -70,14 +70,13 @@ const HR_ASSETS: NavItem = { label: "Assets", href: "/hr/assets", icon: Boxes };
 const HR_ATTENDANCE: NavItem = { label: "Attendance", href: "/hr/attendance", icon: CalendarClock };
 const HR_PROJECTS: NavItem = { label: "Projects", href: "/hr/projects", icon: FolderKanban };
 const HR_PAYROLL: NavItem = { label: "Payroll", href: "/hr/payroll", icon: Wallet };
-const HR_MANPOWER: NavItem = { label: "Manpower Planning", icon: UserRound, soon: true };
 const HR_RECRUITMENT: NavItem = { label: "Recruitment", href: "/hr/recruitment", icon: Briefcase };
 
 const HR: NavSection = {
   heading: "Human Resources",
   items: [
     HR_DASHBOARD, HR_EMPLOYEES, HR_ATTENDANCE, HR_PAYROLL,
-    HR_ASSETS, HR_PROJECTS, HR_MANPOWER, HR_RECRUITMENT,
+    HR_ASSETS, HR_PROJECTS, HR_RECRUITMENT,
   ],
 };
 
@@ -112,7 +111,7 @@ export function navForRole(role: Role): NavSection[] {
     return [
       { heading: "Overview", items: [HR_DASHBOARD] },
       { heading: "People", items: [HR_EMPLOYEES, HR_ATTENDANCE, HR_PAYROLL] },
-      { heading: "Resources", items: [HR_ASSETS, HR_PROJECTS, HR_MANPOWER, HR_RECRUITMENT] },
+      { heading: "Resources", items: [HR_ASSETS, HR_PROJECTS, HR_RECRUITMENT] },
     ];
   }
   if (role === "BD" || role === "SCM" || role === "PROJECT" || role === "FINANCE") {
