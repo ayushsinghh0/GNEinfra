@@ -294,6 +294,7 @@ model Employee {
   designation      String
   band             String?
   empCategory      String?
+  department       String?
   payrollType      String?
   mailId           String?
   location         String?

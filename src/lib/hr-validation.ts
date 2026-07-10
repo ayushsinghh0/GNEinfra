@@ -1,6 +1,19 @@
 import { z } from "zod";
 
-export const EMP_CATEGORIES = ["On-Roll", "Contract", "Intern", "Consultant"] as const;
+export const EMP_CATEGORIES = ["On-Roll", "Contract", "Outsourced", "Intern", "Consultant"] as const;
+
+// Preset departments for Employee.department (a UI convenience — the stored
+// value stays a free string via the form's "Other…" input, so custom/legacy
+// values keep working).
+export const DEPARTMENTS = [
+  "Business Development",
+  "Supply Chain",
+  "Projects",
+  "Engineering & Design",
+  "Finance & Accounts",
+  "HR & Admin",
+  "Operations & Maintenance",
+] as const;
 
 // Preset job positions offered for an employee's Designation (a UI convenience —
 // `designation` stays a free string, so "Other" + legacy values still work).
