@@ -478,6 +478,22 @@ model ProjectAssignment {
   @@index([projectId])
 }
 
+// Company-wide HR policies (title + free-text body), managed on /hr/policies.
+// Text-only by design — policy documents that need files can reference a link
+// in the body; no upload/storage coupling.
+model CompanyPolicy {
+  id            String    @id @default(cuid())
+  title         String
+  category      String? // preset list in hr-validation (POLICY_CATEGORIES) + free text
+  content       String
+  effectiveFrom DateTime? @db.Date
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([isActive])
+}
+
 // ── Recruitment / Sourcing ────────────────────────────────────────────────────
 // JobPosition = the open role (role/position details + JD + manpower requirement);
 // Candidate = an applicant sourced against it (sourcing + CV tracker + hiring

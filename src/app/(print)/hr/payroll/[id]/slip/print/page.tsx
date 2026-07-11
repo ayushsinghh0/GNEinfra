@@ -4,21 +4,42 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentUser, HR_VIEW } from "@/lib/rbac";
 import { fmtDate, fmtDateOnly, fmtINR } from "@/lib/format";
 import { amountInWords } from "@/lib/number-to-words";
+import { MONTHS } from "@/lib/hr-validation";
+import { attendanceLop } from "@/lib/hr-lop";
 import PrintBar from "@/components/PrintBar";
 import { getCompany } from "@/lib/company";
 
 export const dynamic = "force-dynamic";
 
-// Structure-based payment slip: earnings and deductions come from the employee's
-// stored pay structure (edited on /hr/payroll), not a monthly payroll run.
-export default async function PaymentSlipPrintPage({ params }: { params: Promise<{ id: string }> }) {
+const fmtDays = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1));
+
+// Structure-based payment slip for a month (?year&month, default current):
+// earnings and fixed deductions come from the employee's stored pay structure
+// (edited on /hr/payroll); attendance-derived Loss of Pay for the period is
+// added as a deduction line (day rate = monthly gross ÷ days in month).
+export default async function PaymentSlipPrintPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ year?: string; month?: string }>;
+}) {
   const viewer = await getCurrentUser();
   if (!viewer || viewer.mustChangePassword || !HR_VIEW.includes(viewer.role)) notFound();
 
   const { id } = await params;
+  const sp = await searchParams;
   const emp = await prisma.employee.findUnique({ where: { id } });
   if (!emp) notFound();
   const company = await getCompany();
+
+  const now = new Date();
+  const yRaw = parseInt(sp.year ?? "", 10);
+  const mRaw = parseInt(sp.month ?? "", 10);
+  const year = yRaw >= 2000 && yRaw <= 2100 ? yRaw : now.getUTCFullYear();
+  const month = mRaw >= 1 && mRaw <= 12 ? mRaw : now.getUTCMonth() + 1;
+
+  const lop = await attendanceLop(id, year, month, emp.casualLeaveQuota, emp.sickLeaveQuota);
 
   const earnings = [
     { label: "Salary", value: emp.salary ?? 0 },
@@ -26,13 +47,15 @@ export default async function PaymentSlipPrintPage({ params }: { params: Promise
     { label: "Special Allowance", value: emp.specialAllowance ?? 0 },
     { label: "Conveyance", value: emp.conveyance ?? 0 },
   ];
+  const gross = earnings.reduce((s, r) => s + r.value, 0);
+  const lopAmount = gross > 0 ? Math.round((gross / lop.workingDays) * lop.lopDays) : 0;
   const deductions = [
     { label: "PF", value: emp.pfDeduction ?? 0 },
     { label: "ESI", value: emp.esiDeduction ?? 0 },
     { label: "TDS", value: emp.tdsDeduction ?? 0 },
     { label: "Other", value: emp.otherDeduction ?? 0 },
+    ...(lopAmount > 0 ? [{ label: `Loss of Pay (${fmtDays(lop.lopDays)} days)`, value: lopAmount }] : []),
   ];
-  const gross = earnings.reduce((s, r) => s + r.value, 0);
   const totalDed = deductions.reduce((s, r) => s + r.value, 0);
   const net = gross - totalDed;
 
@@ -42,7 +65,7 @@ export default async function PaymentSlipPrintPage({ params }: { params: Promise
 
   return (
     <main className="min-h-screen bg-white">
-      <PrintBar backHref={`/hr/payroll/${emp.id}`} />
+      <PrintBar backHref={`/hr/payroll/${emp.id}?year=${year}&month=${month}`} />
 
       <div className="mx-auto max-w-[794px] px-10 py-8 print:px-0 print:py-0">
         {/* ── Letterhead ─────────────────────────────────────────────────── */}
@@ -57,6 +80,10 @@ export default async function PaymentSlipPrintPage({ params }: { params: Promise
         <h1 className="font-display mt-5 text-center text-[15px] font-bold uppercase tracking-[0.2em] text-slate-900">
           Payment Slip
         </h1>
+        <p className="nums mt-1 text-center text-[11px] text-slate-500">
+          {MONTHS[month - 1]} {year}
+          {lop.markedDays > 0 && <> · Paid days {fmtDays(lop.paidDays)} of {lop.workingDays}</>}
+        </p>
 
         {/* ── Employee identity ──────────────────────────────────────────── */}
         <table className="mt-5 w-full border-collapse break-inside-avoid">

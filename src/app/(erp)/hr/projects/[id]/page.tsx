@@ -37,7 +37,9 @@ export default async function ProjectDetailPage({
     include: {
       assignments: {
         orderBy: { createdAt: "asc" },
-        include: { employee: { select: { id: true, empId: true, name: true } } },
+        include: {
+          employee: { select: { id: true, empId: true, name: true, location: true, department: true } },
+        },
       },
     },
   });
@@ -96,6 +98,20 @@ export default async function ProjectDetailPage({
       cell: (a) => a.roleOnProject ?? "—",
     },
     {
+      key: "location",
+      header: "Location / Dept",
+      priority: "md",
+      cardLabel: "Location / Dept",
+      cell: (a) => (
+        <span className="block min-w-0">
+          <span className="block truncate text-sm text-slate-700">{a.employee.location || "—"}</span>
+          {a.employee.department && (
+            <span className="block truncate text-xs text-slate-500">{a.employee.department}</span>
+          )}
+        </span>
+      ),
+    },
+    {
       key: "allocation",
       header: "Allocation",
       cardLabel: "Allocation",
@@ -140,6 +156,11 @@ export default async function ProjectDetailPage({
         <Link href="/hr/projects" className={btn("secondary", "sm")}>
           <ArrowLeft className="h-4 w-4" />
           Back
+        </Link>
+        {/* Department-wise / project-wise manpower boxes live on the HR dashboard. */}
+        <Link href="/hr" className={btn("secondary", "sm")}>
+          <Users className="h-4 w-4" />
+          Manpower
         </Link>
         {canWrite && (
           <Link href={`/hr/projects/${id}/edit`} className={btn("primary", "sm")}>

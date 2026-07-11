@@ -71,12 +71,13 @@ const HR_ATTENDANCE: NavItem = { label: "Attendance", href: "/hr/attendance", ic
 const HR_PROJECTS: NavItem = { label: "Projects", href: "/hr/projects", icon: FolderKanban };
 const HR_PAYROLL: NavItem = { label: "Payroll", href: "/hr/payroll", icon: Wallet };
 const HR_RECRUITMENT: NavItem = { label: "Recruitment", href: "/hr/recruitment", icon: Briefcase };
+const HR_POLICIES: NavItem = { label: "Policies", href: "/hr/policies", icon: FileText };
 
 const HR: NavSection = {
   heading: "Human Resources",
   items: [
     HR_DASHBOARD, HR_EMPLOYEES, HR_ATTENDANCE, HR_PAYROLL,
-    HR_ASSETS, HR_PROJECTS, HR_RECRUITMENT,
+    HR_ASSETS, HR_PROJECTS, HR_RECRUITMENT, HR_POLICIES,
   ],
 };
 
@@ -111,7 +112,7 @@ export function navForRole(role: Role): NavSection[] {
     return [
       { heading: "Overview", items: [HR_DASHBOARD] },
       { heading: "People", items: [HR_EMPLOYEES, HR_ATTENDANCE, HR_PAYROLL] },
-      { heading: "Resources", items: [HR_ASSETS, HR_PROJECTS, HR_RECRUITMENT] },
+      { heading: "Resources", items: [HR_ASSETS, HR_PROJECTS, HR_RECRUITMENT, HR_POLICIES] },
     ];
   }
   if (role === "BD" || role === "SCM" || role === "PROJECT" || role === "FINANCE") {

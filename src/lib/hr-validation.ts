@@ -179,6 +179,28 @@ export const projectSchema = z.object({
   { message: "End date cannot be before start date", path: ["endDate"] }
 );
 
+// Preset policy categories (a UI convenience — `category` stays a free string
+// via the form's "Other…" input, same pattern as DEPARTMENTS).
+export const POLICY_CATEGORIES = [
+  "Leave & Attendance",
+  "Payroll & Compensation",
+  "Code of Conduct",
+  "IT & Assets",
+  "Travel & Expenses",
+  "Health & Safety (HSE)",
+  "General",
+] as const;
+
+// Company policy (title + free-text body), managed on /hr/policies.
+export const policySchema = z.object({
+  title: z.string().trim().min(1, "Title is required").max(160),
+  category: z.string().trim().max(60).optional().or(z.literal("")),
+  content: z.string().trim().min(1, "Policy text is required").max(20000),
+  effectiveFrom: optDate,
+  isActive: z.coerce.boolean().optional(),
+});
+export type PolicyInput = z.infer<typeof policySchema>;
+
 export const assignmentSchema = z.object({
   employeeId: z.string().min(1, "Employee is required"),
   projectId: z.string().min(1, "Project is required"),

@@ -56,6 +56,11 @@ export default async function ProjectsPage({
         subtitle={`${projects.length} project(s)`}
         breadcrumbs={[{ label: "HR", href: "/hr" }, { label: "Projects" }]}
       >
+        {/* Department-wise / project-wise manpower boxes live on the HR dashboard. */}
+        <Link href="/hr" className={btn("secondary", "sm")}>
+          <Users className="h-4 w-4" />
+          Manpower
+        </Link>
         {canWrite && (
           <Link href="/hr/projects/new" className={btn("primary", "sm")}>
             + Add project
