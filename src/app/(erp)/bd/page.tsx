@@ -3,36 +3,14 @@ import { prisma } from "@/lib/prisma";
 import { requirePageRole, BD_VIEW, BD_WRITE } from "@/lib/rbac";
 import { fmtDateOnly, fmtINR } from "@/lib/format";
 import { fyLabel } from "@/lib/fiscal";
-import CountUp from "@/components/CountUp";
-import { Donut, BarList } from "@/components/Charts";
-import { BrandHero, CanvasAtmosphere } from "@/components/chrome";
-import { DataTable, type Column } from "@/components/DataTable";
 import { buildQuery } from "@/lib/hr-filters";
-import {
-  Building2,
-  FileText,
-  ReceiptText,
-  Target,
-  TrendingUp,
-  PieChart,
-  ChevronRight,
-  Inbox,
-  IndianRupee,
-} from "lucide-react";
-import {
-  StatCard,
-  Card,
-  CardHeader,
-  CardBody,
-  EmptyState,
-  EntityLink,
-  StatusChip,
-  ProgressBar,
-  btn,
-} from "@/components/ui";
+import { KpiTile, DashBox, BoxLink, BoxEmpty } from "@/components/DashboardBits";
+import { PageHeader, ProgressBar, StatusChip, btn, cn } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 
+// Compact single-screen BD dashboard — same system as /hr (KPI tile row +
+// three slim boxes with capped, internally-scrolling bodies).
 export default async function BdDashboardPage() {
   const viewer = await requirePageRole(BD_VIEW);
   const canWrite = BD_WRITE.includes(viewer.role);
@@ -65,7 +43,7 @@ export default async function BdDashboardPage() {
     }),
     prisma.bdEnquiry.findMany({
       orderBy: { createdAt: "desc" },
-      take: 6,
+      take: 12,
       include: { client: { select: { id: true, name: true } } },
     }),
     prisma.bdPurchaseOrder.groupBy({
@@ -86,11 +64,8 @@ export default async function BdDashboardPage() {
     NEGOTIATION: "Negotiation",
     CLOSED: "Closed",
   };
-  const stageData = STAGES.map((s) => ({
-    status: s,
-    label: STAGE_LABELS[s],
-    value: stageCounts.get(s) ?? 0,
-  }));
+  const stageRows = STAGES.map((s) => ({ label: STAGE_LABELS[s], value: stageCounts.get(s) ?? 0 }));
+  const stageMax = Math.max(1, ...stageRows.map((r) => r.value));
 
   const outcomeCounts = new Map(outcomeGroups.map((g) => [g.finalStatus, g._count._all]));
   const won = outcomeCounts.get("WON") ?? 0;
@@ -110,286 +85,204 @@ export default async function BdDashboardPage() {
   const topClientBars = topClients
     .filter((t) => (t._sum.poValue ?? 0) > 0)
     .map((t) => ({
+      id: t.clientId,
       label: clientName.get(t.clientId) ?? "—",
       value: t._sum.poValue ?? 0,
-      href: `/bd/clients/${t.clientId}`,
     }));
+  const topClientMax = Math.max(1, ...topClientBars.map((b) => b.value));
 
   const targetEstimated = targetAgg._sum.estimatedValue ?? 0;
   const targetReceived = targetAgg._sum.orderReceived ?? 0;
   const achievedPct = targetEstimated > 0 ? Math.round((targetReceived / targetEstimated) * 100) : null;
 
-  type Enq = (typeof recentEnquiries)[number];
-  const enquiryColumns: Column<Enq>[] = [
-    {
-      key: "client",
-      header: "Client",
-      titleInCard: true,
-      cell: (e) => (
-        <span className="relative z-10">
-          <EntityLink href={`/bd/enquiries/${e.id}`} name={e.client.name} code={e.quoteNo ?? undefined} />
-        </span>
-      ),
-    },
-    {
-      key: "project",
-      header: "Project",
-      priority: "md",
-      cardLabel: "Project",
-      cell: (e) => e.projectType ?? e.activities ?? "—",
-    },
-    {
-      key: "value",
-      header: "Value",
-      align: "right",
-      cardLabel: "Value",
-      cell: (e) => <span className="nums">{fmtINR(e.value)}</span>,
-    },
-    {
-      key: "stage",
-      header: "Stage",
-      cardLabel: "Stage",
-      cell: (e) => (
-        <span className="relative z-10">
-          <StatusChip status={e.stage} />
-        </span>
-      ),
-    },
-    {
-      key: "date",
-      header: "Date",
-      priority: "lg",
-      cardLabel: "Date",
-      cell: (e) => <span className="nums text-slate-500">{fmtDateOnly(e.enquiryDate) ?? "—"}</span>,
-    },
+  const outcomeChips = [
+    { label: "Open", value: open, cls: "bg-sky-50/60 text-sky-700", href: buildQuery("/bd/enquiries", { fy, status: "OPEN" }) },
+    { label: "Won", value: won, cls: "bg-emerald-50/60 text-emerald-700", href: buildQuery("/bd/enquiries", { fy, status: "WON" }) },
+    { label: "Lost", value: lost, cls: "bg-rose-50/60 text-rose-700", href: buildQuery("/bd/enquiries", { fy, status: "LOST" }) },
   ];
 
   return (
     <>
-      <BrandHero
-        variant="mint"
-        size="sm"
-        wave={false}
-        eyebrow="GNE Business Development"
-        title="Dashboard"
-        subtitle="Pipeline, quotes and orders at a glance."
-        className="px-6 pb-7 pt-9 sm:px-8"
-      />
-
-      <div className="relative isolate space-y-6 p-6 sm:p-8">
-        <CanvasAtmosphere />
-
-        {/* KPI bento — each tile drills into the tracker it summarizes. */}
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
-          <StatCard
-            label="Clients"
-            value={<CountUp value={clientCount} />}
-            tone="brand"
-            icon={<Building2 className="h-[18px] w-[18px]" />}
-            href="/bd/clients"
-          />
-          <StatCard
-            label="Open enquiries"
-            value={<CountUp value={openEnquiries} />}
-            tone="blue"
-            icon={<FileText className="h-[18px] w-[18px]" />}
-            href={buildQuery("/bd/enquiries", { status: "OPEN" })}
-          />
-          <StatCard
-            label={`Quotes · ${fy}`}
-            value={<CountUp value={quotesThisFy} />}
-            tone="amber"
-            icon={<TrendingUp className="h-[18px] w-[18px]" />}
-            href={buildQuery("/bd/enquiries", { fy })}
-          />
-          <StatCard
-            label={`POs · ${fy}`}
-            value={<CountUp value={posThisFy} />}
-            tone="emerald"
-            icon={<ReceiptText className="h-[18px] w-[18px]" />}
-            href={buildQuery("/bd/pos", { fy })}
-          />
-          <StatCard
-            label="Weighted pipeline"
-            value={fmtINR(weightedPipeline._sum.forecastedRevenue ?? 0)}
-            tone="slate"
-            icon={<IndianRupee className="h-[18px] w-[18px]" />}
-            href={buildQuery("/bd/enquiries", { status: "OPEN" })}
-          />
+      <PageHeader title="BD Dashboard" subtitle={`Pipeline, quotes and orders · ${fy}.`} />
+      <div className="space-y-3 p-4 sm:p-5">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
+          <KpiTile label="Clients" value={clientCount} dot="bg-brand-500" href="/bd/clients" />
+          <KpiTile label="Open enquiries" value={openEnquiries} dot="bg-sky-500" href={buildQuery("/bd/enquiries", { status: "OPEN" })} />
+          <KpiTile label={`Quotes · ${fy}`} value={quotesThisFy} dot="bg-amber-500" href={buildQuery("/bd/enquiries", { fy })} />
+          <KpiTile label={`POs · ${fy}`} value={posThisFy} dot="bg-emerald-500" href={buildQuery("/bd/pos", { fy })} />
+          <KpiTile label={`PO value · ${fy}`} value={fmtINR(poValueThisFy._sum.poValue ?? 0)} dot="bg-emerald-500" href={buildQuery("/bd/pos", { fy })} />
+          <KpiTile label="Weighted pipeline" value={fmtINR(weightedPipeline._sum.forecastedRevenue ?? 0)} dot="bg-slate-400" href={buildQuery("/bd/enquiries", { status: "OPEN" })} />
         </div>
 
-        {/* Pipeline composition + this-FY performance */}
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <Card>
-            <CardHeader
-              title={
-                <span className="flex items-center gap-2">
-                  <PieChart className="h-[18px] w-[18px] text-brand" />
-                  Open pipeline
-                </span>
-              }
-              subtitle="Live enquiries by stage"
-            />
-            <CardBody>
-              <Donut data={stageData} unitLabel="enquiries" />
-            </CardBody>
-          </Card>
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+          {/* ── Pipeline: this-FY outcomes + live enquiries by stage ─────────── */}
+          <DashBox
+            title="Pipeline"
+            meta={`${openEnquiries} open`}
+            action={<BoxLink href="/bd/enquiries">Enquiries</BoxLink>}
+          >
+            <div className="flex flex-wrap gap-1.5">
+              {outcomeChips.map((o) => (
+                <Link
+                  key={o.label}
+                  href={o.href}
+                  className={cn(
+                    "min-w-0 flex-1 basis-24 rounded-lg px-2.5 py-1.5 motion-safe:transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30",
+                    o.cls
+                  )}
+                >
+                  <div className="nums text-base font-semibold leading-none text-slate-900">{o.value}</div>
+                  <div className="mt-0.5 truncate text-[11px] font-medium">{o.label} · {fy}</div>
+                </Link>
+              ))}
+            </div>
 
-          <Card>
-            <CardHeader
-              title={
-                <span className="flex items-center gap-2">
-                  <Target className="h-[18px] w-[18px] text-brand" />
-                  {fy} outcomes
-                </span>
-              }
-              subtitle="How this year's enquiries are landing"
-            />
-            <CardBody className="space-y-4">
-              <div className="grid grid-cols-3 gap-3 text-center">
-                {[
-                  { label: "Open", value: open, cls: "text-sky-600", href: buildQuery("/bd/enquiries", { fy, status: "OPEN" }) },
-                  { label: "Won", value: won, cls: "text-emerald-600", href: buildQuery("/bd/enquiries", { fy, status: "WON" }) },
-                  { label: "Lost", value: lost, cls: "text-rose-600", href: buildQuery("/bd/enquiries", { fy, status: "LOST" }) },
-                ].map((o) => (
-                  <Link
-                    key={o.label}
-                    href={o.href}
-                    className="press rounded-xl border border-slate-200 bg-white px-3 py-3 transition-colors hover:bg-slate-50"
-                  >
-                    <div className={`nums text-2xl font-bold ${o.cls}`}>{o.value}</div>
-                    <div className="mt-0.5 text-[11px] uppercase tracking-wide text-slate-500">{o.label}</div>
-                  </Link>
-                ))}
-              </div>
-              <div>
-                <div className="mb-1 flex items-center justify-between text-xs">
-                  <span className="text-slate-500">Win rate (of decided)</span>
-                  <span className="nums font-semibold text-slate-700">
-                    {decided > 0 ? `${Math.round((won / decided) * 100)}%` : "—"}
-                  </span>
-                </div>
-                <ProgressBar value={decided > 0 ? Math.round((won / decided) * 100) : 0} tone="emerald" />
-                {decided === 0 && (
-                  <p className="mt-1.5 text-[11px] text-slate-400">No enquiries decided yet this year.</p>
-                )}
-              </div>
-            </CardBody>
-          </Card>
+            <p className="mt-2 text-xs text-slate-500">
+              Win rate (of decided):{" "}
+              <span className="nums font-semibold text-slate-700">
+                {decided > 0 ? `${Math.round((won / decided) * 100)}%` : "—"}
+              </span>
+              {decided === 0 && <span className="text-slate-400"> · nothing decided yet this year</span>}
+            </p>
 
-          <Card>
-            <CardHeader
-              title={
-                <span className="flex items-center gap-2">
-                  <IndianRupee className="h-[18px] w-[18px] text-brand" />
-                  Target vs received
-                </span>
-              }
-              subtitle={`${fy} business target`}
-            />
-            <CardBody className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-xl border border-slate-200 bg-white px-3 py-3">
-                  <div className="text-[11px] uppercase tracking-wide text-slate-500">Target</div>
-                  <div className="nums mt-1 text-lg font-bold text-slate-900">{fmtINR(targetEstimated)}</div>
-                </div>
-                <div className="rounded-xl border border-slate-200 bg-white px-3 py-3">
-                  <div className="text-[11px] uppercase tracking-wide text-slate-500">Orders received</div>
-                  <div className="nums mt-1 text-lg font-bold text-emerald-600">{fmtINR(targetReceived)}</div>
-                </div>
-              </div>
-              {achievedPct !== null ? (
-                <div>
-                  <div className="mb-1 flex items-center justify-between text-xs">
-                    <span className="text-slate-500">Achieved</span>
-                    <span className="nums font-semibold text-slate-700">{achievedPct}%</span>
-                  </div>
-                  <ProgressBar value={Math.min(100, achievedPct)} tone="brand" />
-                </div>
-              ) : (
-                <p className="text-[12px] text-slate-400">
-                  No target lines for {fy} yet.{" "}
-                  {canWrite && (
+            <ul className="mt-2 border-t border-slate-100 pt-1.5">
+              {stageRows.map((r) => {
+                const zero = r.value === 0;
+                return (
+                  <li key={r.label} className="flex items-center gap-2.5 py-[5px]">
+                    <span className={cn("w-[42%] truncate text-xs", zero ? "text-slate-400" : "text-slate-600")}>
+                      {r.label}
+                    </span>
+                    <span className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-slate-100">
+                      {!zero && (
+                        <span
+                          className="block h-full rounded-full bg-gradient-to-r from-brand-500 to-brand-300"
+                          style={{ width: `${Math.min(100, (r.value / stageMax) * 100)}%` }}
+                        />
+                      )}
+                    </span>
+                    <span className={cn("nums w-7 shrink-0 text-right text-xs font-semibold", zero ? "text-slate-400" : "text-slate-700")}>
+                      {r.value}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          </DashBox>
+
+          {/* ── Target vs received + top clients ─────────────────────────────── */}
+          <DashBox title="Target vs received" meta={fy} action={<BoxLink href={buildQuery("/bd/targets", { fy })}>Targets</BoxLink>}>
+            {targetEstimated === 0 && targetReceived === 0 ? (
+              <p className="py-3 text-sm text-slate-500">
+                No target lines for {fy} yet.
+                {canWrite && (
+                  <>
+                    {" "}
                     <Link href="/bd/targets/new" className="font-medium text-brand-700 hover:text-brand">
                       Add one →
                     </Link>
-                  )}
-                </p>
-              )}
-              <div className="flex items-center justify-between">
-                <Link
-                  href={buildQuery("/bd/targets", { fy })}
-                  className="press inline-flex items-center gap-1 text-sm font-medium text-brand-700 transition-colors hover:text-brand"
-                >
-                  View targets
-                  <ChevronRight className="h-4 w-4" />
-                </Link>
-                <span className="nums text-[12px] text-slate-400">
-                  PO value {fy}: {fmtINR(poValueThisFy._sum.poValue ?? 0)}
-                </span>
-              </div>
-            </CardBody>
-          </Card>
-        </div>
+                  </>
+                )}
+              </p>
+            ) : (
+              <>
+                <div className="flex flex-wrap gap-1.5">
+                  <div className="min-w-0 flex-1 basis-28 rounded-lg bg-brand-50/60 px-2.5 py-1.5 text-brand-700">
+                    <div className="nums truncate text-base font-semibold leading-none text-slate-900">{fmtINR(targetEstimated)}</div>
+                    <div className="mt-0.5 truncate text-[11px] font-medium">Target</div>
+                  </div>
+                  <div className="min-w-0 flex-1 basis-28 rounded-lg bg-emerald-50/60 px-2.5 py-1.5 text-emerald-700">
+                    <div className="nums truncate text-base font-semibold leading-none text-slate-900">{fmtINR(targetReceived)}</div>
+                    <div className="mt-0.5 truncate text-[11px] font-medium">Orders received</div>
+                  </div>
+                </div>
+                {achievedPct !== null && (
+                  <div className="mt-2.5">
+                    <div className="mb-1 flex items-center justify-between text-xs">
+                      <span className="text-slate-500">Achieved</span>
+                      <span className="nums font-semibold text-slate-700">{achievedPct}%</span>
+                    </div>
+                    <ProgressBar value={Math.min(100, achievedPct)} tone="brand" />
+                  </div>
+                )}
+              </>
+            )}
 
-        {/* Recent enquiries + top clients */}
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          <Card className="overflow-hidden lg:col-span-2">
-            <CardHeader
-              title="Recent enquiries"
-              action={
-                <span className="flex items-center gap-3">
-                  {canWrite && (
-                    <Link href="/bd/enquiries/new" className={btn("primary", "sm")}>
-                      + New enquiry
-                    </Link>
-                  )}
-                  <Link
-                    href="/bd/enquiries"
-                    className="press inline-flex items-center gap-1 text-sm font-medium text-brand-700 transition-colors hover:text-brand"
-                  >
-                    View all
-                    <ChevronRight className="h-4 w-4" />
-                  </Link>
-                </span>
-              }
-            />
-            <DataTable
-              rows={recentEnquiries}
-              columns={enquiryColumns}
-              rowKey={(e) => e.id}
-              href={(e) => `/bd/enquiries/${e.id}`}
-              empty={
-                <EmptyState
-                  icon={<Inbox className="h-6 w-6" />}
-                  title="No enquiries yet"
-                  description="Record your first enquiry to start the pipeline."
-                  action={
-                    canWrite ? (
-                      <Link href="/bd/enquiries/new" className={btn("primary", "sm")}>
-                        + New enquiry
-                      </Link>
-                    ) : undefined
-                  }
-                />
-              }
-            />
-          </Card>
-
-          <Card>
-            <CardHeader title="Top clients" subtitle={`By PO value · ${fy}`} />
-            <CardBody>
-              {topClientBars.length > 0 ? (
-                <BarList items={topClientBars} formatValue={fmtINR} />
+            <div className="mt-3 border-t border-slate-100 pt-2">
+              <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                Top clients · PO value {fy}
+              </p>
+              {topClientBars.length === 0 ? (
+                <p className="py-2 text-xs text-slate-400">No POs recorded this year yet.</p>
               ) : (
-                <EmptyState
-                  icon={<ReceiptText className="h-6 w-6" />}
-                  title="No POs this year"
-                  description="Top clients appear here once POs are recorded."
-                />
+                <ul>
+                  {topClientBars.map((b) => (
+                    <li key={b.id}>
+                      <Link
+                        href={`/bd/clients/${b.id}`}
+                        className="-mx-1.5 flex items-center gap-2.5 rounded-lg px-1.5 py-[5px] motion-safe:transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30"
+                      >
+                        <span className="w-[42%] truncate text-xs text-slate-600">{b.label}</span>
+                        <span className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-slate-100">
+                          <span
+                            className="block h-full rounded-full bg-gradient-to-r from-brand-500 to-brand-300"
+                            style={{ width: `${Math.min(100, (b.value / topClientMax) * 100)}%` }}
+                          />
+                        </span>
+                        <span className="nums shrink-0 text-right text-xs font-semibold text-slate-700">{fmtINR(b.value)}</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
               )}
-            </CardBody>
-          </Card>
+            </div>
+          </DashBox>
+
+          {/* ── Recent enquiries ─────────────────────────────────────────────── */}
+          <DashBox
+            title="Recent enquiries"
+            meta={`${recentEnquiries.length} latest`}
+            action={<BoxLink href="/bd/enquiries">All enquiries</BoxLink>}
+          >
+            {recentEnquiries.length === 0 ? (
+              <BoxEmpty title="No enquiries yet" hint="Record your first enquiry to start the pipeline." />
+            ) : (
+              <ul>
+                {recentEnquiries.map((e) => (
+                  <li key={e.id}>
+                    <Link
+                      href={`/bd/enquiries/${e.id}`}
+                      className="group -mx-1.5 flex items-center gap-2.5 rounded-lg px-1.5 py-1.5 motion-safe:transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-baseline gap-1.5">
+                          <span className="truncate text-[13px] font-medium text-slate-800 group-hover:text-brand-700">
+                            {e.client.name}
+                          </span>
+                          {e.quoteNo && <span className="nums shrink-0 font-mono text-[10px] text-slate-400">{e.quoteNo}</span>}
+                        </div>
+                        <div className="truncate text-[11px] text-slate-500">
+                          {e.projectType ?? e.activities ?? "—"}
+                          <span className="nums"> · {fmtDateOnly(e.enquiryDate) ?? "—"}</span>
+                        </div>
+                      </div>
+                      <span className="nums hidden shrink-0 text-xs font-semibold text-slate-700 sm:inline">
+                        {fmtINR(e.value)}
+                      </span>
+                      <StatusChip status={e.stage} className="shrink-0" />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {canWrite && (
+              <div className="border-t border-slate-100 pt-1.5">
+                <Link href="/bd/enquiries/new" className={btn("secondary", "sm")}>
+                  + New enquiry
+                </Link>
+              </div>
+            )}
+          </DashBox>
         </div>
       </div>
     </>

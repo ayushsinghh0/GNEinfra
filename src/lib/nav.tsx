@@ -12,10 +12,10 @@ const BD: NavSection = {
   heading: "Business Development",
   items: [
     { label: "Dashboard", href: "/bd", icon: LayoutDashboard },
+    { label: "Targets", href: "/bd/targets", icon: Target },
     { label: "Clients", href: "/bd/clients", icon: Building2 },
     { label: "Enquiries & Quotes", href: "/bd/enquiries", icon: FileText },
     { label: "PO Tracker", href: "/bd/pos", icon: ReceiptText },
-    { label: "Targets", href: "/bd/targets", icon: Target },
   ],
 };
 

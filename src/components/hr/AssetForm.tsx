@@ -3,6 +3,7 @@ import { useMemo, useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { AlertCircle } from "lucide-react";
 import { Button, Field, Input, Select } from "@/components/ui";
+import { digitsOnly } from "@/components/finance/form-utils";
 import { toast } from "@/components/Toast";
 import { ASSET_TYPES, ASSET_CONDITIONS } from "@/lib/hr-validation";
 
@@ -28,14 +29,6 @@ const EMPTY: AssetValues = {
   allocatedAt: "", remarks: "", returnedAt: "",
 };
 
-const CHECKBOXES: { key: keyof AssetValues; label: string }[] = [
-  { key: "hasLaptop", label: "Laptop" },
-  { key: "laptopBag", label: "Laptop Bag" },
-  { key: "mouse", label: "Mouse" },
-  { key: "charger", label: "Charger" },
-  { key: "idCard", label: "ID Card" },
-];
-
 export default function AssetForm({
   employees,
   asset,
@@ -48,7 +41,16 @@ export default function AssetForm({
   onDone?: () => void;
 }) {
   const router = useRouter();
+  // The legacy accessory booleans (hasLaptop/laptopBag/…) stay in state so
+  // editing an old record round-trips them unchanged — they just have no UI
+  // anymore (the Asset Type select is the single way to say what the asset is).
   const [v, setV] = useState<AssetValues>({ ...EMPTY, ...(asset ?? {}) });
+  const presetTypes: readonly string[] = ASSET_TYPES;
+  // Custom/legacy type values (e.g. "ID Card") open in the free-text mode.
+  const [typeOther, setTypeOther] = useState(() => {
+    const t = asset?.assetType ?? "";
+    return Boolean(t && !presetTypes.includes(t));
+  });
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -56,8 +58,6 @@ export default function AssetForm({
 
   const setStr = (k: keyof AssetValues) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setV((s) => ({ ...s, [k]: e.target.value }));
-  const setBool = (k: keyof AssetValues) => (e: React.ChangeEvent<HTMLInputElement>) =>
-    setV((s) => ({ ...s, [k]: e.target.checked }));
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -109,10 +109,34 @@ export default function AssetForm({
         </div>
 
         <Field label="Asset Type" htmlFor="assetType">
-          <Select id="assetType" value={v.assetType} onChange={setStr("assetType")}>
+          <Select
+            id="assetType"
+            value={typeOther ? "__OTHER__" : v.assetType}
+            onChange={(e) => {
+              const val = e.target.value;
+              if (val === "__OTHER__") {
+                setTypeOther(true);
+                setV((s) => ({ ...s, assetType: "" }));
+              } else {
+                setTypeOther(false);
+                setV((s) => ({ ...s, assetType: val }));
+              }
+            }}
+          >
             <option value="">Select type…</option>
             {ASSET_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+            <option value="__OTHER__">Other…</option>
           </Select>
+          {typeOther && (
+            <Input
+              className="mt-2"
+              value={v.assetType}
+              onChange={setStr("assetType")}
+              placeholder="Enter item name"
+              aria-label="Custom asset type"
+              maxLength={40}
+            />
+          )}
         </Field>
         <Field label="Make / Model" htmlFor="makeModel">
           <Input id="makeModel" value={v.makeModel} onChange={setStr("makeModel")} />
@@ -133,7 +157,7 @@ export default function AssetForm({
           </Select>
         </Field>
         <Field label="Purchase Value (₹)" htmlFor="purchaseValue">
-          <Input id="purchaseValue" inputMode="numeric" value={v.purchaseValue} onChange={setStr("purchaseValue")} />
+          <Input id="purchaseValue" inputMode="numeric" maxLength={9} value={v.purchaseValue} onChange={(e) => setV((s) => ({ ...s, purchaseValue: digitsOnly(9)(e.target.value) }))} />
         </Field>
         <Field label="Purchase Date" htmlFor="purchaseDate">
           <Input id="purchaseDate" type="date" value={v.purchaseDate} onChange={setStr("purchaseDate")} />
@@ -154,19 +178,6 @@ export default function AssetForm({
           </Field>
         </div>
       </div>
-
-      <fieldset className="space-y-2">
-        <legend className="mb-2 text-[13px] font-medium text-slate-700">Accessories issued</legend>
-        <div className="flex flex-wrap gap-4">
-          {CHECKBOXES.map(({ key, label }) => (
-            <label key={key} className="flex items-center gap-2 cursor-pointer select-none text-sm text-slate-700">
-              <input type="checkbox" className="h-4 w-4 rounded border-slate-300 text-brand accent-brand"
-                checked={v[key] as boolean} onChange={setBool(key)} />
-              {label}
-            </label>
-          ))}
-        </div>
-      </fieldset>
 
       <div className="flex gap-2">
         <Button type="submit" disabled={busy}>

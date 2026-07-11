@@ -1,101 +1,19 @@
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
 import { prisma } from "@/lib/prisma";
-import { Card, EntityLink, cn } from "@/components/ui";
+import { EntityLink, cn } from "@/components/ui";
+import { KpiTile, DashBox as Box, BoxLink, BoxEmpty } from "@/components/DashboardBits";
 import { fmtDateOnly } from "@/lib/format";
 import { buildQuery } from "@/lib/hr-filters";
 import { EMP_CATEGORIES, DEPARTMENTS } from "@/lib/hr-validation";
+import { liveAssignmentWhere } from "@/lib/hr-projects";
 
 // The HR dashboard's streamed cells (each its own Suspense boundary). Every cell
 // re-runs its own slice of the employee/project/attendance queries rather than
 // sharing another cell's result — correctness over dedupe.
 //
 // Density is the point of this screen (client requirement: everything visible on
-// one screen in small boxes), so the cells compose their own compact tile/box
-// chrome instead of the roomier StatCard/CardHeader/CardBody primitives.
-
-/* ── Compact building blocks ───────────────────────────────────────────────── */
-
-function KpiTile({
-  label,
-  value,
-  dot,
-  href,
-}: {
-  label: string;
-  value: React.ReactNode;
-  dot: string; // tailwind bg-* class for the tone dot
-  href?: string;
-}) {
-  const inner = (
-    <>
-      <div className="flex items-center gap-1.5">
-        <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", dot)} aria-hidden="true" />
-        <span className="truncate text-[11px] font-medium text-slate-500">{label}</span>
-      </div>
-      <div className="nums mt-1 text-lg font-semibold leading-none text-slate-900">{value}</div>
-    </>
-  );
-  const base = "min-w-0 rounded-xl bg-white px-3 py-2 shadow-[var(--shadow-card)]";
-  return href ? (
-    <Link
-      href={href}
-      className={cn(base, "lift block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40")}
-    >
-      {inner}
-    </Link>
-  ) : (
-    <div className={base}>{inner}</div>
-  );
-}
-
-// Slim card shell: 40px header + a capped, internally-scrolling body so the
-// three boxes never push the page past one screen no matter how long the lists.
-function Box({
-  title,
-  meta,
-  action,
-  children,
-}: {
-  title: string;
-  meta?: React.ReactNode;
-  action?: React.ReactNode;
-  children: React.ReactNode;
-}) {
-  return (
-    <Card className="flex h-full min-w-0 flex-col overflow-hidden">
-      <div className="flex items-center justify-between gap-2 border-b border-slate-100 px-4 py-2.5">
-        <h2 className="flex min-w-0 items-baseline gap-2 text-sm font-semibold tracking-tight text-slate-900">
-          <span className="truncate">{title}</span>
-          {meta && <span className="nums shrink-0 text-[11px] font-medium text-slate-400">{meta}</span>}
-        </h2>
-        {action}
-      </div>
-      <div className="max-h-80 min-h-0 flex-1 overflow-y-auto px-4 py-2.5">{children}</div>
-    </Card>
-  );
-}
-
-function BoxLink({ href, children }: { href: string; children: React.ReactNode }) {
-  return (
-    <Link
-      href={href}
-      className="press inline-flex shrink-0 items-center gap-0.5 text-xs font-medium text-brand-700 transition-colors hover:text-brand"
-    >
-      {children}
-      <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
-    </Link>
-  );
-}
-
-function BoxEmpty({ title, hint }: { title: string; hint?: string }) {
-  return (
-    <div className="flex h-full min-h-24 flex-col items-center justify-center gap-1 py-6 text-center">
-      <p className="text-sm font-medium text-slate-600">{title}</p>
-      {hint && <p className="max-w-60 text-xs text-slate-400">{hint}</p>}
-    </div>
-  );
-}
+// one screen in small boxes) — built from the shared compact tile/box primitives
+// in DashboardBits (same system as the BD dashboard).
 
 /* ── KPI strip: total + today's attendance + per-category headcount ───────── */
 // Every known employment category renders even at 0 (the client's ask is the
@@ -225,11 +143,9 @@ export async function DashboardDepartments() {
 // headcount minus that). Each project row deep-links to its page. No status
 // chip on rows — the query already filters to ACTIVE, so it carries no signal.
 export async function DashboardProjects({ today }: { today: Date }) {
-  // An assignment is "live" now = its employee is active AND it hasn't ended.
-  const liveAssignment = {
-    employee: { status: "ACTIVE" as const },
-    OR: [{ endDate: null }, { endDate: { gte: today } }],
-  };
+  // ONE definition of "live assignment" shared with the Not-deployed box
+  // (hr-projects.liveAssignmentWhere) — the two cells must never disagree.
+  const liveAssignment = liveAssignmentWhere(today);
 
   const [activeCount, projects, assigned] = await Promise.all([
     prisma.employee.count({ where: { status: "ACTIVE" } }),
@@ -268,9 +184,11 @@ export async function DashboardProjects({ today }: { today: Date }) {
 
   return (
     <Box title="By project" meta={`${projects.length} live`} action={<BoxLink href="/hr/projects">Projects</BoxLink>}>
-      <div className="grid grid-cols-3 gap-1.5">
+      {/* flex-wrap (not a rigid 3-col grid): in a narrow column the chips wrap
+          instead of truncating their labels. */}
+      <div className="flex flex-wrap gap-1.5">
         {summary.map((s) => (
-          <div key={s.label} className={cn("min-w-0 rounded-lg px-2.5 py-1.5", s.cls)}>
+          <div key={s.label} className={cn("min-w-0 flex-1 basis-28 rounded-lg px-2.5 py-1.5", s.cls)}>
             <div className="nums text-base font-semibold leading-none text-slate-900">{s.value}</div>
             <div className="mt-0.5 truncate text-[11px] font-medium">{s.label}</div>
           </div>
@@ -324,13 +242,8 @@ export async function DashboardNotDeployed({ today }: { today: Date }) {
   const notDeployed = await prisma.employee.findMany({
     where: {
       status: "ACTIVE",
-      projectAssignments: {
-        none: {
-          startDate: { lte: today },
-          OR: [{ endDate: null }, { endDate: { gte: today } }],
-          project: { status: "ACTIVE" },
-        },
-      },
+      // Same shared definition the By-project box uses for its deployed count.
+      projectAssignments: { none: liveAssignmentWhere(today) },
     },
     select: { id: true, empId: true, name: true, designation: true, department: true },
     orderBy: { name: "asc" },
@@ -348,9 +261,12 @@ export async function DashboardNotDeployed({ today }: { today: Date }) {
         <ul className="divide-y divide-slate-100">
           {notDeployed.map((e) => (
             <li key={e.id} className="flex items-center justify-between gap-2 py-1.5">
-              <EntityLink href={`/hr/employees/${e.id}`} name={e.name} code={e.empId} />
-              <span className="shrink-0 text-right text-[11px] text-slate-400">
-                {[e.designation, e.department].filter(Boolean).join(" · ") || "—"}
+              {/* Name wins the width fight: the meta column truncates (max 45%),
+                  never the employee name — long designations crushed it before. */}
+              <EntityLink href={`/hr/employees/${e.id}`} name={e.name} code={e.empId} className="min-w-0 flex-1" />
+              <span className="min-w-0 max-w-[45%] text-right text-[11px] text-slate-400">
+                <span className="block truncate">{e.designation || "—"}</span>
+                {e.department && <span className="block truncate">{e.department}</span>}
               </span>
             </li>
           ))}

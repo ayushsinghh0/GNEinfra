@@ -21,10 +21,14 @@ Four verticals are built; Project is still a role-scoped "coming soon" shell:
 - **SCM** owns the **vendor/supplier master** — the original vendor-registration flow (admin emails
   a vendor a token link → multi-step form + KYC uploads → review/approve → `vendorCode` like
   `GNE-V-0001`), re-homed under `/scm/*`.
-- **HR** is fully built (`/hr/*`) — employee master, asset register, monthly attendance, payroll +
-  printable salary slips, projects + concurrent assignments, leave balances, and a predictive
-  analytics dashboard. It was reworked in the **"Connected" redesign** (branch `hr-connected-redesign`,
-  unmerged) so every record cross-links and no list scrolls sideways — see the dedicated section below.
+- **HR** is fully built (`/hr/*`) — employee master (incl. department, band, family/nominee rows,
+  bank + statutory), generalized asset register, monthly attendance, **structure-based payroll**
+  (`/hr/payroll`: per-employee CTC/pay/deductions editor) with a month-scoped payment slip that
+  applies attendance-derived Loss of Pay, projects + concurrent assignments, recruitment
+  (`/hr/recruitment`: positions + candidate pipeline), company policies (`/hr/policies`), and a
+  compact single-screen **manpower dashboard** at `/hr` (the old analytics bento was removed;
+  `/hr/analytics` redirects there). Originally reworked in the **"Connected" redesign** — its
+  conventions still govern; see the dedicated section below.
 - **BD** (`/bd/*`, built 2026-07-03) digitizes the four sheets of the GNE "BD Tracker" workbook:
   Clients (`/bd/clients`, 40 real clients seeded), Enquiries & Quotes (`/bd/enquiries`, the
   Query-&-Quote tracker with `BdStage`/`BdFinalStatus` pipeline), PO Tracker (`/bd/pos`) and
@@ -37,7 +41,9 @@ Four verticals are built; Project is still a role-scoped "coming soon" shell:
   `FINANCE_APPROVE` = MANAGER/ADMIN/SUPERADMIN** (the one deliberate exception to managers-read-only;
   the Finance initiator can never approve) → **payment marking** by `FINANCE_WRITE` → a
   **reconciliation** ledger. Three print-clean documents under `(print)/finance/invoices/[id]/…`:
-  the Tax Invoice, the NOPA, and the GNE-002 Approval Note (renders only once APPROVED). The
+  the Tax Invoice, the NOPA, and the GNE-002 Approval Note (renders only once APPROVED). A
+  **Tally XML export** lives at `/finance/tally` (Sales + Receipt vouchers; ledger-name mappings in
+  the `TallySettings` DB singleton). The
   **company "From" block** on every printed document (incl. the HR salary slip) is the
   `CompanyProfile` DB singleton, editable by Finance at `/finance/company` — renderers read it via
   `getCompany()` (`src/lib/company.ts`), which falls back to the hardcoded defaults when no row
@@ -93,10 +99,11 @@ R2/MinIO-compatible via `S3_ENDPOINT`), or SMTP provider is a `.env` change only
   `/login`; the authenticated shell is the `src/app/(erp)/` route group with a **role-driven sidebar**
   (`src/lib/nav.tsx`) — department homes `/bd` `/scm` `/project` `/finance` `/hr`, oversight landing
   `/overview`, system admin `/admin/{users,settings}`. SCM vendor pages are `/scm/*`; HR pages are
-  `/hr/{employees,assets,attendance,payout,projects}` (employee detail is a `(hub)` route-group with
-  per-facet tabs — see the HR "Connected" redesign section); the `/hr` dashboard carries the analytics
-  (pill-driven trend board). Print pages (vendor record, salary
-  slip) live OUTSIDE the shell in a `(print)` route group so they print clean. API handlers under
+  `/hr/{employees,assets,attendance,payroll,projects,recruitment,policies}` (employee detail is a
+  `(hub)` route-group with per-facet tabs — see the HR "Connected" redesign section); the `/hr`
+  dashboard is the compact manpower board (KPI tiles + department / project / not-deployed boxes).
+  Print pages (vendor record, payment slip, finance docs) live OUTSIDE the shell in a `(print)`
+  route group so they print clean. API handlers under
   `src/app/api/*` (`/api/hr/*`, `/api/vendors/*`, `/api/admin/users/*`, `/api/auth/*`, …).
 - **Data layer**: Prisma (`src/lib/prisma.ts` singleton), schema `prisma/schema.prisma`. Field
   validation is **enforced at the application layer** via Zod in `src/lib/validation.ts` +
@@ -120,9 +127,10 @@ R2/MinIO-compatible via `S3_ENDPOINT`), or SMTP provider is a `.env` change only
   API. Guards also reject `mustChangePassword` users. ONE deliberate exception:
   `FINANCE_APPROVE = [MANAGER, ADMIN, SUPERADMIN]` — invoice approval is a sign-off (the manager's
   stated function), and the FINANCE initiator is intentionally NOT in it (no self-approval). **Money is integer rupees** (no Prisma
-  `Decimal`); payslip totals are recomputed server-side (`computePayrollTotals`). HR Zod lives in
-  `src/lib/hr-validation.ts`; HR compute helpers in `src/lib/hr-leave.ts` / `src/lib/hr-forecast.ts` / `src/lib/hr-lop.ts`
-  (attendance-derived loss-of-pay) / `src/lib/hr-projects.ts`.
+  `Decimal`). HR Zod lives in `src/lib/hr-validation.ts`; HR compute helpers in
+  `src/lib/hr-leave.ts` (leave tallies), `src/lib/hr-lop.ts` (attendance-derived loss-of-pay),
+  `src/lib/hr-projects.ts` (timeline/allocation). `src/lib/hr-forecast.ts` is currently
+  unreferenced (the analytics dashboard that used it was removed).
 - **Storage** (`src/lib/storage.ts`): pluggable `local`/`s3` driver. Uploads are gzip-compressed
   only when that's actually smaller (`src/lib/documents.ts` — JPEG/PDF KYC scans don't compress,
   so they store at full size). Files are purged (`src/lib/purge.ts`, run by `POST /api/cron/purge`,
@@ -183,8 +191,8 @@ Premium-**light** design language. Don't hand-roll one-off styles — compose th
   `prefers-reduced-motion` (extend the block in `globals.css` when adding animations), transparency
   on `prefers-reduced-transparency`, and bleeding-edge CSS behind `@supports`. **No chart/animation
   libraries** — charts are bespoke SVG+CSS (`src/components/Charts.tsx`: `AreaChart`/`Donut`/
-  `ForecastArea`/`DeltaBadge`); "predictive" analytics use least-squares trend extrapolation
-  (`src/lib/hr-forecast.ts`), not an ML library. Keep it that way. Tabular `.nums` on codes/money/dates; 16px inputs (no iOS zoom); 44px tap targets;
+  `ForecastArea`/`DeltaBadge`); any trend/forecast math is plain least-squares extrapolation
+  (`src/lib/hr-forecast.ts`, currently unreferenced), never an ML library. Keep it that way. Tabular `.nums` on codes/money/dates; 16px inputs (no iOS zoom); 44px tap targets;
   `:focus-visible` rings. Full rationale: `docs/superpowers/specs/2026-06-22-vendor-portal-ui-redesign-design.md`.
 
 ## HR module — "Connected" redesign
@@ -197,7 +205,8 @@ conventions — don't re-hand-roll tables/links/status colors/keys.** Design + p
 
 - **Employee-360 hub**: `/hr/employees/[id]` is a Next.js **`(hub)` route group**. `(hub)/layout.tsx`
   renders a persistent identity header + snapshot chips + route-tabs (Overview / Attendance / Assets /
-  Projects / Payroll); each tab is its own `(hub)/<tab>/page.tsx` that summarizes and **deep-links**
+  Projects / Payroll; the old Compensation tab redirects to `/hr/payroll/[id]`); each tab is its own
+  `(hub)/<tab>/page.tsx` that summarizes and **deep-links**
   into the full module scoped to that employee. The employee is loaded once via a React-`cache()`d
   `getEmployee` in `(hub)/_data.ts` (layout + page dedupe). `/hr/employees/[id]/edit` sits OUTSIDE
   `(hub)` so it escapes the hub chrome (no double header).
@@ -217,7 +226,7 @@ conventions — don't re-hand-roll tables/links/status colors/keys.** Design + p
   sort dir page`) lives in the query string; `parseListParams`/`buildQuery` read/serialize it, dropping
   empties + defaults. **Every client filter control builds its URL via `buildQuery(basePath, patch)`**
   so params compose and never get silently dropped. Employee-scoped module views (`?employeeId=`) show
-  a `ScopedFilterChip` and are the hub's deep-link targets (`/hr/attendance|assets|payout|projects?employeeId=…`).
+  a `ScopedFilterChip` and are the hub's deep-link targets (`/hr/attendance|assets|projects?employeeId=…`).
 - **Attendance** is a **calendar heatmap** by default (`src/components/hr/AttendanceCalendar.tsx`) with
   small-multiples for the org view; the old wide day-matrix is an opt-in "Table" toggle (in `TableScroll`).
   The status color/code map is shared in `src/components/hr/attendance-status.ts`. The drag-to-paint
@@ -225,40 +234,45 @@ conventions — don't re-hand-roll tables/links/status colors/keys.** Design + p
   preserve them. Cells key off `date.getUTCDate()` (attendance is stored at UTC midnight).
 - **Payroll LOP** (`src/lib/hr-lop.ts`): `attendanceLop(empId, year, month, casualQuota, sickQuota)`
   derives per-month loss-of-pay days = absent + ½·half-day + leave/sick **over the annual quota**
-  (YTD-aware); rate = monthly gross ÷ days-in-month. The printed slip uses it, and the payout editor
-  pre-fills an EDITABLE `"Loss of Pay"` deduction (a reserved `PayrollRecord.extraLines` label — no
-  schema change; server re-sums lines via `computePayrollTotals`, so the client can't fudge totals).
-- **Payroll ops:** `POST /api/hr/payroll/batch` (HR_WRITE, one `$transaction`, per-row server recompute)
-  powers Save-all; Auto-split-all sits in the payout toolbar behind a ConfirmDialog; the payout stat
-  strip gets FULL-MONTH `monthTotals` as props so a `?view=pending|saved` filter never contradicts it.
+  (YTD-aware); rate = monthly gross ÷ days-in-month. It drives the month-navigable "Attendance
+  impact" panel on `/hr/payroll/[id]?year&month` and the `Loss of Pay` deduction line on the
+  month-scoped slip (`/hr/payroll/[id]/slip/print?year&month`). Honesty rule: a month with zero
+  attendance rows says "Attendance not marked" — never claim full pay off missing data.
+- **Payroll is structure-based (2026-07-08 rework):** the monthly PayrollRecord processing UI
+  (payout editor, batch save, `extraLines`, `computePayrollTotals`) was REMOVED — `PayrollRecord`
+  rows remain as read-only history; don't build on them. Pay lives on `Employee` (CTC +
+  salary/LTA/special-allowance/conveyance + fixed pf/esi/tds/other deductions), edited at
+  `/hr/payroll/[id]` via `PATCH /api/hr/payroll/[id]` (`payrollSchema`). The employee form
+  deliberately cannot touch pay — editing an employee must never wipe a salary set later.
 - **⚠️ REMOUNT-KEY RULE (a real data-corruption class, hit twice):** any client component that seeds
   `useState` from server props and is rendered by a page with mutable `searchParams` MUST be keyed on
-  that state — `PayrollEditor key={year-month-view-employeeId}`, `AttendanceGrid key={y-m-employeeId}`,
-  edit forms `key={id}`. Without it, a soft navigation swaps the server data while the client stays
+  that state — `AttendanceGrid key={y-m-employeeId}`, edit forms `key={id}` (EmployeeForm /
+  PayrollForm / PolicyForm). Without it, a soft navigation swaps the server data while the client stays
   frozen — and a later save pairs NEW params with STALE rows. Apply this to every new seeded component.
 - **Guards & feedback:** `useUnsavedGuard(dirty, msg)` (`src/components/hr/useUnsavedGuard.ts`) is the
   shared unsaved-changes guard (beforeunload + capture-phase link-click confirm) — used by
   AttendanceGrid + EmployeeForm; reuse it, don't duplicate. Every `/hr` route segment has a
   `loading.tsx` (shared `RouteLoading` skeleton) — add one to any NEW route so navigation never feels
   dead. Branded 404s exist (`app/not-found.tsx` public, `(erp)/not-found.tsx` in-shell).
-- **Dashboard honesty + bento:** `/hr` is a 12-col bento (KPI cluster / leave-burn rings / sparkline
-  stat-tab Trends / utilization / composition donut / Today-pulse card), streamed via per-cell
-  Suspense. KPI rules (do NOT regress): no DeltaBadge without a real baseline; a partially-processed
-  current month says "so far this month" instead of a red %; zero attendance rows → "—" + "Not marked
-  yet" hints, never an alarming 0%. Chart primitives (`src/components/Charts.tsx`, shared with SCM —
-  additive changes only): wide 1000-unit viewBox, value labels only first/max/last, all-zero series →
-  "No data in this range", least-squares forecast SUPPRESSED when degenerate; `RingGauge`,
-  `DistributionBar`, `SegmentDonut`, `Sparkline`, `BarList` are the bespoke building blocks.
+- **Dashboard = compact manpower board (client requirement, replaced the analytics bento):** `/hr`
+  renders `src/components/hr/DashboardComposition.tsx` — a small-tile KPI row (total / present /
+  on-leave + EVERY `EMP_CATEGORIES` entry, zeros included) + three slim boxes (By department — all
+  `DEPARTMENTS` presets listed even at 0; By project; Not deployed), each box capping its body
+  (`min(20rem, 100vh−20rem)`) and scrolling internally so the page fits one screen at any aspect
+  ratio. Streamed via per-cell Suspense. KPI honesty rules (do NOT regress): zero attendance rows →
+  "—" + "not marked" hints, never an alarming 0. `/hr/analytics` is a redirect stub to `/hr`.
+  Chart primitives (`src/components/Charts.tsx`, shared with SCM — additive changes only) remain
+  the bespoke building blocks (`RingGauge`, `DistributionBar`, `SegmentDonut`, `Sparkline`,
+  `BarList`); no chart libraries.
 - **Cmd-K palette** (`src/components/CommandPalette.tsx`, mounted in the `(erp)` layout with
   `canSearch`/`canWrite` booleans — never import server-only `rbac.ts` client-side): HR_VIEW-scoped
   (non-HR roles get no palette and no key listener), searches via `/api/hr/search` which returns a
   SHAPED payload — never raw Employee rows (they carry salary/bank/PAN). A sidebar search button
   (role-gated) is its visible affordance.
-- **More URL-as-state:** attendance Calendar/Table toggle = `?grid=table`; payout view = `?view=`
-  (payout URLs carry `year/month`, which `buildQuery` does NOT serialize — payout builds its URLs
-  manually; keep it that way). `endDate ≥ startDate` is enforced client-side AND via zod `.refine`
-  on `projectSchema`/`assignmentSchema`.
-  **No schema migration in any phase** — LOP rides `extraLines`, allocation aggregates `allocationPct`.
+- **More URL-as-state:** attendance Calendar/Table toggle = `?grid=table`; payroll month =
+  `?year&month` on `/hr/payroll/[id]` and the slip (`buildQuery` does NOT serialize `year/month` —
+  these pages build their URLs manually; keep it that way). `endDate ≥ startDate` is enforced
+  client-side AND via zod `.refine` on `projectSchema`/`assignmentSchema`.
 
 ## Database & migrations
 
@@ -267,13 +281,18 @@ Postgres via Prisma (`prisma/schema.prisma`). Model groups:
 - **Vendor/SCM:** `Vendor` (registration form) + `VendorService`/`VendorProduct`/`VendorExperience`/
   `VendorPurchaseOrder`/`VendorTurnover`, `VendorDocument`, `VendorInvite`, `DocumentRequest`.
   Status flow `INVITED → SUBMITTED → UNDER_REVIEW → APPROVED/REJECTED`.
-- **HR:** `Employee` (the Man-EMID master + leave quotas + CTC/salary/LTA/special-allowance/conveyance
-  + bank A/C / bankName / IFSC / PAN / UAN / ESIC), `EmployeeAsset`, `AttendanceRecord`
+- **HR:** `Employee` (the Man-EMID master + band/department/category + leave quotas +
+  CTC/salary/LTA/special-allowance/conveyance + fixed pf/esi/tds/other deductions + bank A/C /
+  bankName / IFSC / PAN / UAN / ESIC), `EmployeeFamilyMember` (repeatable family/nominee rows,
+  cascade-delete), `EmployeeAsset` (generalized register: assetType/tag/condition/value/dates/remarks
+  + the legacy laptop booleans), `AttendanceRecord`
   (`AttendanceStatus` = PRESENT/ABSENT/LEAVE/SICK/HALF_DAY/HOLIDAY/WEEK_OFF; unique per employee+day,
-  stored at **UTC midnight**), `PayrollRecord` (monthly, integer-rupee earnings/deductions incl. LTA +
-  special allowance + an `extraLines` JSON of custom per-slip line items; totals server-computed via
-  `computePayrollTotals`), `Project` + `ProjectAssignment` (concurrent per-employee assignments —
-  assignable from EITHER the employee detail OR the project detail page). `AttendanceRecord`/
+  stored at **UTC midnight**), `PayrollRecord` (**LEGACY** — monthly rows kept as history from the
+  removed payroll-processing module; nothing writes them anymore, don't build on them),
+  `Project` + `ProjectAssignment` (concurrent per-employee assignments —
+  assignable from EITHER the employee detail OR the project detail page), `CompanyPolicy`
+  (title/category/content/effectiveFrom/isActive — the `/hr/policies` handbook), recruitment's
+  `JobPosition` + `Candidate` (`PositionStatus` + `HiringStage` pipeline). `AttendanceRecord`/
   `PayrollRecord` use `onDelete: Restrict` so deleting an employee can't wipe payroll/attendance history.
 - **BD:** `BdClient` (client master; enquiry/PO FKs are `onDelete: Restrict` so a client with history
   can't be deleted), `BdEnquiry` (Query & Quote row; enums `BdStage` ENQUIRY/QUOTE_SUBMITTED/FOLLOW_UP/
@@ -287,7 +306,8 @@ Postgres via Prisma (`prisma/schema.prisma`). Model groups:
   non-integer number; rate/amount integer rupees, amount = server-side `round(qty×rate)`), `Nopa`
   (1:1 with Invoice, `nopaNo` unique) + `NopaLine`. Invoice content is editable only in
   DRAFT/REJECTED; deletes only in DRAFT; `decision` uses a conditional `updateMany` on
-  status=PENDING_APPROVAL so concurrent double-decisions lose instead of overwriting.
+  status=PENDING_APPROVAL so concurrent double-decisions lose instead of overwriting. Plus the
+  `CompanyProfile` and `TallySettings` singletons (company "From" block / Tally ledger-name mappings).
 
 ⚠️ **Migrations are additive.** Each schema change is a tracked `prisma migrate dev` migration — or,
 when no DB is reachable, authored **offline** via `prisma migrate diff --from-schema-datamodel <old>

@@ -77,8 +77,11 @@ export default function SlideOver({
         tabIndex={-1}
         inert={!open || undefined}
         className={cn(
-          "fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col bg-white shadow-[var(--shadow-pop)] outline-none transition-transform duration-300 ease-out motion-reduce:transition-none",
-          open ? "translate-x-0" : "translate-x-full",
+          // opacity rides along with the slide so the panel's big tinted shadow
+          // fades out too — a closed (off-screen) panel otherwise leaks a green
+          // shadow band back into the viewport's right edge.
+          "fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col bg-white shadow-[var(--shadow-pop)] outline-none transition-[transform,opacity] duration-300 ease-out motion-reduce:transition-none",
+          open ? "translate-x-0 opacity-100" : "translate-x-full opacity-0",
           className
         )}
       >

@@ -43,7 +43,7 @@ export const employeeStatusSchema = z.object({
 // Optional money field: "" / undefined → undefined; otherwise a non-negative integer (rupees).
 const money = z.preprocess(
   (v) => (v === "" || v === null || v === undefined ? undefined : v),
-  z.coerce.number().int("Whole rupees only").min(0, "Cannot be negative").optional()
+  z.coerce.number({ invalid_type_error: "Enter digits only (₹)" }).int("Whole rupees only").min(0, "Cannot be negative").optional()
 );
 // Optional ISO date string → kept as string|undefined (the route converts to Date).
 const optDate = z.preprocess(
@@ -60,7 +60,7 @@ export const FAMILY_RELATIONS = [
 // Optional 0–100 percentage (nominee share): "" / null / undefined → undefined.
 const pct = z.preprocess(
   (v) => (v === "" || v === null || v === undefined ? undefined : v),
-  z.coerce.number().int("Whole percent only").min(0).max(100).optional()
+  z.coerce.number({ invalid_type_error: "Enter digits only (%)" }).int("Whole percent only").min(0).max(100).optional()
 );
 
 // One repeatable family / next-of-kin member. Only name + relation are required;
@@ -128,8 +128,10 @@ export const payrollSchema = z.object({
 });
 export type PayrollInput = z.infer<typeof payrollSchema>;
 
+// Preset asset types — the form adds its own "Other…" option with a free-text
+// input, so `assetType` stays a free string (custom/legacy values keep working).
 export const ASSET_TYPES = [
-  "Laptop", "Desktop", "Monitor", "Phone", "SIM", "ID Card", "Vehicle", "Tool", "Furniture", "Other",
+  "Laptop", "Desktop", "Monitor", "Phone", "SIM", "Vehicle", "Tool", "Furniture",
 ] as const;
 export const ASSET_CONDITIONS = ["New", "Good", "Fair", "Damaged"] as const;
 
