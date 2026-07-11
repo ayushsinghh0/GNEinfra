@@ -2,6 +2,7 @@
 import { useState, FormEvent, ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Field, Input, Select, Textarea } from "@/components/ui";
+import { digitsOnly, decimal3 } from "@/components/finance/form-utils";
 import { BD_TECHNOLOGIES, BD_SERVICE_CATEGORIES, TECHNOLOGY_LABELS, SERVICE_CATEGORY_LABELS } from "@/lib/bd-validation";
 import { fyChoices, fyLabel } from "@/lib/fiscal";
 import { AlertCircle } from "lucide-react";
@@ -134,7 +135,12 @@ export default function PoForm({
           id={k}
           type={type}
           value={v[k]}
-          onChange={set(k)}
+          onChange={(e) => {
+            // Strict numeric fields: foreign characters never enter state.
+            if (inputMode === "numeric") e.target.value = digitsOnly(12)(e.target.value);
+            else if (inputMode === "decimal") e.target.value = decimal3(e.target.value);
+            set(k)(e);
+          }}
           inputMode={inputMode}
           required={req}
           aria-required={req || undefined}

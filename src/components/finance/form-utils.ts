@@ -1,7 +1,8 @@
 import { useSyncExternalStore } from "react";
 import type { ZodError } from "zod";
 
-// Client-side helpers shared by InvoiceForm and NopaForm.
+// Client-side form helpers — originally for InvoiceForm/NopaForm; the keystroke
+// sanitizers below are shared by HR and BD forms too (strict numeric inputs).
 
 /**
  * Map a ZodError onto the forms' field-error keys: `["items", 2, "rate"]` →

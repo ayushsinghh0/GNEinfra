@@ -2,6 +2,7 @@
 import { useRef, useState, FormEvent, ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Field, Input, Select } from "@/components/ui";
+import { digitsOnly, decimal3, phoneChars } from "@/components/finance/form-utils";
 import { EMP_CATEGORIES, FAMILY_RELATIONS, EMPLOYEE_POSITIONS, DEPARTMENTS } from "@/lib/hr-validation";
 import { AlertCircle, Plus, Trash2, Users } from "lucide-react";
 import ConfirmDialog from "@/components/ConfirmDialog";
@@ -186,7 +187,7 @@ export default function EmployeeForm({
     doSave();
   }
 
-  const Txt = (k: string, label: string, req = false, type = "text", inputMode?: "numeric" | "decimal" | "text") => {
+  const Txt = (k: string, label: string, req = false, type = "text", inputMode?: "numeric" | "decimal" | "tel" | "text") => {
     const err = fieldErrors[k];
     const errId = `${k}-error`;
     return (
@@ -195,7 +196,13 @@ export default function EmployeeForm({
           id={k}
           type={type}
           value={v[k]}
-          onChange={set(k)}
+          onChange={(e) => {
+            // Strict typed fields: foreign characters never enter state.
+            if (inputMode === "numeric") e.target.value = digitsOnly(12)(e.target.value);
+            else if (inputMode === "decimal") e.target.value = decimal3(e.target.value);
+            else if (inputMode === "tel") e.target.value = phoneChars(e.target.value);
+            set(k)(e);
+          }}
           inputMode={inputMode}
           required={req}
           aria-required={req || undefined}
@@ -279,7 +286,7 @@ export default function EmployeeForm({
 
       <Section title="Contact & Personal">
         {Txt("mailId", "Mail Id", false, "email")}
-        {Txt("emergencyNumber", "Emergency Number")}
+        {Txt("emergencyNumber", "Emergency Number", false, "tel", "tel")}
         {Txt("bloodGroup", "Blood Group")}
         {Txt("dob", "DOB", false, "date")}
         {Txt("offerLetterDate", "Offer Letter Date", false, "date")}
@@ -339,7 +346,7 @@ export default function EmployeeForm({
                     <Input id={`fm-occ-${m._k}`} value={m.occupation} onChange={(e) => updateMember(m._k, { occupation: e.target.value })} />
                   </Field>
                   <Field label="Contact" htmlFor={`fm-contact-${m._k}`}>
-                    <Input id={`fm-contact-${m._k}`} inputMode="tel" value={m.contact} onChange={(e) => updateMember(m._k, { contact: e.target.value })} />
+                    <Input id={`fm-contact-${m._k}`} inputMode="tel" value={m.contact} onChange={(e) => updateMember(m._k, { contact: phoneChars(e.target.value) })} />
                   </Field>
                 </div>
                 <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">
@@ -370,7 +377,7 @@ export default function EmployeeForm({
                         max={100}
                         inputMode="numeric"
                         value={m.nomineePct}
-                        onChange={(e) => updateMember(m._k, { nomineePct: e.target.value })}
+                        onChange={(e) => updateMember(m._k, { nomineePct: digitsOnly(3)(e.target.value) })}
                         className="h-9 w-20"
                         aria-label={`Nominee share % for member ${idx + 1}`}
                       />

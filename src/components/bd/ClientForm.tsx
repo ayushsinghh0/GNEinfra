@@ -2,6 +2,7 @@
 import { useState, FormEvent, ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Field, Input, Select, Textarea } from "@/components/ui";
+import { phoneChars } from "@/components/finance/form-utils";
 import { BD_SERVICE_TYPES, BD_PLANT_TYPES, SERVICE_TYPE_LABELS, PLANT_TYPE_LABELS } from "@/lib/bd-validation";
 import { AlertCircle } from "lucide-react";
 import ConfirmDialog from "@/components/ConfirmDialog";
@@ -132,7 +133,15 @@ export default function ClientForm({ id, initial }: { id?: string; initial?: Val
           <Input id="contactPerson" value={v.contactPerson} onChange={set("contactPerson")} />
         </Field>
         <Field label="Contact number" htmlFor="contactNumber">
-          <Input id="contactNumber" value={v.contactNumber} onChange={set("contactNumber")} inputMode="numeric" />
+          <Input
+            id="contactNumber"
+            value={v.contactNumber}
+            onChange={(e) => {
+              e.target.value = phoneChars(e.target.value);
+              set("contactNumber")(e);
+            }}
+            inputMode="tel"
+          />
         </Field>
         <Field label="Notes" htmlFor="notes" className="sm:col-span-2 lg:col-span-3">
           <Textarea id="notes" value={v.notes} onChange={set("notes")} rows={3} />

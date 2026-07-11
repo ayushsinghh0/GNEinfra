@@ -43,17 +43,17 @@ export const PLANT_TYPE_LABELS: Record<(typeof BD_PLANT_TYPES)[number], string> 
 // Optional money: "" / null / undefined → undefined; else non-negative integer rupees.
 const money = z.preprocess(
   (v) => (v === "" || v === null || v === undefined ? undefined : v),
-  z.coerce.number().int("Whole rupees only").min(0, "Cannot be negative").optional()
+  z.coerce.number({ invalid_type_error: "Enter digits only (₹)" }).int("Whole rupees only").min(0, "Cannot be negative").optional()
 );
 // Optional non-negative integer (quantities, location counts).
 const optInt = z.preprocess(
   (v) => (v === "" || v === null || v === undefined ? undefined : v),
-  z.coerce.number().int("Whole numbers only").min(0).optional()
+  z.coerce.number({ invalid_type_error: "Enter digits only" }).int("Whole numbers only").min(0).optional()
 );
 // Optional 0–100 percentage.
 const pct = z.preprocess(
   (v) => (v === "" || v === null || v === undefined ? undefined : v),
-  z.coerce.number().int().min(0, "0–100").max(100, "0–100").optional()
+  z.coerce.number({ invalid_type_error: "Enter digits only (%)" }).int().min(0, "0–100").max(100, "0–100").optional()
 );
 // Optional ISO date string (routes convert to Date).
 const optDate = z.preprocess(

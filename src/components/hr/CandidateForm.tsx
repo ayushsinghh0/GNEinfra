@@ -2,6 +2,7 @@
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Field, Input, Select, Textarea } from "@/components/ui";
+import { digitsOnly, decimal3, phoneChars } from "@/components/finance/form-utils";
 import {
   HIRING_STAGES,
   HIRING_STAGE_LABELS,
@@ -85,7 +86,13 @@ export default function CandidateForm({
           type={type}
           inputMode={inputMode}
           value={v[k]}
-          onChange={set(k)}
+          onChange={(e) => {
+            // Strict typed fields: foreign characters never enter state.
+            if (inputMode === "numeric") e.target.value = digitsOnly(12)(e.target.value);
+            else if (inputMode === "decimal") e.target.value = decimal3(e.target.value);
+            else if (inputMode === "tel") e.target.value = phoneChars(e.target.value);
+            set(k)(e);
+          }}
           aria-invalid={err ? true : undefined}
           aria-describedby={err ? errId : undefined}
         />

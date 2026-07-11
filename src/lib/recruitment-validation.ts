@@ -41,7 +41,7 @@ export const positionSchema = z.object({
   employmentType: z.string().trim().max(60).optional().or(z.literal("")),
   openings: z.preprocess(
     (v) => (v === "" || v === null || v === undefined ? 1 : v),
-    z.coerce.number().int("Whole number only").min(0, "Cannot be negative").max(10000)
+    z.coerce.number({ invalid_type_error: "Enter digits only" }).int("Whole number only").min(0, "Cannot be negative").max(10000)
   ),
   jobDescription: z.string().trim().max(8000).optional().or(z.literal("")),
   status: z.enum(POSITION_STATUSES).default("OPEN"),
@@ -59,7 +59,7 @@ export const candidateSchema = z.object({
   cvLink: z.string().trim().max(500).optional().or(z.literal("")),
   experienceYears: z.preprocess(
     (v) => (v === "" || v === null || v === undefined ? undefined : v),
-    z.coerce.number().min(0, "Cannot be negative").max(60).optional()
+    z.coerce.number({ invalid_type_error: "Enter a number" }).min(0, "Cannot be negative").max(60).optional()
   ),
   noticePeriod: z.string().trim().max(60).optional().or(z.literal("")),
   appliedOn: optDate,

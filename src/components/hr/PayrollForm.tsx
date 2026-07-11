@@ -2,6 +2,7 @@
 import { useState, FormEvent, ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Field, Input } from "@/components/ui";
+import { digitsOnly } from "@/components/finance/form-utils";
 import { fmtINR } from "@/lib/format";
 import { AlertCircle } from "lucide-react";
 import { toast } from "@/components/Toast";
@@ -33,8 +34,11 @@ export default function PayrollForm({ id, initial, canWrite }: { id: string; ini
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement>) =>
-    setV((s) => ({ ...s, [k]: e.target.value }));
+  // Money fields are strict: non-digit keystrokes never enter state (the zod
+  // `money` schema on the API stays the submit-time authority).
+  const rupees = digitsOnly(9);
+  const set = (k: string, money = false) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    setV((s) => ({ ...s, [k]: money ? rupees(e.target.value) : e.target.value }));
 
   const dirty = JSON.stringify(v) !== seed;
   useUnsavedGuard(dirty && canWrite, "You have unsaved payroll changes. Leave without saving?");
@@ -74,7 +78,7 @@ export default function PayrollForm({ id, initial, canWrite }: { id: string; ini
 
   const Txt = (k: string, label: string, money = false) => (
     <Field label={label} htmlFor={k}>
-      <Input id={k} value={v[k] ?? ""} onChange={set(k)} inputMode={money ? "numeric" : undefined} />
+      <Input id={k} value={v[k] ?? ""} onChange={set(k, money)} inputMode={money ? "numeric" : undefined} maxLength={money ? 9 : undefined} />
     </Field>
   );
 

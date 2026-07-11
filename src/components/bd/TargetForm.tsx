@@ -2,6 +2,7 @@
 import { useState, FormEvent, ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Field, Input, Select, Textarea } from "@/components/ui";
+import { digitsOnly, decimal3 } from "@/components/finance/form-utils";
 import {
   BD_SERVICE_TYPES, BD_PLANT_TYPES, BD_QUARTERS,
   SERVICE_TYPE_LABELS, PLANT_TYPE_LABELS,
@@ -110,7 +111,12 @@ export default function TargetForm({ id, initial }: { id?: string; initial?: Val
           id={k}
           type={type}
           value={v[k]}
-          onChange={set(k)}
+          onChange={(e) => {
+            // Strict numeric fields: foreign characters never enter state.
+            if (inputMode === "numeric") e.target.value = digitsOnly(12)(e.target.value);
+            else if (inputMode === "decimal") e.target.value = decimal3(e.target.value);
+            set(k)(e);
+          }}
           inputMode={inputMode}
           required={req}
           aria-required={req || undefined}
@@ -202,7 +208,10 @@ export default function TargetForm({ id, initial }: { id?: string; initial?: Val
           <Input
             id="forecastedRevenue"
             value={v.forecastedRevenue}
-            onChange={set("forecastedRevenue")}
+            onChange={(e) => {
+              e.target.value = digitsOnly(12)(e.target.value);
+              set("forecastedRevenue")(e);
+            }}
             inputMode="numeric"
           />
         </Field>
@@ -211,7 +220,15 @@ export default function TargetForm({ id, initial }: { id?: string; initial?: Val
           htmlFor="orderReceived"
           hint={achievement !== null ? `${achievement}% of sales target achieved` : undefined}
         >
-          <Input id="orderReceived" value={v.orderReceived} onChange={set("orderReceived")} inputMode="numeric" />
+          <Input
+            id="orderReceived"
+            value={v.orderReceived}
+            onChange={(e) => {
+              e.target.value = digitsOnly(12)(e.target.value);
+              set("orderReceived")(e);
+            }}
+            inputMode="numeric"
+          />
         </Field>
         <Field label="Notes" htmlFor="notes" className="sm:col-span-2 lg:col-span-3">
           <Textarea id="notes" value={v.notes} onChange={set("notes")} rows={2} />

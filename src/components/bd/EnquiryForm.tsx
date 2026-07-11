@@ -2,6 +2,7 @@
 import { useState, FormEvent, ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Field, Input, Select, Textarea } from "@/components/ui";
+import { digitsOnly, decimal3 } from "@/components/finance/form-utils";
 import {
   BD_STAGES, BD_FINAL_STATUSES,
   BD_TECHNOLOGIES, BD_SERVICE_CATEGORIES, BD_QUOTATION_STATUSES,
@@ -142,7 +143,12 @@ export default function EnquiryForm({
           id={k}
           type={type}
           value={v[k]}
-          onChange={set(k)}
+          onChange={(e) => {
+            // Strict numeric fields: foreign characters never enter state.
+            if (inputMode === "numeric") e.target.value = digitsOnly(12)(e.target.value);
+            else if (inputMode === "decimal") e.target.value = decimal3(e.target.value);
+            set(k)(e);
+          }}
           inputMode={inputMode}
           required={req}
           aria-required={req || undefined}
@@ -265,7 +271,10 @@ export default function EnquiryForm({
           <Input
             id="forecastedRevenue"
             value={v.forecastedRevenue}
-            onChange={set("forecastedRevenue")}
+            onChange={(e) => {
+              e.target.value = digitsOnly(12)(e.target.value);
+              set("forecastedRevenue")(e);
+            }}
             inputMode="numeric"
           />
         </Field>

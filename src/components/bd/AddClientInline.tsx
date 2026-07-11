@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { Button, Field, Input } from "@/components/ui";
+import { phoneChars } from "@/components/finance/form-utils";
 import { toast } from "@/components/Toast";
 import { Plus, AlertCircle } from "lucide-react";
 
@@ -74,7 +75,7 @@ export default function AddClientInline({ onAdded }: { onAdded: (c: { id: string
           <Input id="new-client-person" value={contactPerson} onChange={(e) => setContactPerson(e.target.value)} onKeyDown={onKey} />
         </Field>
         <Field label="Contact no" htmlFor="new-client-number">
-          <Input id="new-client-number" value={contactNumber} onChange={(e) => setContactNumber(e.target.value)} onKeyDown={onKey} inputMode="tel" />
+          <Input id="new-client-number" value={contactNumber} onChange={(e) => setContactNumber(phoneChars(e.target.value))} onKeyDown={onKey} inputMode="tel" />
         </Field>
       </div>
       <div className="flex gap-2">

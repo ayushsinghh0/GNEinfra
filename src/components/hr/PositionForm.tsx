@@ -2,6 +2,7 @@
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Field, Input, Select, Textarea } from "@/components/ui";
+import { digitsOnly } from "@/components/finance/form-utils";
 import {
   POSITION_STATUSES,
   POSITION_STATUS_LABELS,
@@ -72,7 +73,11 @@ export default function PositionForm({ id, initial }: { id?: string; initial?: V
           type={type}
           inputMode={inputMode}
           value={v[k]}
-          onChange={set(k)}
+          onChange={(e) => {
+            // Strict numeric fields: foreign characters never enter state.
+            if (inputMode === "numeric") e.target.value = digitsOnly(12)(e.target.value);
+            set(k)(e);
+          }}
           aria-invalid={err ? true : undefined}
           aria-describedby={err ? errId : undefined}
         />
