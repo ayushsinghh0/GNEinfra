@@ -79,6 +79,36 @@ export function assignmentStats(
 }
 
 /**
+ * Prisma where-fragment for an assignment that is live TODAY: already started,
+ * not ended, on an ACTIVE project, held by an ACTIVE employee. This is the ONE
+ * definition behind every deployed / on-projects / not-deployed number (dashboard
+ * cells, hub chips) — compose it instead of re-writing the clauses, or two
+ * counts of the same fact will disagree on edge cases (future-dated starts,
+ * assignments on on-hold/completed projects).
+ */
+export function liveAssignmentWhere(today: Date) {
+  return {
+    startDate: { lte: today },
+    OR: [{ endDate: null }, { endDate: { gte: today } }],
+    employee: { status: "ACTIVE" as const },
+    project: { status: "ACTIVE" as const },
+  };
+}
+
+/** In-memory twin of liveAssignmentWhere for rows already loaded with their project. */
+export function isLiveAssignment(
+  a: { startDate: Date; endDate: Date | null; project: { status: ProjectStatus } },
+  asOf: Date = new Date(),
+): boolean {
+  const cutoff = Date.UTC(asOf.getUTCFullYear(), asOf.getUTCMonth(), asOf.getUTCDate());
+  return (
+    a.project.status === "ACTIVE" &&
+    a.startDate.getTime() <= cutoff &&
+    (a.endDate == null || a.endDate.getTime() >= cutoff)
+  );
+}
+
+/**
  * Sum of allocationPct across a single employee's ACTIVE assignment rows (endDate
  * null or on/after `asOf`, default today at UTC midnight). Null allocationPct
  * contributes 0 — never blocks/undercounts as NaN.

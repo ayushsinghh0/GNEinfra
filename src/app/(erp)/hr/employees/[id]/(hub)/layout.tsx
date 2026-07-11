@@ -7,6 +7,7 @@ import EmployeeStatusAction from "@/components/hr/EmployeeStatusAction";
 import ProfileHeader from "@/components/hr/ProfileHeader";
 import SnapshotStrip from "@/components/hr/SnapshotStrip";
 import EmployeeTabs from "@/components/hr/EmployeeTabs";
+import { isLiveAssignment } from "@/lib/hr-projects";
 import { getEmployee } from "./_data";
 
 export const dynamic = "force-dynamic";
@@ -40,15 +41,13 @@ export default async function EmployeeHubLayout({
   const emp = await getEmployee(id);
   if (!emp) notFound();
 
-  // UTC-midnight cutoff — MUST match hr-projects.ts's activeAllocation(),
-  // which the Projects tab uses for "X% committed". endDate is stored at
-  // UTC midnight; comparing against a full `new Date()` timestamp (today's
-  // time-of-day) instead of a date-only cutoff made an assignment ending
-  // "today" read as already-ended here but still-active there — the chip
-  // undercounted by one, with the drift varying by server time-of-day.
-  const today = new Date();
-  const cutoff = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
-  const activeProjects = emp.projectAssignments.filter((a) => !a.endDate || a.endDate.getTime() >= cutoff).length;
+  // Shared "live today" definition (hr-projects.isLiveAssignment: started, not
+  // ended, project ACTIVE — UTC-midnight cutoff) so this chip always agrees
+  // with the dashboard's deployed / not-deployed numbers. Note the Projects
+  // tab's "X% committed" (activeAllocation) intentionally stays forward-looking
+  // (counts not-yet-ended rows incl. future starts) — it warns about planned
+  // over-commitment, a different question than "deployed today".
+  const activeProjects = emp.projectAssignments.filter((a) => isLiveAssignment(a)).length;
 
   return (
     <>
@@ -93,7 +92,7 @@ export default async function EmployeeHubLayout({
       <SnapshotStrip
         id={id}
         tenureLabel={tenureLabel(emp.dateOfJoining)}
-        assetsCount={emp.assets.length}
+        assetsCount={emp.assets.filter((a) => !a.returnedAt).length}
         activeProjects={activeProjects}
         band={emp.band}
       />

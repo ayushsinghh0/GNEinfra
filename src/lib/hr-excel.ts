@@ -1,15 +1,12 @@
 import ExcelJS from "exceljs";
 import type { Employee } from "@prisma/client";
+import { STATUS } from "@/components/hr/attendance-status";
 
-// Short display codes for attendance statuses
-const STATUS_CODE: Record<string, string> = {
-  PRESENT: "P",
-  ABSENT: "A",
-  LEAVE: "L",
-  HALF_DAY: "H½",
-  HOLIDAY: "H",
-  WEEK_OFF: "WO",
-};
+// Attendance cell codes come from the shared on-screen status map (single
+// source of truth) — the export must show exactly what the calendar shows.
+// A hand-rolled copy here once drifted (no SICK code → raw "SICK" in cells).
+const statusCode = (raw: string) =>
+  (STATUS as Record<string, { code: string }>)[raw]?.code ?? raw;
 
 function mmYYYY(month: number, year: number) {
   return `${String(month).padStart(2, "0")}-${year}`;
@@ -60,6 +57,18 @@ export async function buildEmployeesWorkbook(
     "LTA",
     "Special Allowance",
     "Conveyance",
+    "PF",
+    "ESI",
+    "TDS",
+    "Other Deduction",
+    "Total Deductions",
+    "Net / Month",
+    "Bank Name",
+    "Bank A/C No",
+    "IFSC",
+    "PAN",
+    "UAN",
+    "ESIC",
   ];
 
   ws.columns = [
@@ -87,16 +96,30 @@ export async function buildEmployeesWorkbook(
     { width: 10 },  // LTA
     { width: 18 },  // Special Allowance
     { width: 13 },  // Conveyance
+    { width: 10 },  // PF
+    { width: 10 },  // ESI
+    { width: 10 },  // TDS
+    { width: 16 },  // Other Deduction
+    { width: 16 },  // Total Deductions
+    { width: 13 },  // Net / Month
+    { width: 20 },  // Bank Name
+    { width: 20 },  // Bank A/C No
+    { width: 14 },  // IFSC
+    { width: 14 },  // PAN
+    { width: 16 },  // UAN
+    { width: 16 },  // ESIC
   ];
 
   const head = ws.addRow(headers);
   boldWhiteHeader(head);
 
   employees.forEach((emp, idx) => {
-    // Monthly gross mirrors /hr/payroll's live summary; ×12 sits next to the
-    // annual Total CTC so the two are directly comparable in the sheet.
+    // Monthly gross/deductions/net mirror /hr/payroll's live summary exactly;
+    // ×12 sits next to the annual Total CTC so the two are directly comparable.
     const gross =
       (emp.salary ?? 0) + (emp.lta ?? 0) + (emp.specialAllowance ?? 0) + (emp.conveyance ?? 0);
+    const deductions =
+      (emp.pfDeduction ?? 0) + (emp.esiDeduction ?? 0) + (emp.tdsDeduction ?? 0) + (emp.otherDeduction ?? 0);
     ws.addRow([
       idx + 1,
       emp.empId,
@@ -122,6 +145,18 @@ export async function buildEmployeesWorkbook(
       emp.lta ?? "",
       emp.specialAllowance ?? "",
       emp.conveyance ?? "",
+      emp.pfDeduction ?? "",
+      emp.esiDeduction ?? "",
+      emp.tdsDeduction ?? "",
+      emp.otherDeduction ?? "",
+      deductions || "",
+      gross ? gross - deductions : "",
+      emp.bankName ?? "",
+      emp.bankAccountNo ?? "",
+      emp.ifsc ?? "",
+      emp.panNo ?? "",
+      emp.uan ?? "",
+      emp.esicNo ?? "",
     ]);
   });
 
@@ -144,19 +179,25 @@ export async function buildAttendanceWorkbook(
 
   const ws = wb.addWorksheet(`Attendance ${mmYYYY(month, year)}`);
 
+  // Summary tallies mirror the on-screen legend: Present / Absent / Leave /
+  // Sick / Half-day (sick and half-days used to be silently uncounted).
   const headers = [
     "EMP ID",
     "Employee Name",
     ...Array.from({ length: daysInMonth }, (_, i) => String(i + 1)),
     "P",
-    "L",
     "A",
+    "L",
+    "S",
+    "½",
   ];
 
   ws.columns = [
     { width: 12 },
     { width: 26 },
     ...Array.from({ length: daysInMonth }, () => ({ width: 5 })),
+    { width: 5 },
+    { width: 5 },
     { width: 5 },
     { width: 5 },
     { width: 5 },
@@ -176,16 +217,20 @@ export async function buildAttendanceWorkbook(
     const dayMap = lookup.get(emp.id) ?? new Map<number, string>();
     const dayCells: string[] = [];
     let P = 0,
+      A = 0,
       L = 0,
-      A = 0;
+      S = 0,
+      H = 0;
     for (let d = 1; d <= daysInMonth; d++) {
       const raw = dayMap.get(d) ?? "";
-      dayCells.push(raw ? (STATUS_CODE[raw] ?? raw) : "");
+      dayCells.push(raw ? statusCode(raw) : "");
       if (raw === "PRESENT") P++;
-      else if (raw === "LEAVE") L++;
       else if (raw === "ABSENT") A++;
+      else if (raw === "LEAVE") L++;
+      else if (raw === "SICK") S++;
+      else if (raw === "HALF_DAY") H++;
     }
-    ws.addRow([emp.empId, emp.name, ...dayCells, P, L, A]);
+    ws.addRow([emp.empId, emp.name, ...dayCells, P, A, L, S, H]);
   }
 
   return Buffer.from(await wb.xlsx.writeBuffer());
