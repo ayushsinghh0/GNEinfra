@@ -1,23 +1,131 @@
 import Link from "next/link";
-import { FolderKanban, Users, ChevronRight, Armchair, CalendarCheck, Clock } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { prisma } from "@/lib/prisma";
-import { Card, CardHeader, CardBody, EmptyState, StatusChip, StatCard, EntityLink, cn } from "@/components/ui";
+import { Card, EntityLink, cn } from "@/components/ui";
 import { fmtDateOnly } from "@/lib/format";
 import { buildQuery } from "@/lib/hr-filters";
-import { BarList } from "@/components/Charts";
+import { EMP_CATEGORIES, DEPARTMENTS } from "@/lib/hr-validation";
 
 // The HR dashboard's streamed cells (each its own Suspense boundary). Every cell
 // re-runs its own slice of the employee/project/attendance queries rather than
 // sharing another cell's result — correctness over dedupe.
+//
+// Density is the point of this screen (client requirement: everything visible on
+// one screen in small boxes), so the cells compose their own compact tile/box
+// chrome instead of the roomier StatCard/CardHeader/CardBody primitives.
+
+/* ── Compact building blocks ───────────────────────────────────────────────── */
+
+function KpiTile({
+  label,
+  value,
+  dot,
+  href,
+}: {
+  label: string;
+  value: React.ReactNode;
+  dot: string; // tailwind bg-* class for the tone dot
+  href?: string;
+}) {
+  const inner = (
+    <>
+      <div className="flex items-center gap-1.5">
+        <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", dot)} aria-hidden="true" />
+        <span className="truncate text-[11px] font-medium text-slate-500">{label}</span>
+      </div>
+      <div className="nums mt-1 text-lg font-semibold leading-none text-slate-900">{value}</div>
+    </>
+  );
+  const base = "min-w-0 rounded-xl bg-white px-3 py-2 shadow-[var(--shadow-card)]";
+  return href ? (
+    <Link
+      href={href}
+      className={cn(base, "lift block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40")}
+    >
+      {inner}
+    </Link>
+  ) : (
+    <div className={base}>{inner}</div>
+  );
+}
+
+// Slim card shell: 40px header + a capped, internally-scrolling body so the
+// three boxes never push the page past one screen no matter how long the lists.
+function Box({
+  title,
+  meta,
+  action,
+  children,
+}: {
+  title: string;
+  meta?: React.ReactNode;
+  action?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <Card className="flex h-full min-w-0 flex-col overflow-hidden">
+      <div className="flex items-center justify-between gap-2 border-b border-slate-100 px-4 py-2.5">
+        <h2 className="flex min-w-0 items-baseline gap-2 text-sm font-semibold tracking-tight text-slate-900">
+          <span className="truncate">{title}</span>
+          {meta && <span className="nums shrink-0 text-[11px] font-medium text-slate-400">{meta}</span>}
+        </h2>
+        {action}
+      </div>
+      <div className="max-h-80 min-h-0 flex-1 overflow-y-auto px-4 py-2.5">{children}</div>
+    </Card>
+  );
+}
+
+function BoxLink({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <Link
+      href={href}
+      className="press inline-flex shrink-0 items-center gap-0.5 text-xs font-medium text-brand-700 transition-colors hover:text-brand"
+    >
+      {children}
+      <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
+    </Link>
+  );
+}
+
+function BoxEmpty({ title, hint }: { title: string; hint?: string }) {
+  return (
+    <div className="flex h-full min-h-24 flex-col items-center justify-center gap-1 py-6 text-center">
+      <p className="text-sm font-medium text-slate-600">{title}</p>
+      {hint && <p className="max-w-60 text-xs text-slate-400">{hint}</p>}
+    </div>
+  );
+}
 
 /* ── KPI strip: total + today's attendance + per-category headcount ───────── */
+// Every known employment category renders even at 0 (the client's ask is the
+// full category split — On-Roll / Contract / Outsourced / …), with legacy or
+// custom category values appended after the presets.
 export async function ManpowerKpis({ todayUTC }: { todayUTC: Date }) {
   const [byCategory, attToday] = await Promise.all([
     prisma.employee.groupBy({ by: ["empCategory"], where: { status: "ACTIVE" }, _count: { _all: true } }),
     prisma.attendanceRecord.groupBy({ by: ["status"], where: { date: todayUTC }, _count: { _all: true } }),
   ]);
   const total = byCategory.reduce((s, r) => s + r._count._all, 0);
-  const cats = [...byCategory].sort((a, b) => b._count._all - a._count._all);
+
+  const catCount = new Map<string, number>();
+  for (const r of byCategory) {
+    const key = r.empCategory?.trim() || "Uncategorised";
+    catCount.set(key, (catCount.get(key) ?? 0) + r._count._all);
+  }
+  const presets: readonly string[] = EMP_CATEGORIES;
+  const catHref = (c: string) => buildQuery("/hr/employees", { status: "ACTIVE", category: c });
+  const categories = [
+    ...EMP_CATEGORIES.map((c) => ({ label: c, value: catCount.get(c) ?? 0, href: catHref(c) })),
+    ...[...catCount.entries()]
+      .filter(([label]) => label !== "Uncategorised" && !presets.includes(label))
+      .sort((a, b) => b[1] - a[1])
+      .map(([label, value]) => ({ label, value, href: catHref(label) })),
+    ...(catCount.has("Uncategorised")
+      ? [{ label: "Uncategorised", value: catCount.get("Uncategorised")!, href: undefined }]
+      : []),
+  ];
+
   const n = (s: string) => attToday.find((r) => r.status === s)?._count._all ?? 0;
   const presentToday = n("PRESENT");
   const onLeaveToday = n("LEAVE") + n("SICK");
@@ -25,77 +133,97 @@ export async function ManpowerKpis({ todayUTC }: { todayUTC: Date }) {
   const todayHasRows = attToday.reduce((s, r) => s + r._count._all, 0) > 0;
   const y = todayUTC.getUTCFullYear();
   const m = todayUTC.getUTCMonth() + 1;
+  const attendanceHref = `/hr/attendance?year=${y}&month=${m}`;
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-      <StatCard size="sm" label="Total manpower" value={total} tone="brand" icon={<Users className="h-4 w-4" />} href="/hr/employees?status=ACTIVE" />
-      <StatCard size="sm" label="Present today" value={todayHasRows ? presentToday : "—"} tone="emerald" icon={<CalendarCheck className="h-4 w-4" />} href={`/hr/attendance?year=${y}&month=${m}`} />
-      <StatCard size="sm" label="On leave today" value={todayHasRows ? onLeaveToday : "—"} tone="amber" icon={<Clock className="h-4 w-4" />} href={`/hr/attendance?year=${y}&month=${m}`} />
-      {cats.map((c) => (
-        <StatCard
-          key={c.empCategory ?? "uncategorised"}
-          size="sm"
-          label={c.empCategory ?? "Uncategorised"}
-          value={c._count._all}
-          tone="slate"
-          href={c.empCategory ? buildQuery("/hr/employees", { status: "ACTIVE", category: c.empCategory }) : undefined}
-        />
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-8">
+      <KpiTile label="Total manpower" value={total} dot="bg-brand-500" href="/hr/employees?status=ACTIVE" />
+      <KpiTile label="Present today" value={todayHasRows ? presentToday : "—"} dot="bg-emerald-500" href={attendanceHref} />
+      <KpiTile label="On leave today" value={todayHasRows ? onLeaveToday : "—"} dot="bg-amber-500" href={attendanceHref} />
+      {categories.map((c) => (
+        <KpiTile key={c.label} label={c.label} value={c.value} dot="bg-slate-300" href={c.href} />
       ))}
     </div>
   );
 }
 
 /* ── Manpower by department ────────────────────────────────────────────────── */
+// One slim bar-row per department. Preset departments always render (zeros
+// included) so the box reads as the org structure, not just whoever has the
+// field filled in; departments with headcount sort first.
 export async function DashboardDepartments() {
   const byDept = await prisma.employee.groupBy({
     by: ["department"],
     where: { status: "ACTIVE" },
     _count: { _all: true },
   });
-  const items = [...byDept]
-    .sort((a, b) => b._count._all - a._count._all)
-    .map((d) => ({
-      label: d.department ?? "Unassigned",
-      value: d._count._all,
-      href: d.department
-        ? buildQuery("/hr/employees", { status: "ACTIVE", department: d.department })
-        : undefined,
-    }));
+
+  const deptCount = new Map<string, number>();
+  for (const r of byDept) {
+    const key = r.department?.trim() || "Unassigned";
+    deptCount.set(key, (deptCount.get(key) ?? 0) + r._count._all);
+  }
+  const staffed = [...deptCount.entries()]
+    .map(([label, value]) => ({ label, value }))
+    .sort((a, b) => b.value - a.value || a.label.localeCompare(b.label));
+  const empty = DEPARTMENTS.filter((d) => !deptCount.has(d)).map((d) => ({ label: d, value: 0 }));
+  const items = [...staffed, ...empty];
+  const max = Math.max(1, ...items.map((i) => i.value));
+  const totalActive = staffed.reduce((s, i) => s + i.value, 0);
 
   return (
-    <Card className="h-full">
-      <CardHeader
-        title="By department"
-        subtitle="Active headcount"
-        action={
-          <Link
-            href="/hr/employees?status=ACTIVE"
-            className="press inline-flex items-center gap-1 text-sm font-medium text-brand-700 transition-colors hover:text-brand"
-          >
-            Employees
-            <ChevronRight className="h-4 w-4" />
-          </Link>
-        }
-      />
-      <CardBody className="px-6 py-5">
-        {items.length === 0 ? (
-          <EmptyState
-            icon={<Users className="h-6 w-6" />}
-            title="No active employees"
-            description="Department headcount appears once employees are on record."
-          />
-        ) : (
-          <BarList items={items} />
-        )}
-      </CardBody>
-    </Card>
+    <Box
+      title="By department"
+      meta={`${totalActive} active`}
+      action={<BoxLink href="/hr/employees?status=ACTIVE">Employees</BoxLink>}
+    >
+      <ul>
+        {items.map((d) => {
+          const zero = d.value === 0;
+          const row = (
+            <>
+              <span className={cn("w-[42%] truncate text-xs", zero ? "text-slate-400" : "text-slate-600")}>
+                {d.label}
+              </span>
+              <span className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-slate-100">
+                {!zero && (
+                  <span
+                    className="block h-full rounded-full bg-gradient-to-r from-brand-500 to-brand-300"
+                    style={{ width: `${Math.min(100, (d.value / max) * 100)}%` }}
+                  />
+                )}
+              </span>
+              <span className={cn("nums w-7 shrink-0 text-right text-xs font-semibold", zero ? "text-slate-400" : "text-slate-700")}>
+                {d.value}
+              </span>
+            </>
+          );
+          // "Unassigned" has no department value to filter by — leave it unlinked.
+          return (
+            <li key={d.label}>
+              {d.label === "Unassigned" ? (
+                <div className="-mx-1.5 flex items-center gap-2.5 rounded-lg px-1.5 py-[5px]">{row}</div>
+              ) : (
+                <Link
+                  href={buildQuery("/hr/employees", { status: "ACTIVE", department: d.label })}
+                  className="-mx-1.5 flex items-center gap-2.5 rounded-lg px-1.5 py-[5px] motion-safe:transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30"
+                >
+                  {row}
+                </Link>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </Box>
   );
 }
 
-/* ── Project details ──────────────────────────────────────────────────────── */
-// Active projects, plus the "who's deployed / who's idle" split the utilization
-// card used to carry (working = distinct active employees on a live assignment,
-// unused = active headcount minus that). Each project row deep-links to its page.
+/* ── Project-wise manpower ─────────────────────────────────────────────────── */
+// Active projects ranked by staffed headcount, plus the deployed/bench split
+// (working = distinct active employees on a live assignment, bench = active
+// headcount minus that). Each project row deep-links to its page. No status
+// chip on rows — the query already filters to ACTIVE, so it carries no signal.
 export async function DashboardProjects({ today }: { today: Date }) {
   // An assignment is "live" now = its employee is active AND it hasn't ended.
   const liveAssignment = {
@@ -112,7 +240,6 @@ export async function DashboardProjects({ today }: { today: Date }) {
         name: true,
         code: true,
         client: true,
-        status: true,
         startDate: true,
         endDate: true,
         _count: { select: { assignments: { where: liveAssignment } } },
@@ -132,101 +259,61 @@ export async function DashboardProjects({ today }: { today: Date }) {
   const ranked = [...projects].sort(
     (a, b) => b._count.assignments - a._count.assignments || a.name.localeCompare(b.name)
   );
-  const CAP = 6;
-  const shown = ranked.slice(0, CAP);
-  const moreCount = ranked.length - shown.length;
 
   const summary = [
-    { label: "Active projects", value: projects.length, tone: "brand" as const, icon: FolderKanban },
-    { label: "On projects", value: deployed, tone: "emerald" as const, icon: Users },
-    { label: "Not deployed", value: bench, tone: "amber" as const, icon: Armchair },
+    { label: "Live projects", value: projects.length, cls: "bg-brand-50/60 text-brand-700" },
+    { label: "On projects", value: deployed, cls: "bg-emerald-50/60 text-emerald-700" },
+    { label: "Not deployed", value: bench, cls: "bg-amber-50/60 text-amber-700" },
   ];
-  const toneCls: Record<"brand" | "emerald" | "amber", string> = {
-    brand: "bg-brand-50/60 text-brand-700",
-    emerald: "bg-emerald-50/60 text-emerald-700",
-    amber: "bg-amber-50/60 text-amber-700",
-  };
 
   return (
-    <Card className="h-full">
-      <CardHeader
-        title="Project details"
-        subtitle="Live projects and staffing"
-        action={
-          <Link
-            href="/hr/projects"
-            className="press inline-flex items-center gap-1 text-sm font-medium text-brand-700 transition-colors hover:text-brand"
-          >
-            Projects
-            <ChevronRight className="h-4 w-4" />
-          </Link>
-        }
-      />
-      <CardBody className="space-y-4 px-6 py-5">
-        <div className="grid grid-cols-3 gap-2.5">
-          {summary.map((s) => (
-            <div key={s.label} className={cn("rounded-xl p-2.5", toneCls[s.tone])}>
-              <div className="flex items-center gap-1.5 text-[11px] font-medium">
-                <s.icon className="h-3.5 w-3.5" aria-hidden="true" />
-                <span className="truncate">{s.label}</span>
-              </div>
-              <div className="nums mt-1 text-xl font-semibold leading-none text-slate-900">{s.value}</div>
-            </div>
-          ))}
-        </div>
+    <Box title="By project" meta={`${projects.length} live`} action={<BoxLink href="/hr/projects">Projects</BoxLink>}>
+      <div className="grid grid-cols-3 gap-1.5">
+        {summary.map((s) => (
+          <div key={s.label} className={cn("min-w-0 rounded-lg px-2.5 py-1.5", s.cls)}>
+            <div className="nums text-base font-semibold leading-none text-slate-900">{s.value}</div>
+            <div className="mt-0.5 truncate text-[11px] font-medium">{s.label}</div>
+          </div>
+        ))}
+      </div>
 
-        <div className="border-t border-slate-100 pt-3">
-          {shown.length === 0 ? (
-            <p className="text-sm text-slate-400">
-              No active projects yet —{" "}
-              <Link href="/hr/projects" className="font-medium text-brand-700 hover:text-brand">
-                view projects
-              </Link>
-              .
-            </p>
-          ) : (
-            <ul className="space-y-1">
-              {shown.map((p) => {
-                const range = [fmtDateOnly(p.startDate), fmtDateOnly(p.endDate)].filter(Boolean).join(" – ");
-                return (
-                  <li key={p.id}>
-                    <Link
-                      href={`/hr/projects/${p.id}`}
-                      className="group -mx-1.5 flex min-h-11 items-center gap-3 rounded-lg px-1.5 py-1 motion-safe:transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="truncate text-sm font-medium text-slate-800 group-hover:text-brand-700">{p.name}</span>
-                          <span className="nums shrink-0 font-mono text-[11px] text-slate-400">{p.code}</span>
-                        </div>
-                        <div className="truncate text-xs text-slate-500">
-                          {p.client || "—"}
-                          {range && <span className="nums"> · {range}</span>}
-                        </div>
+      <div className="mt-2 border-t border-slate-100 pt-1.5">
+        {ranked.length === 0 ? (
+          <BoxEmpty title="No active projects" hint="Staffing per project appears once a project is live." />
+        ) : (
+          <ul>
+            {ranked.map((p) => {
+              const range = [fmtDateOnly(p.startDate), fmtDateOnly(p.endDate)].filter(Boolean).join(" – ");
+              return (
+                <li key={p.id}>
+                  <Link
+                    href={`/hr/projects/${p.id}`}
+                    className="group -mx-1.5 flex items-center gap-2.5 rounded-lg px-1.5 py-1.5 motion-safe:transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-baseline gap-1.5">
+                        <span className="truncate text-[13px] font-medium text-slate-800 group-hover:text-brand-700">
+                          {p.name}
+                        </span>
+                        <span className="nums shrink-0 font-mono text-[10px] text-slate-400">{p.code}</span>
                       </div>
-                      <StatusChip status={p.status} className="hidden shrink-0 sm:inline-flex" />
-                      <span className="nums flex shrink-0 items-baseline gap-1 text-sm font-semibold text-slate-700">
-                        {p._count.assignments}
-                        <span className="text-[11px] font-normal text-slate-400">staff</span>
-                      </span>
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-          {moreCount > 0 && (
-            <Link
-              href="/hr/projects"
-              className="press mt-1 inline-flex items-center gap-1 px-1.5 text-xs font-medium text-brand-700 transition-colors hover:text-brand"
-            >
-              +{moreCount} more project{moreCount === 1 ? "" : "s"}
-              <ChevronRight className="h-3.5 w-3.5" />
-            </Link>
-          )}
-        </div>
-      </CardBody>
-    </Card>
+                      <div className="truncate text-[11px] text-slate-500">
+                        {p.client || "—"}
+                        {range && <span className="nums"> · {range}</span>}
+                      </div>
+                    </div>
+                    <span className="nums flex shrink-0 items-baseline gap-1 text-sm font-semibold text-slate-700">
+                      {p._count.assignments}
+                      <span className="text-[10px] font-normal text-slate-400">staff</span>
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+    </Box>
   );
 }
 
@@ -250,31 +337,25 @@ export async function DashboardNotDeployed({ today }: { today: Date }) {
   });
 
   return (
-    <Card className="h-full">
-      <CardHeader
-        title="Not deployed"
-        subtitle={`${notDeployed.length} without a live project`}
-      />
-      <CardBody className="max-h-96 overflow-y-auto px-6 py-4">
-        {notDeployed.length === 0 ? (
-          <EmptyState
-            icon={<Users className="h-6 w-6" />}
-            title="Everyone is deployed"
-            description="Every active employee has a live project assignment."
-          />
-        ) : (
-          <ul className="divide-y divide-slate-100">
-            {notDeployed.map((e) => (
-              <li key={e.id} className="flex items-center justify-between gap-2 py-2">
-                <EntityLink href={`/hr/employees/${e.id}`} name={e.name} code={e.empId} />
-                <span className="shrink-0 text-right text-xs text-slate-400">
-                  {[e.designation, e.department].filter(Boolean).join(" · ") || "—"}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </CardBody>
-    </Card>
+    <Box
+      title="Not deployed"
+      meta={`${notDeployed.length} idle`}
+      action={<BoxLink href="/hr/projects">Assign</BoxLink>}
+    >
+      {notDeployed.length === 0 ? (
+        <BoxEmpty title="Everyone is deployed" hint="Every active employee has a live project assignment." />
+      ) : (
+        <ul className="divide-y divide-slate-100">
+          {notDeployed.map((e) => (
+            <li key={e.id} className="flex items-center justify-between gap-2 py-1.5">
+              <EntityLink href={`/hr/employees/${e.id}`} name={e.name} code={e.empId} />
+              <span className="shrink-0 text-right text-[11px] text-slate-400">
+                {[e.designation, e.department].filter(Boolean).join(" · ") || "—"}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Box>
   );
 }
